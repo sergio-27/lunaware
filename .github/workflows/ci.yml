@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: lint, types, tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      LUNARENV_DATA_DIR: ${{ github.workspace }}/.data
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10
+
+      - name: Install the locked environment
+        run: uv sync --locked
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Formatting
+        run: uv run ruff format --check .
+
+      - name: Types
+        run: uv run mypy
+
+      # The SPICE kernels (64 MB) are small enough to fetch here, so the tests of time,
+      # frames, ephemerides, eclipses and the JPL Horizons cross-check run on real data.
+      # Terrain models (hundreds of MB from a rate-limited server) are not fetched; the
+      # tests that need them are skipped and must be run locally.
+      - name: Restore SPICE kernels
+        uses: actions/cache@v6
+        with:
+          path: .data
+          key: spice-kernels-${{ hashFiles('src/lunarenv/data/checksums.json') }}
+
+      - name: Fetch SPICE kernels (checksum-verified)
+        # an outage of the kernel server must not fail the build: without the kernels
+        # the data-backed tests are skipped, and the unit tests still run
+        continue-on-error: true
+        run: uv run lunarenv data fetch kernels kernels-de421
+
+      - name: Tests
+        run: uv run pytest

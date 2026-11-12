@@ -20,8 +20,8 @@ Requires Python 3.12 and [uv](https://docs.astral.sh/uv/). Developed on macOS, A
 Silicon; nothing depends on a GPU.
 
 ```bash
-git clone <this repository> lunarenv
-cd lunarenv
+git clone https://github.com/sergio-27/lunaware.git
+cd lunaware
 uv sync
 ```
 
@@ -187,8 +187,9 @@ Software
   when code changes.
 - Maps cost about 0.1 CPU-second per pixel (a 2 x 2 km window at 5 m: about 4.7
   CPU-hours).
-- No continuous integration yet. Tests against real data are skipped when the data
-  cache is absent.
+- Continuous integration (GitHub Actions, Linux) runs lint, type checks, the unit tests
+  and the tests that only need SPICE kernels. Tests that need terrain data, including
+  the end-to-end runs and the published-data comparisons, run only locally.
 
 ## Performance
 

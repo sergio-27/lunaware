@@ -401,4 +401,4 @@ Honest list, in order of importance for a user of the numbers:
 3. **Low-temperature heat capacity**: results reach 43 K, the fit is stated from about 90 K.
 4. ~~ILL-V1 with the full clone ensemble~~ done (PASS, see the Phase 4 addendum). Phase 2 and 3 ensemble tables regenerated with all 100 Site 4 clones.
 5. **Pending references**: Mazarico2011 Table 3, Glaser2014, Diviner polar products.
-6. Smaller items: configurable "lit" threshold; per-model validity flags; warning when validation results predate the code; hover values in report charts; continuous integration; a commit history (nothing has been committed).
+6. Smaller items: configurable "lit" threshold; per-model validity flags; warning when validation results predate the code; hover values in report charts. (Done since: the repository has a commit history and continuous integration on Linux for lint, types, unit tests and kernel-only data tests; terrain-backed tests still run only locally.)
