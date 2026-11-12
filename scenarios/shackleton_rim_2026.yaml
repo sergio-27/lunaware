@@ -1,0 +1,33 @@
+# Reference scenario of the MVP: one year on the Shackleton crater rim.
+#
+# The point is the best-lit 5 m pixel of the rim crest found in Phase 2 (85.5 % mean
+# visible solar disc during 2026 at 2 m above the ground).
+#
+#   lunarenv run scenarios/shackleton_rim_2026.yaml
+schema_version: 1
+name: shackleton-rim-2026
+description: Illumination and regolith temperature at the Shackleton rim crest during 2026.
+
+site:
+  terrain: site04
+  x_m: -2822.5          # south polar stereographic, metres (frame MOON_ME, DE421-aligned)
+  y_m: -9062.5
+  height_above_surface_m: 2.0
+
+period:
+  start_utc: 2026-01-01T00:00:00
+  end_utc: 2027-01-01T00:00:00
+  step_minutes: 60
+
+illumination:
+  earth_visibility: true
+
+thermal:
+  surface:
+    source: dem           # slope of the 5 m terrain model at the site
+  constant_albedo_alternative: true
+
+uncertainty:
+  members: 64
+  terrain_clones: 16
+  seed: 20261112

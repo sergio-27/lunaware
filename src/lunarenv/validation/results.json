@@ -1,0 +1,1261 @@
+{
+ "schema_version": 1,
+ "lunarenv_version": "0.1.0.dev0",
+ "generated_utc": "2026-11-12T20:47:35Z",
+ "results": [
+  {
+   "id": "ILL-A1",
+   "title": "Horizon of a smooth sphere (dip)",
+   "kind": "analytic",
+   "source": "closed form",
+   "metric": "max |horizon - dip| over all azimuths",
+   "tolerance": "1e-7 rad",
+   "status": "PASS",
+   "summary": "max error 4.7e-10 rad",
+   "checks": [
+    {
+     "quantity": "max horizon error over three observer heights",
+     "reference": 0.0,
+     "measured": 4.656612873077393e-10,
+     "tolerance": 1e-07,
+     "unit": "rad",
+     "informational": false
+    }
+   ],
+   "notes": [],
+   "data": {},
+   "seconds": 0.6784773330145981
+  },
+  {
+   "id": "ILL-A2",
+   "title": "Horizon behind an analytic hill, off-pole observer",
+   "kind": "analytic",
+   "source": "independent geodesic computation from true azimuths",
+   "metric": "max horizon error",
+   "tolerance": "2e-5 rad",
+   "status": "PASS",
+   "summary": "max error 5.8e-06 rad",
+   "checks": [
+    {
+     "quantity": "max horizon error over 72 azimuths",
+     "reference": 0.0,
+     "measured": 5.83193700152973e-06,
+     "tolerance": 2e-05,
+     "unit": "rad",
+     "informational": false
+    }
+   ],
+   "notes": [
+    "Tolerance is the bound of bilinear interpolation of a 5 m raster of this hill (3.5 mm in height at about 1 km)."
+   ],
+   "data": {},
+   "seconds": 0.23937925000791438
+  },
+  {
+   "id": "ILL-A3",
+   "title": "Visible fraction of a disc cut by a straight horizon",
+   "kind": "analytic",
+   "source": "circular segment; limb-darkened segment in closed form",
+   "metric": "max error of area and flux fractions",
+   "tolerance": "2e-6",
+   "status": "PASS",
+   "summary": "area 3.9e-07, flux 2.0e-07 (512 strips)",
+   "checks": [
+    {
+     "quantity": "visible area fraction, max error",
+     "reference": 0.0,
+     "measured": 3.8853202911220963e-07,
+     "tolerance": 2e-06,
+     "unit": "",
+     "informational": false
+    },
+    {
+     "quantity": "limb-darkened flux fraction, max error",
+     "reference": 0.0,
+     "measured": 1.951731229132836e-07,
+     "tolerance": 2e-06,
+     "unit": "",
+     "informational": false
+    }
+   ],
+   "notes": [],
+   "data": {},
+   "seconds": 0.02174470800673589
+  },
+  {
+   "id": "ILL-X1",
+   "title": "Apparent direction of the Sun and the Earth at the rim site",
+   "kind": "cross-check",
+   "source": "JPL Horizons (HORIZONS)",
+   "metric": "max angular separation",
+   "tolerance": "2e-6 rad",
+   "status": "PASS",
+   "summary": "Sun 9.3e-10 rad, Earth 9.4e-09 rad",
+   "checks": [
+    {
+     "quantity": "Sun: max angular difference, 288 epochs 2026-2028",
+     "reference": 0.0,
+     "measured": 9.294650921259262e-10,
+     "tolerance": 2e-06,
+     "unit": "rad",
+     "informational": false
+    },
+    {
+     "quantity": "Earth: max angular difference, 288 epochs 2026-2028",
+     "reference": 0.0,
+     "measured": 9.415377397302575e-09,
+     "tolerance": 2e-06,
+     "unit": "rad",
+     "informational": false
+    }
+   ],
+   "notes": [
+    "Reference: JPL Horizons API responses of 2026-11-12 (DE441, its 'MEAN_ME (high precision)' lunar frame), stored verbatim in validation/reference/. Horizons shares the JPL ephemerides with lunarenv, so this validates time conversion, frames, projection and topocentric reduction, not the ephemeris itself."
+   ],
+   "data": {
+    "naif.lsk": "678e32bdb5a744117a467cd9601cd6b373f0e9bc9bbde1371d5eee39600a039b",
+    "naif.pck.text": "3dff7b1dbeceaa01f25467767d3fa25816051c85d162d1edf04acb310ee28bb1",
+    "naif.spk.de440s": "c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2",
+    "naif.pck.moon_pa_de440": "60cd55aa401ea2ea97360636f567554bfe4e37bb829f901b4460a455dfaf783f",
+    "naif.fk.moon_de440": "a47c71e9c9f33796bdafb2c9d69a7ee447b6016ecad80f71cd6f3e479f9cf768"
+   },
+   "seconds": 0.18315095800790004
+  },
+  {
+   "id": "ILL-V1",
+   "title": "Illumination of the Site 1 regions of interest",
+   "kind": "published",
+   "source": "Barker2021 Table 2",
+   "metric": "1st percentile over terrain clones of the region-average illumination, dz = 1 and 5 m",
+   "tolerance": "3 percentage points",
+   "status": "PASS",
+   "summary": "1st percentile of average illumination: largest difference 2.22 pp over 14 region-height pairs, from 100 of 100 clones; region areas within 2.6 % of the published ones",
+   "checks": [
+    {
+     "quantity": "region 1, dz = 1 m: nominal DEM average illumination",
+     "reference": 68.03,
+     "measured": 76.19789907243857,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 1, dz = 1 m: 1st percentile of average illumination",
+     "reference": 68.03,
+     "measured": 70.25222272404167,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "region 1, dz = 1 m: clone minimum of average illumination",
+     "reference": 68.03,
+     "measured": 69.12821859916211,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 1, dz = 1 m: 1st percentile of longest illumination period",
+     "reference": 63.35,
+     "measured": 82.7376685660019,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 1, dz = 1 m: 99th percentile of longest shadow period",
+     "reference": 16.55,
+     "measured": 17.287067901234572,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 1: area above 70 % at 1 m",
+     "reference": 8625.0,
+     "measured": 8775.0,
+     "tolerance": null,
+     "unit": "m2",
+     "informational": true
+    },
+    {
+     "quantity": "region 2, dz = 1 m: nominal DEM average illumination",
+     "reference": 70.32,
+     "measured": 76.24661006241908,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 2, dz = 1 m: 1st percentile of average illumination",
+     "reference": 70.32,
+     "measured": 70.61519353069927,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "region 2, dz = 1 m: clone minimum of average illumination",
+     "reference": 70.32,
+     "measured": 69.78752493039487,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 2, dz = 1 m: 1st percentile of longest illumination period",
+     "reference": 113.8,
+     "measured": 106.05739583333333,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 2, dz = 1 m: 99th percentile of longest shadow period",
+     "reference": 17.84,
+     "measured": 17.428320997807024,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 2: area above 70 % at 1 m",
+     "reference": 7550.0,
+     "measured": 7600.0,
+     "tolerance": null,
+     "unit": "m2",
+     "informational": true
+    },
+    {
+     "quantity": "region 3, dz = 1 m: nominal DEM average illumination",
+     "reference": 67.51,
+     "measured": 72.79639793680522,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 3, dz = 1 m: 1st percentile of average illumination",
+     "reference": 67.51,
+     "measured": 68.45935954934177,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "region 3, dz = 1 m: clone minimum of average illumination",
+     "reference": 67.51,
+     "measured": 68.17480222787634,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 3, dz = 1 m: 1st percentile of longest illumination period",
+     "reference": 117.86,
+     "measured": 134.73053418803417,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 3, dz = 1 m: 99th percentile of longest shadow period",
+     "reference": 22.23,
+     "measured": 19.09152510683762,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 3: area above 70 % at 1 m",
+     "reference": 3825.0,
+     "measured": 3900.0,
+     "tolerance": null,
+     "unit": "m2",
+     "informational": true
+    },
+    {
+     "quantity": "region 4, dz = 1 m: nominal DEM average illumination",
+     "reference": 69.61,
+     "measured": 77.36542295804963,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 4, dz = 1 m: 1st percentile of average illumination",
+     "reference": 69.61,
+     "measured": 71.21273223276101,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "region 4, dz = 1 m: clone minimum of average illumination",
+     "reference": 69.61,
+     "measured": 70.72315256731436,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 4, dz = 1 m: 1st percentile of longest illumination period",
+     "reference": 136.49,
+     "measured": 139.39332493894995,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 4, dz = 1 m: 99th percentile of longest shadow period",
+     "reference": 13.27,
+     "measured": 14.194998473748479,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 4: area above 70 % at 1 m",
+     "reference": 13300.0,
+     "measured": 13650.0,
+     "tolerance": null,
+     "unit": "m2",
+     "informational": true
+    },
+    {
+     "quantity": "region 5, dz = 1 m: nominal DEM average illumination",
+     "reference": 70.38,
+     "measured": 75.66010284923375,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 5, dz = 1 m: 1st percentile of average illumination",
+     "reference": 70.38,
+     "measured": 70.93474282289742,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "region 5, dz = 1 m: clone minimum of average illumination",
+     "reference": 70.38,
+     "measured": 70.483824305688,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 5, dz = 1 m: 1st percentile of longest illumination period",
+     "reference": 142.17,
+     "measured": 148.20266585760518,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 5, dz = 1 m: 99th percentile of longest shadow period",
+     "reference": 15.24,
+     "measured": 13.660790857605184,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 5: area above 70 % at 1 m",
+     "reference": 10075.0,
+     "measured": 10300.0,
+     "tolerance": null,
+     "unit": "m2",
+     "informational": true
+    },
+    {
+     "quantity": "region 6, dz = 1 m: nominal DEM average illumination",
+     "reference": 71.15,
+     "measured": 77.46914447679673,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 6, dz = 1 m: 1st percentile of average illumination",
+     "reference": 71.15,
+     "measured": 72.25709817301198,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "region 6, dz = 1 m: clone minimum of average illumination",
+     "reference": 71.15,
+     "measured": 72.15969208381881,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 6, dz = 1 m: 1st percentile of longest illumination period",
+     "reference": 81.01,
+     "measured": 130.28853494623655,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 6, dz = 1 m: 99th percentile of longest shadow period",
+     "reference": 12.74,
+     "measured": 11.536425765095123,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 6: area above 70 % at 1 m",
+     "reference": 10000.0,
+     "measured": 10075.0,
+     "tolerance": null,
+     "unit": "m2",
+     "informational": true
+    },
+    {
+     "quantity": "region 7, dz = 1 m: nominal DEM average illumination",
+     "reference": 67.36,
+     "measured": 73.48071173590857,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 7, dz = 1 m: 1st percentile of average illumination",
+     "reference": 67.36,
+     "measured": 67.48748445743514,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "region 7, dz = 1 m: clone minimum of average illumination",
+     "reference": 67.36,
+     "measured": 66.21664397141114,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 7, dz = 1 m: 1st percentile of longest illumination period",
+     "reference": 100.23,
+     "measured": 101.761,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 7, dz = 1 m: 99th percentile of longest shadow period",
+     "reference": 14.54,
+     "measured": 17.04609064327491,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 7: area above 70 % at 1 m",
+     "reference": 7075.0,
+     "measured": 7125.0,
+     "tolerance": null,
+     "unit": "m2",
+     "informational": true
+    },
+    {
+     "quantity": "region 1, dz = 5 m: nominal DEM average illumination",
+     "reference": 89.26,
+     "measured": 90.1102434862502,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 1, dz = 5 m: 1st percentile of average illumination",
+     "reference": 89.26,
+     "measured": 89.35159261565188,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "region 1, dz = 5 m: clone minimum of average illumination",
+     "reference": 89.26,
+     "measured": 89.25927208976536,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 1, dz = 5 m: 1st percentile of longest illumination period",
+     "reference": 215.79,
+     "measured": 216.13388770180438,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 1, dz = 5 m: 99th percentile of longest shadow period",
+     "reference": 5.29,
+     "measured": 5.501526590693258,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 2, dz = 5 m: nominal DEM average illumination",
+     "reference": 88.51,
+     "measured": 89.09709031727134,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 2, dz = 5 m: 1st percentile of average illumination",
+     "reference": 88.51,
+     "measured": 88.48463970390843,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "region 2, dz = 5 m: clone minimum of average illumination",
+     "reference": 88.51,
+     "measured": 88.4211976422421,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 2, dz = 5 m: 1st percentile of longest illumination period",
+     "reference": 216.28,
+     "measured": 216.71180235745612,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 2, dz = 5 m: 99th percentile of longest shadow period",
+     "reference": 7.31,
+     "measured": 7.265919682017544,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 3, dz = 5 m: nominal DEM average illumination",
+     "reference": 84.53,
+     "measured": 86.13800397730216,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 3, dz = 5 m: 1st percentile of average illumination",
+     "reference": 84.53,
+     "measured": 84.85687241312796,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "region 3, dz = 5 m: clone minimum of average illumination",
+     "reference": 84.53,
+     "measured": 84.81307979425401,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 3, dz = 5 m: 1st percentile of longest illumination period",
+     "reference": 216.89,
+     "measured": 219.15916933760684,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 3, dz = 5 m: 99th percentile of longest shadow period",
+     "reference": 8.41,
+     "measured": 7.688317307692308,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 4, dz = 5 m: nominal DEM average illumination",
+     "reference": 88.12,
+     "measured": 88.54221830838733,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 4, dz = 5 m: 1st percentile of average illumination",
+     "reference": 88.12,
+     "measured": 88.19380805747264,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "region 4, dz = 5 m: clone minimum of average illumination",
+     "reference": 88.12,
+     "measured": 88.18482857586378,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 4, dz = 5 m: 1st percentile of longest illumination period",
+     "reference": 231.2,
+     "measured": 231.57901404151406,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 4, dz = 5 m: 99th percentile of longest shadow period",
+     "reference": 4.0,
+     "measured": 3.988582112332112,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 5, dz = 5 m: nominal DEM average illumination",
+     "reference": 85.71,
+     "measured": 86.2407336873823,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 5, dz = 5 m: 1st percentile of average illumination",
+     "reference": 85.71,
+     "measured": 85.75720691980237,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "region 5, dz = 5 m: clone minimum of average illumination",
+     "reference": 85.71,
+     "measured": 85.73645636870454,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 5, dz = 5 m: 1st percentile of longest illumination period",
+     "reference": 218.98,
+     "measured": 219.05508495145634,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 5, dz = 5 m: 99th percentile of longest shadow period",
+     "reference": 4.52,
+     "measured": 4.4725920307443365,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 6, dz = 5 m: nominal DEM average illumination",
+     "reference": 87.35,
+     "measured": 87.52954170623214,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 6, dz = 5 m: 1st percentile of average illumination",
+     "reference": 87.35,
+     "measured": 87.29689450874382,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "region 6, dz = 5 m: clone minimum of average illumination",
+     "reference": 87.35,
+     "measured": 87.29014760120216,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 6, dz = 5 m: 1st percentile of longest illumination period",
+     "reference": 220.98,
+     "measured": 221.0695936724566,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 6, dz = 5 m: 99th percentile of longest shadow period",
+     "reference": 4.16,
+     "measured": 4.168693134822167,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 7, dz = 5 m: nominal DEM average illumination",
+     "reference": 82.79,
+     "measured": 82.90999657711727,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 7, dz = 5 m: 1st percentile of average illumination",
+     "reference": 82.79,
+     "measured": 82.74180961511144,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "region 7, dz = 5 m: clone minimum of average illumination",
+     "reference": 82.79,
+     "measured": 82.73954694342909,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "region 7, dz = 5 m: 1st percentile of longest illumination period",
+     "reference": 119.07,
+     "measured": 124.00069298245613,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    },
+    {
+     "quantity": "region 7, dz = 5 m: 99th percentile of longest shadow period",
+     "reference": 5.42,
+     "measured": 5.40614619883041,
+     "tolerance": null,
+     "unit": "d",
+     "informational": true
+    }
+   ],
+   "notes": [
+    "Reference: Barker2021 Table 2, rows A, Site 1 (connecting ridge), 2024-01-01 to 2026-01-01, hourly, on the same 5 m LOLA site DEM and its error clones.",
+    "The table prints centroid coordinates as positive kilometres; the Site 1 tile lies at negative x and y, so the centroids are taken as (-X, -Y). They fall on pixel centres of the tile.",
+    "Regions are rebuilt here as the pixels connected to the published centroid with average illumination above 70 % at 1 m in the nominal DEM (the published definition); their areas are compared for information.",
+    "Published values are 1st/99th percentiles over 100 clones. Here 100 clone(s) were used. With 50 or more the percentiles are taken from the ensemble itself; with 8 to 49 they are estimated as mean -/+ 2.326 standard deviations of the region means, which for 12 to 16 clones carries a sampling error of about half a standard deviation.",
+    "Method differences: far-field terrain is the 2023 PGDA 80 m product (the paper used the earlier 80 m and 240 m LDEMs); single-chord disc with the Eddington limb-darkening law (the paper: limb darkening at 550 nm); longest-period statistics are discontinuous functionals and are reported without a tolerance.",
+    "Tolerance for average illumination, fixed beforehand: 3 percentage points."
+   ],
+   "data": {
+    "pgda78.site01.surf": "3ba7b97cb00a2bcf21189c3aeb535f65afc21207154ab9f0d43c5bdc1f7e747e",
+    "pgda90.ldem_80s_80mpp": "82030dcbdd7c4bb0c7d858e9b4b293b9f2cda5a543ba31ec0f42784bd6beee5a",
+    "naif.lsk": "678e32bdb5a744117a467cd9601cd6b373f0e9bc9bbde1371d5eee39600a039b",
+    "naif.pck.text": "3dff7b1dbeceaa01f25467767d3fa25816051c85d162d1edf04acb310ee28bb1",
+    "naif.spk.de440s": "c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2",
+    "naif.pck.moon_pa_de440": "60cd55aa401ea2ea97360636f567554bfe4e37bb829f901b4460a455dfaf783f",
+    "naif.fk.moon_de440": "a47c71e9c9f33796bdafb2c9d69a7ee447b6016ecad80f71cd6f3e479f9cf768"
+   },
+   "seconds": 5216.860630832991
+  },
+  {
+   "id": "ILL-V2",
+   "title": "18.6-year average illumination map, Shackleton rim",
+   "kind": "published",
+   "source": "PGDA-69 (method of Mazarico2011)",
+   "metric": "bias, RMS and correlation over 100 x 100 cells of 60 m",
+   "tolerance": "bias 2 pp, RMS 6 pp, r >= 0.95",
+   "status": "PASS",
+   "summary": "bias -1.60 pp, RMS 4.12 pp, r = 0.959 over 10000 cells",
+   "checks": [
+    {
+     "quantity": "mean difference (lunarenv - published)",
+     "reference": 0.0,
+     "measured": -1.6011027899422892,
+     "tolerance": 2.0,
+     "unit": "pp",
+     "informational": false
+    },
+    {
+     "quantity": "RMS difference",
+     "reference": 0.0,
+     "measured": 4.1155791898765015,
+     "tolerance": 6.0,
+     "unit": "pp",
+     "informational": false
+    },
+    {
+     "quantity": "correlation coefficient",
+     "reference": 1.0,
+     "measured": 0.9585249173062278,
+     "tolerance": 0.05,
+     "unit": "",
+     "informational": false
+    },
+    {
+     "quantity": "published maximum in the window",
+     "reference": 87.05999851226807,
+     "measured": 81.00681610000812,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "mean over cells published above 50 %",
+     "reference": 60.6558814556641,
+     "measured": 54.77636365056867,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "cells below 0.5 % in both / in either",
+     "reference": 0.0937,
+     "measured": 0.0658,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    }
+   ],
+   "notes": [
+    "Reference: PGDA average solar illumination map AVGVISIB_85S_060M_201608 (method of Mazarico2011: hourly over one 18.6-year cycle on LOLA 60 m topography, 2016 processing).",
+    "lunarenv was run like-for-like: Site 4 DEM block-averaged from 5 m to 60 m on the published lattice, observers at ground level, single-chord solar disc, 720 azimuths, 100 x 100 cells (6 x 6 km on the Shackleton rim), 2010-01-01 plus 18.6 years every 2 h (the 2 h step changes the mean by 0.004 pp; the published start date is not known and does not matter for a full cycle).",
+    "Known differences that the tolerances were set to cover: DEM generation (2020 track-adjusted site model vs 2016 gridded product), far-field DEM version, and the observer height of the published map, which its documentation does not state.",
+    "Tolerances were fixed before the comparison from the terrain sensitivity measured in Phase 2 (coarsening the near DEM twofold moves a rim point by 0.3-1.5 pp; terrain clones by 1 pp).",
+    "The case passes, but not uniformly: on cells the published map puts above 50 %, lunarenv at ground level is about 6 pp darker. A follow-up run (2026-11-12, 6 h sampling) with the observer 2 m above the ground gave overall bias -0.7 pp, +1.2 pp on those cells and r = 0.950; at 10 m, +10 pp and r = 0.897. The difference therefore equals about 1.5 m of observer height. A likely cause is the treatment of terrain next to the observer (lunarenv samples the slope of the observer's own 60 m cell from 15 m away; a horizon built from neighbouring grid nodes does not), but the published method could not be checked, so this is not established. The registered comparison stays at ground level."
+   ],
+   "data": {
+    "pgda69.avgvisib_85s_60m": "ccf67d4f39e0a970c111196da7d6551ffcf50d075470b93067fb3904c0b05806",
+    "pgda78.site04.surf": "38ff70dbdf2f066c2cfa94a646c3a59d653ce7f6b4528b15fc1b43ee397ce758",
+    "pgda90.ldem_80s_80mpp": "82030dcbdd7c4bb0c7d858e9b4b293b9f2cda5a543ba31ec0f42784bd6beee5a",
+    "naif.lsk": "678e32bdb5a744117a467cd9601cd6b373f0e9bc9bbde1371d5eee39600a039b",
+    "naif.pck.text": "3dff7b1dbeceaa01f25467767d3fa25816051c85d162d1edf04acb310ee28bb1",
+    "naif.spk.de440s": "c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2",
+    "naif.pck.moon_pa_de440": "60cd55aa401ea2ea97360636f567554bfe4e37bb829f901b4460a455dfaf783f",
+    "naif.fk.moon_de440": "a47c71e9c9f33796bdafb2c9d69a7ee447b6016ecad80f71cd6f3e479f9cf768"
+   },
+   "seconds": 81.3215243750019
+  },
+  {
+   "id": "ILL-V3",
+   "title": "Continuous sunlight and longest darkness near the Shackleton rim",
+   "kind": "published",
+   "source": "Mazarico2011",
+   "metric": "days of continuous sunlight; longest total darkness",
+   "tolerance": "not set",
+   "status": "PENDING",
+   "summary": "The paper is behind a paywall and was not accessed; only its abstract was read. The abstract gives about 240 days of continuous sunlight and 1.5 days of longest darkness for a point near the rim, without its coordinates or observer height. Needs: Table 3 of the paper.",
+   "checks": [],
+   "notes": [],
+   "data": {},
+   "seconds": null
+  },
+  {
+   "id": "ILL-V4",
+   "title": "Best-lit point of the connecting ridge over 19 years",
+   "kind": "published",
+   "source": "Glaser2014",
+   "metric": "average illumination at 2 m and 10 m",
+   "tolerance": "not set",
+   "status": "PENDING",
+   "summary": "The paper is behind a paywall and was not accessed; only its abstract was read. The abstract gives 92.27 % at 2 m and 95.65 % at 10 m on a 20 m terrain model, without the coordinates. Needs: the location from the paper.",
+   "checks": [],
+   "notes": [],
+   "data": {},
+   "seconds": null
+  },
+  {
+   "id": "TH-A1",
+   "title": "Damped temperature wave under a periodic surface temperature",
+   "kind": "analytic",
+   "source": "CarslawJaeger1959",
+   "metric": "max |T - exact|; observed spatial order",
+   "tolerance": "0.25 K (0.25 % of amplitude); order 2 +/- 0.3",
+   "status": "PASS",
+   "summary": "max error 0.061 K of a 100 K wave; spatial order 1.93",
+   "checks": [
+    {
+     "quantity": "max error, 20 cells per skin depth, 2000 steps per cycle",
+     "reference": 0.0,
+     "measured": 0.060582367388917646,
+     "tolerance": 0.25,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "observed order of accuracy in space",
+     "reference": 2.0,
+     "measured": 1.932371127643556,
+     "tolerance": 0.3,
+     "unit": "",
+     "informational": false
+    }
+   ],
+   "notes": [],
+   "data": {},
+   "seconds": 0.8771217500034254
+  },
+  {
+   "id": "TH-A2",
+   "title": "Steady conduction with interior heat flow, K depending on T",
+   "kind": "analytic",
+   "source": "closed form (Kirchhoff transformation)",
+   "metric": "relative error of the potential profile",
+   "tolerance": "1e-9",
+   "status": "PASS",
+   "summary": "profile error 2.6e-16 (relative) on 14 cells with 267 K across the domain",
+   "checks": [
+    {
+     "quantity": "surface temperature",
+     "reference": 184.1891683197693,
+     "measured": 184.1891683197693,
+     "tolerance": 1e-06,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "relative error of the Kirchhoff potential profile",
+     "reference": 0.0,
+     "measured": 2.575815004609015e-16,
+     "tolerance": 1e-09,
+     "unit": "",
+     "informational": false
+    }
+   ],
+   "notes": [],
+   "data": {},
+   "seconds": 0.0594374579959549
+  },
+  {
+   "id": "TH-P1",
+   "title": "Energy conservation of the four time integrators",
+   "kind": "property",
+   "source": "energy identity of each scheme",
+   "metric": "relative residual of stored energy vs boundary flux",
+   "tolerance": "1e-9",
+   "status": "PASS",
+   "summary": "largest relative residual 1.4e-16 over three lunations",
+   "checks": [
+    {
+     "quantity": "relative energy residual, explicit",
+     "reference": 0.0,
+     "measured": 6.923390990648227e-18,
+     "tolerance": 1e-09,
+     "unit": "",
+     "informational": false
+    },
+    {
+     "quantity": "relative energy residual, backward_euler",
+     "reference": 0.0,
+     "measured": 2.7693563962592906e-18,
+     "tolerance": 1e-09,
+     "unit": "",
+     "informational": false
+    },
+    {
+     "quantity": "relative energy residual, crank_nicolson",
+     "reference": 0.0,
+     "measured": 5.5387127925185814e-17,
+     "tolerance": 1e-09,
+     "unit": "",
+     "informational": false
+    },
+    {
+     "quantity": "relative energy residual, bdf2",
+     "reference": 0.0,
+     "measured": 1.40544837110159e-16,
+     "tolerance": 1e-09,
+     "unit": "",
+     "informational": false
+    }
+   ],
+   "notes": [],
+   "data": {},
+   "seconds": 0.036834458995144814
+  },
+  {
+   "id": "TH-V1",
+   "title": "Equatorial diurnal temperatures",
+   "kind": "published",
+   "source": "Hayne2017 Table A2 (Vasavada2012, Diviner)",
+   "metric": "noon, midnight and minimum surface temperature",
+   "tolerance": "2 K (twice the < 1 K RMS residual Hayne2017 reports for its fits)",
+   "status": "PASS",
+   "summary": "385.2 / 100.3 / 93.7 K against 385 / 101 / 95 K",
+   "checks": [
+    {
+     "quantity": "peak noon temperature",
+     "reference": 385.0,
+     "measured": 385.18914923781006,
+     "tolerance": 2.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "midnight temperature",
+     "reference": 101.0,
+     "measured": 100.25961451746926,
+     "tolerance": 2.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "minimum night-time temperature",
+     "reference": 95.0,
+     "measured": 93.74258265964652,
+     "tolerance": 2.0,
+     "unit": "K",
+     "informational": false
+    }
+   ],
+   "notes": [
+    "Reference values are those quoted in Hayne2017 Table A2 from Vasavada2012 (Diviner, equator, A0 = 0.12), described there as typical and rounded to 1 K. Vasavada2012 itself was not accessed.",
+    "Level ground at the equator, Sun at 1 au, declination 0, standard parameters (H = 0.06 m).",
+    "Disclosure: the 2 K tolerance was written down after exploratory runs had already shown 385.2 / 100.3 / 93.7 K. It is anchored to the residual stated by the source, not to the result."
+   ],
+   "data": {},
+   "seconds": 0.5281596250133589
+  },
+  {
+   "id": "TH-V2",
+   "title": "Apollo 15 and 17 mean temperatures, published parameter set",
+   "kind": "published",
+   "source": "Hayne2017 Table A2 (Keihm1973)",
+   "metric": "diurnal mean at the surface and at depth",
+   "tolerance": "5 K (stated by the source)",
+   "status": "FAIL",
+   "summary": "205.6 / 247.0 K; 203.0 / 241.7 K against 216 / 256 and 211 / 252 K (+/-5 K)",
+   "checks": [
+    {
+     "quantity": "Apollo 17 (20 N): diurnal mean surface temperature",
+     "reference": 216.0,
+     "measured": 205.62554871325773,
+     "tolerance": 5.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Apollo 17 (20 N): diurnal mean temperature at 1.30 m",
+     "reference": 256.0,
+     "measured": 247.04782319415867,
+     "tolerance": 5.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Apollo 15 (26 N): diurnal mean surface temperature",
+     "reference": 211.0,
+     "measured": 202.99572814538462,
+     "tolerance": 5.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Apollo 15 (26 N): diurnal mean temperature at 0.83 m",
+     "reference": 252.0,
+     "measured": 241.74561792967643,
+     "tolerance": 5.0,
+     "unit": "K",
+     "informational": false
+    }
+   ],
+   "notes": [
+    "Reference: Apollo 15 and 17 heat-flow experiment values (Keihm1973) as quoted, with their +/-5 K, in Hayne2017 Table A2. The original papers were not accessed, so what the 'mean surface temperature' was measured on (regolith surface or probe hardware) is not established here.",
+    "Sun at 1.017 au, as stated in the caption of Hayne2017 Figure A1.",
+    "With the published parameter set, including the incidence-dependent albedo of Hayne2017 Table A1, the model is 8-10 K below all four values while it reproduces the equatorial noon, midnight and minimum temperatures (TH-V1) and agrees with the reference code at the surface (TH-X1). The cause is not resolved; see TH-V2b. No tolerance was changed."
+   ],
+   "data": {},
+   "seconds": 0.1625156250083819
+  },
+  {
+   "id": "TH-V2b",
+   "title": "Apollo 15 and 17 mean temperatures, constant albedo",
+   "kind": "published",
+   "source": "Hayne2017 Table A2 (Keihm1973)",
+   "metric": "diurnal mean at the surface and at depth",
+   "tolerance": "5 K (stated by the source)",
+   "status": "PASS",
+   "summary": "213.4 / 255.2 K; 211.2 / 250.7 K against 216 / 256 and 211 / 252 K (+/-5 K) [constant albedo]",
+   "checks": [
+    {
+     "quantity": "Apollo 17 (20 N): diurnal mean surface temperature",
+     "reference": 216.0,
+     "measured": 213.3584111597739,
+     "tolerance": 5.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Apollo 17 (20 N): diurnal mean temperature at 1.30 m",
+     "reference": 256.0,
+     "measured": 255.1903184935485,
+     "tolerance": 5.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Apollo 15 (26 N): diurnal mean surface temperature",
+     "reference": 211.0,
+     "measured": 211.24297942617122,
+     "tolerance": 5.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Apollo 15 (26 N): diurnal mean temperature at 0.83 m",
+     "reference": 252.0,
+     "measured": 250.72889479727957,
+     "tolerance": 5.0,
+     "unit": "K",
+     "informational": false
+    }
+   ],
+   "notes": [
+    "Reference: Apollo 15 and 17 heat-flow experiment values (Keihm1973) as quoted, with their +/-5 K, in Hayne2017 Table A2. The original papers were not accessed, so what the 'mean surface temperature' was measured on (regolith surface or probe hardware) is not established here.",
+    "Sun at 1.017 au, as stated in the caption of Hayne2017 Figure A1.",
+    "Same model with a constant albedo of 0.12. It then also matches the model curves of Hayne2017 Figure A1 (surface ~215 K, 1 m ~256 K at 20 N). This suggests that figure was computed with a constant albedo. It does not show which albedo is right: daytime Diviner temperatures are what the incidence-dependent law was fitted to."
+   ],
+   "data": {},
+   "seconds": 0.11360625000088476
+  },
+  {
+   "id": "TH-X1",
+   "title": "Code-to-code comparison with the reference implementation",
+   "kind": "cross-check",
+   "source": "heat1d 0.3.2",
+   "metric": "surface mean, max, min and deep mean at 0, 20, 26 deg latitude",
+   "tolerance": "1 K (convergence level stated in Hayne2017)",
+   "status": "PARTIAL",
+   "summary": "surface within 1 K at three latitudes; at depth -2.3 K",
+   "checks": [
+    {
+     "quantity": "latitude 0: surface mean",
+     "reference": 211.7675788614714,
+     "measured": 211.87579279003927,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 0: surface max",
+     "reference": 388.505537915692,
+     "measured": 388.31982790565326,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 0: surface min",
+     "reference": 92.80454667745326,
+     "measured": 93.17498212628942,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 0: mean at 0.68 m",
+     "reference": 258.4909330575354,
+     "measured": 255.63508784911917,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 20: surface mean",
+     "reference": 207.99716629333415,
+     "measured": 208.57148767161382,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 20: surface max",
+     "reference": 382.12538145342734,
+     "measured": 382.06846774870513,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 20: surface min",
+     "reference": 91.71697833561308,
+     "measured": 92.27262053234816,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 20: mean at 0.68 m",
+     "reference": 252.5422567191322,
+     "measured": 250.38472296609228,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 26: surface mean",
+     "reference": 205.29925658171328,
+     "measured": 206.0381212194111,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 26: surface max",
+     "reference": 377.32045452256926,
+     "measured": 377.26671169128605,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 26: surface min",
+     "reference": 90.94470723618713,
+     "measured": 91.56886951054595,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 26: mean at 0.68 m",
+     "reference": 248.2975590197314,
+     "measured": 246.42823668818224,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    }
+   ],
+   "notes": [
+    "Reference: heat1d 0.3.2 (the public code of Hayne2017), run on 2026-11-12 with its lunar defaults except the equilibration time, raised from 1 to 20 years; inputs and outputs are stored in validation/reference/heat1d_reference.json with the script that produced them.",
+    "lunarenv is run with heat1d's parameters (H = 0.07 m, its Sun distance and declination at output time). Tolerance 1 K: the level to which Hayne2017 states its grids are converged. Disclosure: it was written down after exploratory runs of both codes had been compared.",
+    "At depth lunarenv is -2.3 K from heat1d. lunarenv's deep temperature changes by 0.013 K between grids with first cells from 3.6 mm to 0.25 mm; heat1d returns NaN on every grid finer than its default, so its value cannot be refined. The gap is attributed to heat1d's averaging of conductivities across the near-surface gradient (a hypothesis consistent with the evidence, not demonstrated).",
+    "With its default one-year equilibration heat1d's deep temperature at 20 N is 261.7 K, 9 K above its own equilibrated value."
+   ],
+   "data": {},
+   "seconds": 0.17035270799533464
+  },
+  {
+   "id": "TH-V3",
+   "title": "Polar surface temperatures at the test site",
+   "kind": "published",
+   "source": "Williams2019; Diviner polar products (DIV-PCP)",
+   "metric": "bolometric temperature at 240 m aggregation",
+   "tolerance": "not set",
+   "status": "PENDING",
+   "summary": "Not run. The archive location and format of the Diviner polar products were not confirmed, and the model omits terrain-scattered and terrain-emitted radiation, so only sunlit, level pixels would be comparable. Needs: the data path, and a decision on scattering.",
+   "checks": [],
+   "notes": [],
+   "data": {},
+   "seconds": null
+  }
+ ]
+}

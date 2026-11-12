@@ -1,0 +1,12 @@
+{
+ "observers": 40401,
+ "n_azimuth": 720,
+ "epochs": 8760,
+ "threads": 10,
+ "cpu_count": 10,
+ "horizon_s": 508.3398797090049,
+ "statistics_s": 44.47106420900673,
+ "horizon_ms_per_observer": 12.58235884530098,
+ "rays_per_s": 57222.9745513014,
+ "observer_epochs_per_s": 7958270.536020184
+}

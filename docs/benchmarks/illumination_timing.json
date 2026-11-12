@@ -1,0 +1,127 @@
+{
+ "machine": "arm64",
+ "processor": "arm",
+ "cpu_count": 10,
+ "numba_threads": 10,
+ "horizon": [
+  {
+   "observers": 100,
+   "n_azimuth": 1440,
+   "step_fraction": 0.5,
+   "wall_s": 5.60410879200208,
+   "cpu_s": 12.722013,
+   "cpu_ms_per_observer": 127.22013000000001,
+   "cpu_us_per_ray": 88.3473125,
+   "effective_cores": 2.270122417708282
+  },
+  {
+   "observers": 1000,
+   "n_azimuth": 1440,
+   "step_fraction": 0.5,
+   "wall_s": 45.82015662500635,
+   "cpu_s": 114.48350500000001,
+   "cpu_ms_per_observer": 114.48350500000001,
+   "cpu_us_per_ray": 79.5024340277778,
+   "effective_cores": 2.4985402371479597
+  },
+  {
+   "observers": 4000,
+   "n_azimuth": 1440,
+   "step_fraction": 0.5,
+   "wall_s": 111.6154788749991,
+   "cpu_s": 412.614149,
+   "cpu_ms_per_observer": 103.15353725,
+   "cpu_us_per_ray": 71.63440086805555,
+   "effective_cores": 3.6967466623701597
+  },
+  {
+   "observers": 1000,
+   "n_azimuth": 360,
+   "step_fraction": 0.5,
+   "wall_s": 10.684497584006749,
+   "cpu_s": 37.62008500000002,
+   "cpu_ms_per_observer": 37.620085000000024,
+   "cpu_us_per_ray": 104.50023611111115,
+   "effective_cores": 3.5209970992283446
+  },
+  {
+   "observers": 1000,
+   "n_azimuth": 720,
+   "step_fraction": 0.5,
+   "wall_s": 13.062947584025096,
+   "cpu_s": 61.093479,
+   "cpu_ms_per_observer": 61.093479,
+   "cpu_us_per_ray": 84.85205416666666,
+   "effective_cores": 4.676852494969227
+  },
+  {
+   "observers": 1000,
+   "n_azimuth": 2880,
+   "step_fraction": 0.5,
+   "wall_s": 71.56563562501105,
+   "cpu_s": 213.41295100000002,
+   "cpu_ms_per_observer": 213.41295100000002,
+   "cpu_us_per_ray": 74.10171909722223,
+   "effective_cores": 2.982059044626379
+  },
+  {
+   "observers": 1000,
+   "n_azimuth": 1440,
+   "step_fraction": 1.0,
+   "wall_s": 35.69275133300107,
+   "cpu_s": 68.885896,
+   "cpu_ms_per_observer": 68.885896,
+   "cpu_us_per_ray": 47.837427777777776,
+   "effective_cores": 1.9299687871444353
+  },
+  {
+   "observers": 1000,
+   "n_azimuth": 1440,
+   "step_fraction": 0.25,
+   "wall_s": 73.53116420801962,
+   "cpu_s": 219.9394860000001,
+   "cpu_ms_per_observer": 219.9394860000001,
+   "cpu_us_per_ray": 152.73575416666674,
+   "effective_cores": 2.9911057218921684
+  }
+ ],
+ "statistics": [
+  {
+   "years": 1.0,
+   "epochs": 8760,
+   "observers": 1000,
+   "wall_s": 3.0173439589852933,
+   "cpu_s": 8.250810000000001,
+   "cpu_ns_per_observer_epoch": 941.873287671233,
+   "ephemeris_wall_s": 0.5557909590133931
+  },
+  {
+   "years": 5.0,
+   "epochs": 43824,
+   "observers": 1000,
+   "wall_s": 15.382003749982687,
+   "cpu_s": 42.315467000000126,
+   "cpu_ns_per_observer_epoch": 965.5774689667792,
+   "ephemeris_wall_s": 1.187501248990884
+  },
+  {
+   "years": 18.6,
+   "epochs": 163056,
+   "observers": 1000,
+   "wall_s": 64.22825254200143,
+   "cpu_s": 157.81959900000015,
+   "cpu_ns_per_observer_epoch": 967.8858735649111,
+   "ephemeris_wall_s": 4.074038207996637
+  }
+ ],
+ "plan_samples_per_ray_max": 11832,
+ "one_point_one_member": {
+  "wall_s": 10.403268333990127,
+  "cpu_s": 1.2063029999999344
+ },
+ "load_average_at_end": [
+  38.01806640625,
+  36.107421875,
+  36.001953125
+ ]
+}

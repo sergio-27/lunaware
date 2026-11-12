@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+dist/
+build/
+*.egg-info/
+# local data cache and run outputs (never committed)
+.data/
+runs/
+.DS_Store
+# advisory lock files created next to the pin file and the manifest
+src/lunarenv/data/checksums.lock
+.manifest.lock

@@ -1,0 +1,218 @@
+# Catalog of external data sources.
+#
+# Every file lunarenv can download is declared here. Checksums are pinned separately in
+# checksums.json (machine-written at first download, then committed).
+#
+# kind:  geotiff | spice-lsk | spice-pck-text | spice-pck-binary | spice-fk | spice-spk
+# groups: a file is fetched by `fetch_group(<name>)` for each group it belongs to.
+# Reference keys (citation) resolve in docs/references.md.
+
+# --------------------------------------------------------------------------- SPICE
+[[file]]
+id = "naif.lsk"
+url = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/naif0012.tls"
+kind = "spice-lsk"
+groups = ["kernels", "kernels-de421"]
+product = "NAIF generic kernels"
+version = "naif0012"
+citation = "NAIF-GEN"
+description = "Leapseconds kernel."
+
+[[file]]
+id = "naif.spk.de440s"
+url = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440s.bsp"
+kind = "spice-spk"
+groups = ["kernels"]
+product = "NAIF generic kernels"
+version = "DE440 (short span, 1849-2150)"
+citation = "Park2021"
+description = "Planetary and lunar ephemeris DE440."
+
+[[file]]
+id = "naif.pck.text"
+url = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/pck00011.tpc"
+kind = "spice-pck-text"
+groups = ["kernels", "kernels-de421"]
+product = "NAIF generic kernels"
+version = "pck00011"
+citation = "NAIF-GEN"
+description = "Planetary constants (body radii)."
+
+[[file]]
+id = "naif.pck.moon_pa_de440"
+url = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/moon_pa_de440_200625.bpc"
+kind = "spice-pck-binary"
+groups = ["kernels"]
+product = "NAIF generic kernels"
+version = "moon_pa_de440_200625"
+citation = "Park2021"
+description = "Lunar principal-axis orientation from DE440."
+
+[[file]]
+id = "naif.fk.moon_de440"
+url = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/fk/satellites/moon_de440_250416.tf"
+kind = "spice-fk"
+groups = ["kernels"]
+product = "NAIF generic kernels"
+version = "moon_de440_250416"
+citation = "NAIF-GEN"
+description = "Lunar frames for DE440, including MOON_ME_DE440_ME421."
+
+# DE421 set: used only by the frame-consistency check (PLAN.md decision D6).
+[[file]]
+id = "naif.spk.de421"
+url = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/a_old_versions/de421.bsp"
+kind = "spice-spk"
+groups = ["kernels-de421"]
+product = "NAIF generic kernels"
+version = "DE421"
+citation = "NAIF-GEN"
+description = "Planetary and lunar ephemeris DE421 (ephemeris of the LOLA products)."
+
+[[file]]
+id = "naif.pck.moon_pa_de421"
+url = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/moon_pa_de421_1900-2050.bpc"
+kind = "spice-pck-binary"
+groups = ["kernels-de421"]
+product = "NAIF generic kernels"
+version = "moon_pa_de421_1900-2050"
+citation = "NAIF-GEN"
+description = "Lunar principal-axis orientation from DE421."
+
+[[file]]
+id = "naif.fk.moon_de421"
+url = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/fk/satellites/moon_080317.tf"
+kind = "spice-fk"
+groups = ["kernels-de421"]
+product = "NAIF generic kernels"
+version = "moon_080317"
+citation = "NAIF-GEN"
+description = "Lunar frames for DE421 (MOON_PA_DE421, MOON_ME_DE421)."
+
+# ------------------------------------------------------- PGDA product 78: 5 m sites
+[[file]]
+id = "pgda78.site04.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site04/Site04_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["site04"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj (2020-06)"
+citation = "Barker2021"
+description = "Site 4 (Shackleton rim) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.site04.toterr"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site04/Site04_final_adj_5mpp_toterr.tif"
+kind = "geotiff"
+groups = ["site04"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj (2020-06)"
+citation = "Barker2021"
+description = "Site 4 total height uncertainty (formal RMS), metres."
+
+[[file]]
+id = "pgda78.site04.slperr"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site04/Site04_final_adj_5mpp_slperr.tif"
+kind = "geotiff"
+groups = ["site04"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj (2020-06)"
+citation = "Barker2021"
+description = "Site 4 slope uncertainty (formal RMS), degrees."
+
+[[file]]
+id = "pgda78.site04.ldec"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site04/Site04_final_adj_5mpp_ldec.tif"
+kind = "geotiff"
+groups = ["site04-extra"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj (2020-06)"
+citation = "Barker2021"
+description = "Site 4 number of LOLA returns per pixel (0 = interpolated pixel)."
+
+[[file]]
+id = "pgda78.site01.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site01/Site01_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["site01"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj (2020-06)"
+citation = "Barker2021"
+description = "Site 1 (connecting ridge) surface height, 5 m/pix; used by validation case ILL-V1."
+
+# Error clones: 100 statistically consistent realizations per site.
+[[series]]
+id = "pgda78.site04.clone.{n:04d}"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site04/Clones/Site04_final_adj_5mpp_{n:04d}_err.tif"
+first = 1
+last = 100
+kind = "geotiff"
+groups = ["site04-clones"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "clones (2020-10)"
+citation = "Barker2021"
+description = "Site 4 error clone {n:04d}."
+
+[[series]]
+id = "pgda78.site01.clone.{n:04d}"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site01/Clones/Site01_final_adj_5mpp_{n:04d}_err.tif"
+first = 1
+last = 100
+kind = "geotiff"
+groups = ["site01-clones"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "clones (2020-10)"
+citation = "Barker2021"
+description = "Site 1 error clone {n:04d}."
+
+# ------------------------------------------- PGDA product 90: regional south pole
+[[file]]
+id = "pgda90.ldem_80s_80mpp"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/LDEM_80S_80MPP_ADJ.TIF"
+kind = "geotiff"
+groups = ["regional"]
+product = "PGDA-90 A New View of the Lunar South Pole from LOLA"
+version = "ADJ (2023-07); data DOI 10.60903/gsfcpgda-lola-spole"
+citation = "Barker2023"
+description = "South pole LDEM poleward of 80S at 80 m/pix; mid- and far-field terrain."
+
+[[file]]
+id = "pgda90.ldem_80s_40mpp"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/LDEM_80S_40MPP_ADJ.TIF"
+kind = "geotiff"
+groups = ["regional-fine"]
+product = "PGDA-90 A New View of the Lunar South Pole from LOLA"
+version = "ADJ (2023-07); data DOI 10.60903/gsfcpgda-lola-spole"
+citation = "Barker2023"
+description = "South pole LDEM poleward of 80S at 40 m/pix; used to measure the resolution error of the 80 m mid-field."
+
+[[file]]
+id = "pgda90.ldem_60s_240mpp"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/LDEM_60S_240MPP_ADJ.TIF"
+kind = "geotiff"
+groups = ["regional-wide"]
+product = "PGDA-90 A New View of the Lunar South Pole from LOLA"
+version = "ADJ (2023-07); data DOI 10.60903/gsfcpgda-lola-spole"
+citation = "Barker2023"
+description = "South pole LDEM poleward of 60S at 240 m/pix; fallback when rays leave the 80S product."
+
+# ------------------------------------- PGDA product 69: published illumination maps
+[[file]]
+id = "pgda69.avgvisib_85s_60m"
+url = "https://pgda.gsfc.nasa.gov/data/MoonIllumination/AVGVISIB_85S_060M_201608.TIF"
+kind = "geotiff"
+groups = ["validation-illumination"]
+product = "PGDA-69 Lunar Polar Illumination"
+version = "201608"
+citation = "Mazarico2011"
+description = "Average solar illumination over 18.6 years, 85S-90S, 60 m/pix (validation only)."
+
+[[file]]
+id = "pgda69.avgvisib_85s_60m_earth"
+url = "https://pgda.gsfc.nasa.gov/data/MoonIllumination/AVGVISIB_85S_060M_201608_EARTH.TIF"
+kind = "geotiff"
+groups = ["validation-illumination"]
+product = "PGDA-69 Lunar Polar Illumination"
+version = "201608"
+citation = "Mazarico2011"
+description = "Average Earth visibility over 18.6 years, 85S-90S, 60 m/pix (validation only)."

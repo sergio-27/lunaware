@@ -1,0 +1,103 @@
+{
+ "code": "heat1d",
+ "version": "0.3.2",
+ "source": "https://github.com/phayne/heat1d (PyPI heat1d 0.3.2)",
+ "generated": "2026-11-12",
+ "note": "Default grid (m=10, n=5; 21 layers; finer grids return NaN in this version). NYEARSEQ raised from the default 1 to 20 so that the deep temperature is equilibrated.",
+ "planet": {
+  "albedo": 0.12,
+  "albedo_coefficients": [
+   0.06,
+   0.25
+  ],
+  "emissivity": 0.95,
+  "ks": 0.00074,
+  "kd": 0.0034,
+  "rhos": 1100.0,
+  "rhod": 1800.0,
+  "H": 0.07,
+  "Qb": 0.018,
+  "day_s": 2551442.976,
+  "S": 1361.0
+ },
+ "cases": [
+  {
+   "latitude_deg": 0.0,
+   "equilibration_years": 1,
+   "sun_distance_au": 0.9841935360795807,
+   "declination_rad": 0.008743836419442357,
+   "surface_mean_k": 212.0231892502277,
+   "surface_max_k": 388.5210792560412,
+   "surface_min_k": 93.39438872816206,
+   "bottom_depth_m": 0.6760199883767863,
+   "bottom_mean_k": 266.47333955657166,
+   "layers": 21,
+   "first_layer_m": 0.0036211218168506667
+  },
+  {
+   "latitude_deg": 0.0,
+   "equilibration_years": 20,
+   "sun_distance_au": 0.9841772207499365,
+   "declination_rad": 0.008664672697315367,
+   "surface_mean_k": 211.7675788614714,
+   "surface_max_k": 388.505537915692,
+   "surface_min_k": 92.80454667745326,
+   "bottom_depth_m": 0.6760199883767863,
+   "bottom_mean_k": 258.4909330575354,
+   "layers": 21,
+   "first_layer_m": 0.0036211218168506667
+  },
+  {
+   "latitude_deg": 20.0,
+   "equilibration_years": 1,
+   "sun_distance_au": 0.9841897038811449,
+   "declination_rad": 0.008725314514253716,
+   "surface_mean_k": 208.2810474105704,
+   "surface_max_k": 382.13711299004297,
+   "surface_min_k": 92.37545443756942,
+   "bottom_depth_m": 0.6760199883767863,
+   "bottom_mean_k": 261.65247030515974,
+   "layers": 21,
+   "first_layer_m": 0.0036211218168506667
+  },
+  {
+   "latitude_deg": 20.0,
+   "equilibration_years": 20,
+   "sun_distance_au": 0.9841772525592665,
+   "declination_rad": 0.008664827828216343,
+   "surface_mean_k": 207.99716629333415,
+   "surface_max_k": 382.12538145342734,
+   "surface_min_k": 91.71697833561308,
+   "bottom_depth_m": 0.6760199883767863,
+   "bottom_mean_k": 252.5422567191322,
+   "layers": 21,
+   "first_layer_m": 0.0036211218168506667
+  },
+  {
+   "latitude_deg": 26.0,
+   "equilibration_years": 1,
+   "sun_distance_au": 0.9841904909248099,
+   "declination_rad": 0.00872912207617333,
+   "surface_mean_k": 205.6190101572508,
+   "surface_max_k": 377.33461013372636,
+   "surface_min_k": 91.67642775927429,
+   "bottom_depth_m": 0.6760199883767863,
+   "bottom_mean_k": 258.2200397559155,
+   "layers": 21,
+   "first_layer_m": 0.0036211218168506667
+  },
+  {
+   "latitude_deg": 26.0,
+   "equilibration_years": 20,
+   "sun_distance_au": 0.9841755015570737,
+   "declination_rad": 0.008656283736865791,
+   "surface_mean_k": 205.29925658171328,
+   "surface_max_k": 377.32045452256926,
+   "surface_min_k": 90.94470723618713,
+   "bottom_depth_m": 0.6760199883767863,
+   "bottom_mean_k": 248.2975590197314,
+   "layers": 21,
+   "first_layer_m": 0.0036211218168506667
+  }
+ ]
+}

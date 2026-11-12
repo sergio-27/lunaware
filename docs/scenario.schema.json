@@ -1,0 +1,562 @@
+{
+ "$defs": {
+  "IlluminationBlock": {
+   "additionalProperties": false,
+   "properties": {
+    "enabled": {
+     "default": true,
+     "title": "Enabled",
+     "type": "boolean"
+    },
+    "settings": {
+     "$ref": "#/$defs/IlluminationSettings"
+    },
+    "earth_visibility": {
+     "default": true,
+     "description": "Also compute visibility of the Earth's disc.",
+     "title": "Earth Visibility",
+     "type": "boolean"
+    },
+    "map": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/MapBlock"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null
+    }
+   },
+   "title": "IlluminationBlock",
+   "type": "object"
+  },
+  "IlluminationSettings": {
+   "additionalProperties": false,
+   "description": "Numerical parameters of horizon tracing and disc integration.",
+   "properties": {
+    "n_azimuth": {
+     "default": 1440,
+     "description": "Horizon directions per observer.",
+     "minimum": 8,
+     "title": "N Azimuth",
+     "type": "integer"
+    },
+    "step_fraction": {
+     "default": 0.5,
+     "description": "Ray sampling step in pixels of the level in use.",
+     "exclusiveMinimum": 0.0,
+     "maximum": 2.0,
+     "title": "Step Fraction",
+     "type": "number"
+    },
+    "near_radius_m": {
+     "default": 8000.0,
+     "description": "Ground distance out to which the site DEM is used.",
+     "exclusiveMinimum": 0.0,
+     "title": "Near Radius M",
+     "type": "number"
+    },
+    "mid_radius_m": {
+     "default": 100000.0,
+     "description": "Ground distance out to which the regional DEM is used.",
+     "exclusiveMinimum": 0.0,
+     "title": "Mid Radius M",
+     "type": "number"
+    },
+    "far_coarsening": {
+     "default": 3,
+     "description": "Block-averaging factor of the regional DEM beyond mid_radius_m.",
+     "minimum": 1,
+     "title": "Far Coarsening",
+     "type": "integer"
+    },
+    "n_strips": {
+     "default": 32,
+     "description": "Strips used to integrate the disc.",
+     "minimum": 2,
+     "title": "N Strips",
+     "type": "integer"
+    },
+    "limb_darkening": {
+     "default": 0.6,
+     "description": "Linear limb-darkening coefficient.",
+     "maximum": 1.0,
+     "minimum": 0.0,
+     "title": "Limb Darkening",
+     "type": "number"
+    },
+    "disc_mode": {
+     "default": "profile",
+     "description": "Horizon across the disc: per-strip profile, or one chord.",
+     "enum": [
+      "profile",
+      "chord"
+     ],
+     "title": "Disc Mode",
+     "type": "string"
+    }
+   },
+   "title": "IlluminationSettings",
+   "type": "object"
+  },
+  "MapBlock": {
+   "additionalProperties": false,
+   "description": "Optional map of illumination statistics over a square window centred on the site.",
+   "properties": {
+    "half_width_m": {
+     "default": 250.0,
+     "exclusiveMinimum": 0.0,
+     "maximum": 2000.0,
+     "title": "Half Width M",
+     "type": "number"
+    },
+    "n_azimuth": {
+     "default": 720,
+     "description": "Horizon directions per pixel (cost is linear in it).",
+     "minimum": 8,
+     "title": "N Azimuth",
+     "type": "integer"
+    }
+   },
+   "title": "MapBlock",
+   "type": "object"
+  },
+  "Period": {
+   "additionalProperties": false,
+   "description": "Time span of the results, in UTC, sampled uniformly.",
+   "properties": {
+    "start_utc": {
+     "format": "date-time",
+     "title": "Start Utc",
+     "type": "string"
+    },
+    "end_utc": {
+     "format": "date-time",
+     "title": "End Utc",
+     "type": "string"
+    },
+    "step_minutes": {
+     "default": 60,
+     "description": "Sampling step of all time series.",
+     "maximum": 360,
+     "minimum": 1,
+     "title": "Step Minutes",
+     "type": "integer"
+    }
+   },
+   "required": [
+    "start_utc",
+    "end_utc"
+   ],
+   "title": "Period",
+   "type": "object"
+  },
+  "RegolithProperties": {
+   "additionalProperties": false,
+   "description": "Parameters of the regolith model (defaults: Hayne2017, Table A1).",
+   "properties": {
+    "surface_conductivity_w_m_k": {
+     "default": 0.00074,
+     "description": "K_s",
+     "exclusiveMinimum": 0.0,
+     "title": "Surface Conductivity W M K",
+     "type": "number"
+    },
+    "deep_conductivity_w_m_k": {
+     "default": 0.0034,
+     "description": "K_d",
+     "exclusiveMinimum": 0.0,
+     "title": "Deep Conductivity W M K",
+     "type": "number"
+    },
+    "surface_density_kg_m3": {
+     "default": 1100.0,
+     "description": "rho_s",
+     "exclusiveMinimum": 0.0,
+     "title": "Surface Density Kg M3",
+     "type": "number"
+    },
+    "deep_density_kg_m3": {
+     "default": 1800.0,
+     "description": "rho_d",
+     "exclusiveMinimum": 0.0,
+     "title": "Deep Density Kg M3",
+     "type": "number"
+    },
+    "scale_height_m": {
+     "default": 0.06,
+     "description": "H (0.068 m global mode)",
+     "exclusiveMinimum": 0.0,
+     "title": "Scale Height M",
+     "type": "number"
+    },
+    "radiative_parameter": {
+     "default": 2.7,
+     "description": "chi",
+     "minimum": 0.0,
+     "title": "Radiative Parameter",
+     "type": "number"
+    },
+    "heat_capacity_coefficients": {
+     "default": [
+      -3.6125,
+      2.7431,
+      0.0023616,
+      -1.234e-05,
+      8.9093e-09
+     ],
+     "description": "c0..c4 of c_p(T) in J kg-1 K-1",
+     "maxItems": 5,
+     "minItems": 5,
+     "prefixItems": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "number"
+      },
+      {
+       "type": "number"
+      },
+      {
+       "type": "number"
+      },
+      {
+       "type": "number"
+      }
+     ],
+     "title": "Heat Capacity Coefficients",
+     "type": "array"
+    },
+    "emissivity": {
+     "default": 0.95,
+     "exclusiveMinimum": 0.0,
+     "maximum": 1.0,
+     "title": "Emissivity",
+     "type": "number"
+    },
+    "albedo_normal": {
+     "default": 0.12,
+     "description": "A0",
+     "exclusiveMaximum": 1.0,
+     "minimum": 0.0,
+     "title": "Albedo Normal",
+     "type": "number"
+    },
+    "albedo_a": {
+     "default": 0.06,
+     "minimum": 0.0,
+     "title": "Albedo A",
+     "type": "number"
+    },
+    "albedo_b": {
+     "default": 0.25,
+     "minimum": 0.0,
+     "title": "Albedo B",
+     "type": "number"
+    },
+    "heat_flow_w_m2": {
+     "default": 0.018,
+     "description": "Q, interior heat flow",
+     "minimum": 0.0,
+     "title": "Heat Flow W M2",
+     "type": "number"
+    }
+   },
+   "title": "RegolithProperties",
+   "type": "object"
+  },
+  "Site": {
+   "additionalProperties": false,
+   "description": "Location of the point of interest.\n\nGive either map coordinates (south polar stereographic metres, as in the LOLA\nproducts) or longitude and latitude. ``terrain`` names the terrain data set that\ncovers the site.",
+   "properties": {
+    "terrain": {
+     "default": "site04",
+     "description": "Terrain set: 5 m site DEM plus regional DEM (see lunarenv.sites).",
+     "enum": [
+      "site04",
+      "site01"
+     ],
+     "title": "Terrain",
+     "type": "string"
+    },
+    "x_m": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Polar stereographic x, metres.",
+     "title": "X M"
+    },
+    "y_m": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Polar stereographic y, metres.",
+     "title": "Y M"
+    },
+    "longitude_deg": {
+     "anyOf": [
+      {
+       "maximum": 360.0,
+       "minimum": -360.0,
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "East longitude.",
+     "title": "Longitude Deg"
+    },
+    "latitude_deg": {
+     "anyOf": [
+      {
+       "exclusiveMaximum": -60.0,
+       "minimum": -90.0,
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Planetocentric latitude.",
+     "title": "Latitude Deg"
+    },
+    "height_above_surface_m": {
+     "default": 2.0,
+     "description": "Height of the point above the terrain, for illumination and Earth visibility.",
+     "maximum": 1000.0,
+     "minimum": 0.0,
+     "title": "Height Above Surface M",
+     "type": "number"
+    }
+   },
+   "title": "Site",
+   "type": "object"
+  },
+  "SurfaceOrientation": {
+   "additionalProperties": false,
+   "description": "Orientation of the surface element whose temperature is computed.",
+   "properties": {
+    "source": {
+     "default": "dem",
+     "description": "'dem': slope of the terrain model at the site; 'explicit': values below.",
+     "enum": [
+      "dem",
+      "explicit"
+     ],
+     "title": "Source",
+     "type": "string"
+    },
+    "slope_deg": {
+     "default": 0.0,
+     "exclusiveMaximum": 90.0,
+     "minimum": 0.0,
+     "title": "Slope Deg",
+     "type": "number"
+    },
+    "facing_azimuth_deg": {
+     "default": 0.0,
+     "description": "Grid azimuth (from map +y towards +x) the surface faces.",
+     "exclusiveMaximum": 360.0,
+     "minimum": 0.0,
+     "title": "Facing Azimuth Deg",
+     "type": "number"
+    },
+    "dem_baseline_m": {
+     "anyOf": [
+      {
+       "exclusiveMinimum": 0.0,
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Half-length over which the DEM slope is measured (default: one pixel).",
+     "title": "Dem Baseline M"
+    }
+   },
+   "title": "SurfaceOrientation",
+   "type": "object"
+  },
+  "ThermalBlock": {
+   "additionalProperties": false,
+   "properties": {
+    "enabled": {
+     "default": true,
+     "title": "Enabled",
+     "type": "boolean"
+    },
+    "properties": {
+     "$ref": "#/$defs/RegolithProperties"
+    },
+    "settings": {
+     "$ref": "#/$defs/ThermalSettings"
+    },
+    "surface": {
+     "$ref": "#/$defs/SurfaceOrientation"
+    },
+    "constant_albedo_alternative": {
+     "default": true,
+     "description": "Also compute the result with a constant albedo. The incidence-dependent law was fitted on level equatorial ground; at grazing polar incidence the two differ by tens of kelvin, and validation has not settled which applies (VALIDATION.md, TH-V2).",
+     "title": "Constant Albedo Alternative",
+     "type": "boolean"
+    }
+   },
+   "title": "ThermalBlock",
+   "type": "object"
+  },
+  "ThermalSettings": {
+   "additionalProperties": false,
+   "description": "Numerical parameters of the thermal model (defaults: docs/convergence/thermal.md).",
+   "properties": {
+    "first_cell_m": {
+     "default": 0.002,
+     "description": "Thickness of the top cell.",
+     "exclusiveMinimum": 0.0,
+     "title": "First Cell M",
+     "type": "number"
+    },
+    "growth": {
+     "default": 1.12,
+     "description": "Thickness ratio of consecutive cells.",
+     "minimum": 1.0,
+     "title": "Growth",
+     "type": "number"
+    },
+    "depth_m": {
+     "default": 2.0,
+     "description": "Depth of the model domain.",
+     "exclusiveMinimum": 0.0,
+     "title": "Depth M",
+     "type": "number"
+    },
+    "scheme": {
+     "default": "bdf2",
+     "description": "Time integrator.",
+     "enum": [
+      "explicit",
+      "backward_euler",
+      "crank_nicolson",
+      "bdf2"
+     ],
+     "title": "Scheme",
+     "type": "string"
+    },
+    "substeps": {
+     "default": 2,
+     "description": "Solver steps per forcing sample.",
+     "minimum": 1,
+     "title": "Substeps",
+     "type": "integer"
+    },
+    "spinup_tolerance_k": {
+     "default": 0.001,
+     "exclusiveMinimum": 0.0,
+     "title": "Spinup Tolerance K",
+     "type": "number"
+    },
+    "spinup_max_cycles": {
+     "default": 60,
+     "minimum": 1,
+     "title": "Spinup Max Cycles",
+     "type": "integer"
+    }
+   },
+   "title": "ThermalSettings",
+   "type": "object"
+  },
+  "UncertaintyBlock": {
+   "additionalProperties": false,
+   "description": "Monte Carlo propagation of terrain and regolith-parameter uncertainty.",
+   "properties": {
+    "members": {
+     "default": 64,
+     "description": "Regolith-parameter samples (0 disables).",
+     "maximum": 4096,
+     "minimum": 0,
+     "title": "Members",
+     "type": "integer"
+    },
+    "terrain_clones": {
+     "default": 16,
+     "description": "Terrain error clones to use, taken in catalog order from the cache.",
+     "maximum": 100,
+     "minimum": 0,
+     "title": "Terrain Clones",
+     "type": "integer"
+    },
+    "seed": {
+     "default": 20261112,
+     "minimum": 0,
+     "title": "Seed",
+     "type": "integer"
+    }
+   },
+   "title": "UncertaintyBlock",
+   "type": "object"
+  }
+ },
+ "additionalProperties": false,
+ "description": "A complete, self-contained request.",
+ "properties": {
+  "schema_version": {
+   "const": 1,
+   "default": 1,
+   "title": "Schema Version",
+   "type": "integer"
+  },
+  "name": {
+   "maxLength": 120,
+   "minLength": 1,
+   "pattern": "^[A-Za-z0-9][A-Za-z0-9 _.\\-]*$",
+   "title": "Name",
+   "type": "string"
+  },
+  "description": {
+   "default": "",
+   "title": "Description",
+   "type": "string"
+  },
+  "site": {
+   "$ref": "#/$defs/Site"
+  },
+  "period": {
+   "$ref": "#/$defs/Period"
+  },
+  "illumination": {
+   "$ref": "#/$defs/IlluminationBlock"
+  },
+  "thermal": {
+   "$ref": "#/$defs/ThermalBlock"
+  },
+  "uncertainty": {
+   "$ref": "#/$defs/UncertaintyBlock"
+  }
+ },
+ "required": [
+  "name",
+  "site",
+  "period"
+ ],
+ "title": "Scenario",
+ "type": "object"
+}
