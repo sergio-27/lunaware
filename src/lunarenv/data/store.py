@@ -102,10 +102,23 @@ class Manifest(BaseModel):
     derived: dict[str, DerivedRecord] = Field(default_factory=dict)
 
 
+def _checkout_data_dir() -> Path | None:
+    """``.data`` at the root of a source checkout, if the package runs from one and it exists."""
+    root = Path(__file__).resolve().parents[3]  # src/lunarenv/data/store.py -> repository
+    candidate = root / ".data"
+    if (root / "pyproject.toml").is_file() and candidate.is_dir():
+        return candidate
+    return None
+
+
 def default_data_dir() -> Path:
-    """Cache location: ``$LUNARENV_DATA_DIR`` or the per-user cache directory."""
+    """Cache location, in order: ``$LUNARENV_DATA_DIR``; ``.data`` at the root of the
+    source checkout the package runs from, if that directory exists (the location the
+    test suite uses); the per-user cache directory."""
     override = os.environ.get(ENV_DATA_DIR)
-    return Path(override).expanduser() if override else Path(user_cache_dir("lunarenv"))
+    if override:
+        return Path(override).expanduser()
+    return _checkout_data_dir() or Path(user_cache_dir("lunarenv"))
 
 
 class DataStore:

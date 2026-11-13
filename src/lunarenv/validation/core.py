@@ -84,6 +84,9 @@ class CaseResult(BaseModel):
     notes: list[str] = Field(default_factory=list)
     data: dict[str, str] = Field(default_factory=dict, description="catalog id -> sha256 used")
     seconds: float | None = None
+    run_utc: str | None = Field(
+        None, description="When this case was computed; None if not recorded (older results)."
+    )
 
 
 class ValidationReport(BaseModel):
@@ -95,6 +98,11 @@ class ValidationReport(BaseModel):
     lunarenv_version: str = __version__
     generated_utc: str = ""
     results: list[CaseResult] = Field(default_factory=list)
+    not_rerun: dict[str, str] = Field(
+        default_factory=dict,
+        description="Cases this run did not compute, with the reason; their entry, if any, "
+        "is the stored result of an earlier run (see its run_utc).",
+    )
 
     def by_id(self) -> dict[str, CaseResult]:
         return {r.id: r for r in self.results}
@@ -161,6 +169,8 @@ def run_cases(
     selected = set(ids) if ids is not None else None
     known = previous.by_id() if previous else {}
     results: list[CaseResult] = []
+    not_rerun: dict[str, str] = {}
+    now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     for case in registry():
         base = {
             "id": case.id,
@@ -178,10 +188,16 @@ def run_cases(
         )
         missing = [r for r in case.requires if not store.is_available(r)]
         if skip or missing:
+            if selected is not None and case.id not in selected:
+                reason = "not selected"
+            elif case.slow and not include_slow:
+                reason = "slow case; include it with --slow"
+            else:
+                reason = f"data not in the cache {store.root}: {', '.join(missing)}"
+            not_rerun[case.id] = reason
             if case.id in known and known[case.id].status is not Status.NOT_RUN:
                 results.append(known[case.id])
             else:
-                reason = f"data not in the cache: {', '.join(missing)}" if missing else "not run"
                 results.append(CaseResult(**base, status=Status.NOT_RUN, summary=reason))
             continue
         start = time.perf_counter()
@@ -195,11 +211,10 @@ def run_cases(
                 notes=list(outcome.notes),
                 data={r: store.record(r).sha256 for r in case.requires},
                 seconds=time.perf_counter() - start,
+                run_utc=now,
             )
         )
-    return ValidationReport(
-        generated_utc=datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"), results=results
-    )
+    return ValidationReport(generated_utc=now, results=results, not_rerun=not_rerun)
 
 
 def results_path() -> Path:
@@ -227,6 +242,7 @@ class CaseStatus(TypedDict):
     tolerance: str
     status: str
     summary: str
+    run_utc: str | None
 
 
 class ValidationStatus(TypedDict):
@@ -256,6 +272,7 @@ def get_validation_status(path: Path | None = None) -> ValidationStatus:
                 tolerance=case.tolerance,
                 status=str(result.status if result else Status.NOT_RUN),
                 summary=result.summary if result else "no stored result",
+                run_utc=result.run_utc if result else None,
             )
         )
     counts: dict[str, int] = {}
@@ -311,7 +328,8 @@ def render_markdown(report: ValidationReport) -> str:
     lines += ["", "Totals: " + ", ".join(f"{n} {s}" for s, n in sorted(counts.items())) + ".", ""]
     lines.append("## Details")
     for r in report.results:
-        lines += ["", f"### {r.id} - {r.title}", "", f"Status: **{r.status}**. {r.summary}"]
+        run = f" Computed {r.run_utc}." if r.run_utc else ""
+        lines += ["", f"### {r.id} - {r.title}", "", f"Status: **{r.status}**.{run} {r.summary}"]
         if r.checks:
             lines += [
                 "",

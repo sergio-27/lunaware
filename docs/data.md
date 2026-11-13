@@ -39,7 +39,9 @@ The south-pole lies inside the Site 4 tile; the tile is 16 km on a side, not 20 
 - **TLS** is verified against the operating-system trust store.
 
 Commands: `python -m lunarenv.data fetch <group|id>`, `... verify`, `... list`.
-Cache location: `$LUNARENV_DATA_DIR`, else the per-user cache directory.
+Cache location: `$LUNARENV_DATA_DIR`; else `.data/` at the root of the source checkout the
+package runs from, if that directory exists (where the tests look); else the per-user
+cache directory. `lunarenv validate --run` prints the location it used.
 
 ## Conventions, each one asserted in code
 

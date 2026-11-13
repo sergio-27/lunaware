@@ -66,18 +66,24 @@ def _run(args: argparse.Namespace) -> int:
 
 
 def _validate(args: argparse.Namespace) -> int:
+    import textwrap
+
     from lunarenv.validation import core
 
+    not_rerun: dict[str, str] = {}
     if args.run:
         from lunarenv.data.store import DataStore
 
+        store = DataStore()
+        print(f"data cache: {store.root}", file=sys.stderr)
         report = core.run_cases(
-            DataStore(),
+            store,
             args.cases or None,
             include_slow=args.slow or bool(args.cases),
             previous=core.load_report(),
         )
         core.save_report(report)
+        not_rerun = {k: v for k, v in report.not_rerun.items() if v != "not selected"}
         if args.markdown:
             Path(args.markdown).write_text(core.render_markdown(report), encoding="utf-8")
     status = core.get_validation_status()
@@ -85,11 +91,21 @@ def _validate(args: argparse.Namespace) -> int:
         _print_json(status)
     else:
         print(
-            f"lunarenv {status['lunarenv_version']}, validation results of {status['generated_utc']}"
+            f"lunarenv {status['lunarenv_version']}, last validation run {status['generated_utc']}"
         )
         for case in status["cases"]:
-            print(f"{case['id']:8s} {case['status']:8s} {case['summary'][:110]}")
+            computed = (case["run_utc"] or "-")[:10]
+            summary = textwrap.shorten(case["summary"], width=96, placeholder=" ...")
+            print(f"{case['id']:8s} {case['status']:8s} {computed:10s} {summary}")
         print("totals: " + ", ".join(f"{n} {s}" for s, n in sorted(status["counts"].items())))
+    if not_rerun:
+        sys.stdout.flush()
+        print(
+            "\nnot re-run in this run (any stored result above is from an earlier run):",
+            file=sys.stderr,
+        )
+        for case_id, reason in not_rerun.items():
+            print(f"  {case_id:8s} {reason}", file=sys.stderr)
     return 1 if "FAIL" in status["counts"] and args.strict else 0
 
 

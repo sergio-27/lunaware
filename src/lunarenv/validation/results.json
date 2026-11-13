@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "lunarenv_version": "0.1.0.dev0",
- "generated_utc": "2026-11-12T20:47:35Z",
+ "generated_utc": "2026-11-13T02:15:26Z",
  "results": [
   {
    "id": "ILL-A1",
@@ -24,7 +24,8 @@
    ],
    "notes": [],
    "data": {},
-   "seconds": 0.6784773330145981
+   "seconds": 0.2753720000036992,
+   "run_utc": "2026-11-13T02:15:26Z"
   },
   {
    "id": "ILL-A2",
@@ -49,7 +50,8 @@
     "Tolerance is the bound of bilinear interpolation of a 5 m raster of this hill (3.5 mm in height at about 1 km)."
    ],
    "data": {},
-   "seconds": 0.23937925000791438
+   "seconds": 0.20217058301204816,
+   "run_utc": "2026-11-13T02:15:26Z"
   },
   {
    "id": "ILL-A3",
@@ -80,7 +82,8 @@
    ],
    "notes": [],
    "data": {},
-   "seconds": 0.02174470800673589
+   "seconds": 0.0031900409958325326,
+   "run_utc": "2026-11-13T02:15:26Z"
   },
   {
    "id": "ILL-X1",
@@ -119,7 +122,8 @@
     "naif.pck.moon_pa_de440": "60cd55aa401ea2ea97360636f567554bfe4e37bb829f901b4460a455dfaf783f",
     "naif.fk.moon_de440": "a47c71e9c9f33796bdafb2c9d69a7ee447b6016ecad80f71cd6f3e479f9cf768"
    },
-   "seconds": 0.18315095800790004
+   "seconds": 0.18227195896906778,
+   "run_utc": "2026-11-13T02:15:26Z"
   },
   {
    "id": "ILL-V1",
@@ -765,7 +769,8 @@
     "naif.pck.moon_pa_de440": "60cd55aa401ea2ea97360636f567554bfe4e37bb829f901b4460a455dfaf783f",
     "naif.fk.moon_de440": "a47c71e9c9f33796bdafb2c9d69a7ee447b6016ecad80f71cd6f3e479f9cf768"
    },
-   "seconds": 5216.860630832991
+   "seconds": 4529.369891208014,
+   "run_utc": "2026-11-13T02:15:26Z"
   },
   {
    "id": "ILL-V2",
@@ -843,7 +848,8 @@
     "naif.pck.moon_pa_de440": "60cd55aa401ea2ea97360636f567554bfe4e37bb829f901b4460a455dfaf783f",
     "naif.fk.moon_de440": "a47c71e9c9f33796bdafb2c9d69a7ee447b6016ecad80f71cd6f3e479f9cf768"
    },
-   "seconds": 81.3215243750019
+   "seconds": 56.339462791976985,
+   "run_utc": "2026-11-13T02:15:26Z"
   },
   {
    "id": "ILL-V3",
@@ -857,7 +863,8 @@
    "checks": [],
    "notes": [],
    "data": {},
-   "seconds": null
+   "seconds": null,
+   "run_utc": null
   },
   {
    "id": "ILL-V4",
@@ -871,7 +878,8 @@
    "checks": [],
    "notes": [],
    "data": {},
-   "seconds": null
+   "seconds": null,
+   "run_utc": null
   },
   {
    "id": "TH-A1",
@@ -902,7 +910,8 @@
    ],
    "notes": [],
    "data": {},
-   "seconds": 0.8771217500034254
+   "seconds": 0.6981433749897406,
+   "run_utc": "2026-11-13T02:15:26Z"
   },
   {
    "id": "TH-A2",
@@ -933,7 +942,8 @@
    ],
    "notes": [],
    "data": {},
-   "seconds": 0.0594374579959549
+   "seconds": 0.008809957944322377,
+   "run_utc": "2026-11-13T02:15:26Z"
   },
   {
    "id": "TH-P1",
@@ -980,7 +990,8 @@
    ],
    "notes": [],
    "data": {},
-   "seconds": 0.036834458995144814
+   "seconds": 0.03499241697136313,
+   "run_utc": "2026-11-13T02:15:26Z"
   },
   {
    "id": "TH-V1",
@@ -1023,7 +1034,8 @@
     "Disclosure: the 2 K tolerance was written down after exploratory runs had already shown 385.2 / 100.3 / 93.7 K. It is anchored to the residual stated by the source, not to the result."
    ],
    "data": {},
-   "seconds": 0.5281596250133589
+   "seconds": 0.0695596250006929,
+   "run_utc": "2026-11-13T02:15:26Z"
   },
   {
    "id": "TH-V2",
@@ -1074,7 +1086,8 @@
     "With the published parameter set, including the incidence-dependent albedo of Hayne2017 Table A1, the model is 8-10 K below all four values while it reproduces the equatorial noon, midnight and minimum temperatures (TH-V1) and agrees with the reference code at the surface (TH-X1). The cause is not resolved; see TH-V2b. No tolerance was changed."
    ],
    "data": {},
-   "seconds": 0.1625156250083819
+   "seconds": 0.11616249999497086,
+   "run_utc": "2026-11-13T02:15:26Z"
   },
   {
    "id": "TH-V2b",
@@ -1125,7 +1138,8 @@
     "Same model with a constant albedo of 0.12. It then also matches the model curves of Hayne2017 Figure A1 (surface ~215 K, 1 m ~256 K at 20 N). This suggests that figure was computed with a constant albedo. It does not show which albedo is right: daytime Diviner temperatures are what the incidence-dependent law was fitted to."
    ],
    "data": {},
-   "seconds": 0.11360625000088476
+   "seconds": 0.11394879099680111,
+   "run_utc": "2026-11-13T02:15:26Z"
   },
   {
    "id": "TH-X1",
@@ -1241,7 +1255,8 @@
     "With its default one-year equilibration heat1d's deep temperature at 20 N is 261.7 K, 9 K above its own equilibrated value."
    ],
    "data": {},
-   "seconds": 0.17035270799533464
+   "seconds": 0.17096645897254348,
+   "run_utc": "2026-11-13T02:15:26Z"
   },
   {
    "id": "TH-V3",
@@ -1255,7 +1270,9 @@
    "checks": [],
    "notes": [],
    "data": {},
-   "seconds": null
+   "seconds": null,
+   "run_utc": null
   }
- ]
+ ],
+ "not_rerun": {}
 }

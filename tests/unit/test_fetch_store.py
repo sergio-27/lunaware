@@ -209,3 +209,16 @@ def test_derived_products_keep_parent_checksum(local_store):
     local_store.discard_raw("t.good")
     assert not local_store.is_available("t.good")
     assert local_store.derived_path("t.good.crop").exists()  # provenance survives
+
+
+def test_default_data_dir_order(tmp_path, monkeypatch):
+    """Environment variable first, then the checkout's .data (as the tests), then the user cache."""
+    monkeypatch.setenv(store_module.ENV_DATA_DIR, str(tmp_path / "env"))
+    assert store_module.default_data_dir() == tmp_path / "env"
+    monkeypatch.delenv(store_module.ENV_DATA_DIR)
+    monkeypatch.setattr(store_module, "_checkout_data_dir", lambda: tmp_path / "checkout")
+    assert store_module.default_data_dir() == tmp_path / "checkout"
+    monkeypatch.setattr(store_module, "_checkout_data_dir", lambda: None)
+    assert store_module.default_data_dir() == store_module.Path(
+        store_module.user_cache_dir("lunarenv")
+    )

@@ -39,7 +39,9 @@ The source server delivers about 100 kB/s per connection, so allow one to two ho
 uv run lunarenv data fetch site04-clones
 ```
 
-The cache lives in the per-user cache directory, or in `$LUNARENV_DATA_DIR` if set.
+The cache lives in `$LUNARENV_DATA_DIR` if set; otherwise in `.data/` at the root of the
+repository, if that directory exists (the location the tests use); otherwise in the
+per-user cache directory.
 
 ## A complete example
 
@@ -106,7 +108,9 @@ lunarenv.describe_models()  # assumptions, validity range, numerical error
 lunarenv.get_validation_status()  # outcome of every validation case
 ```
 
-Other commands: `lunarenv validate` (stored validation status; `--run` to recompute),
+Other commands: `lunarenv validate` (stored validation status with the date each case was
+computed; `--run` to recompute, `--slow` to include the cases that take minutes; cases
+not recomputed are listed with the reason),
 `lunarenv describe`, `lunarenv schema` (JSON Schema of a scenario, also in
 [docs/scenario.schema.json](docs/scenario.schema.json)), `lunarenv data list|verify`.
 For agents: `lunarenv-mcp`, see [docs/mcp.md](docs/mcp.md).

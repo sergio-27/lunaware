@@ -96,6 +96,19 @@ def test_runner_statuses_selection_and_retention(tmp_path, monkeypatch):
     assert full.by_id()["T-3"].status is Status.INFO
     assert full.by_id()["T-2"] == quick.by_id()["T-2"]  # kept from the previous report
 
+    # every case not computed is reported with its reason; dates say which run computed what
+    assert quick.not_rerun["T-3"].startswith("slow case")
+    assert (
+        quick.not_rerun["T-4"].startswith("data not in the cache")
+        and "naif.lsk" in quick.not_rerun["T-4"]
+    )
+    assert set(quick.not_rerun) == {"T-3", "T-4"}
+    assert full.not_rerun == {"T-1": "not selected", "T-2": "not selected", "T-4": "not selected"}
+    assert quick.by_id()["T-1"].run_utc == quick.generated_utc
+    assert full.by_id()["T-3"].run_utc == full.generated_utc
+    assert full.by_id()["T-2"].run_utc == quick.generated_utc
+    assert quick.by_id()["T-4"].run_utc is None
+
     path = tmp_path / "results.json"
     save_report(full, path)
     assert load_report(path) == full
