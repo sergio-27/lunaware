@@ -17,6 +17,7 @@ from lunarenv.geometry.visibility import horizon_dip
 from lunarenv.illumination.disc import CHORD, PROFILE, disc_fractions
 from lunarenv.illumination.horizon import compute_horizons
 from lunarenv.illumination.products import illumination_statistics
+from lunarenv.illumination.settings import IlluminationSettings, load_site_stack
 from lunarenv.illumination.terrain import TerrainLevel, TerrainStack, build_stack, coarsen
 from lunarenv.validation.analytic import analytic_dem, reference_horizon
 from lunarenv.validation.core import Case, Check, Outcome, Status
@@ -199,7 +200,8 @@ def _nodal_cycle(store: DataStore, start: str, hours: int):  # type: ignore[no-u
         return et, ephemeris.position_from_center("SUN", et), ephemeris.body_radius_m("SUN")
 
 
-def _ill_v2(store: DataStore) -> Outcome:
+def _pgda69_window(store: DataStore):  # type: ignore[no-untyped-def]
+    """Published map and lunarenv statistics on the ILL-V2 window (shared by ILL-V2 and ILL-V2b)."""
     window = Bounds(-6000.0, -12000.0, 0.0, -6000.0)  # 100 x 100 cells of the published 60 m grid
     published, grid = read_raster(store.path("pgda69.avgvisib_85s_60m"), window, allow_nodata=True)
     # site DEM cropped to the published lattice, then block-averaged from 5 m to 60 m
@@ -213,8 +215,10 @@ def _ill_v2(store: DataStore) -> Outcome:
     horizons = compute_horizons(stack, xx.ravel(), yy.ravel(), n_azimuth=720, diagnostics=False)
     et, sun, radius = _nodal_cycle(store, "2010-01-01T00:00", 2)
     stats = illumination_statistics(horizons, et, sun, radius, mode=CHORD)
-    ours = 100.0 * stats.mean_visible_fraction.reshape(xx.shape)
-    theirs = 100.0 * published.astype(np.float64)
+    return 100.0 * published.astype(np.float64), stats, xx.shape
+
+
+def _map_checks(ours: np.ndarray, theirs: np.ndarray) -> tuple[list[Check], str]:
     valid = np.isfinite(theirs)
     difference = (ours - theirs)[valid]
     correlation = float(np.corrcoef(ours[valid], theirs[valid])[0, 1])
@@ -260,6 +264,15 @@ def _ill_v2(store: DataStore) -> Outcome:
             informational=True,
         ),
     ]
+    bias = float(difference.mean())
+    rms = float(np.sqrt(np.mean(difference**2)))
+    summary = f"bias {bias:+.2f} pp, RMS {rms:.2f} pp, r = {correlation:.3f} over {int(valid.sum())} cells"
+    return checks, summary
+
+
+def _ill_v2(store: DataStore) -> Outcome:
+    theirs, stats, shape = _pgda69_window(store)
+    checks, summary = _map_checks(100.0 * stats.mean_visible_fraction.reshape(shape), theirs)
     notes = (
         "Reference: PGDA average solar illumination map AVGVISIB_85S_060M_201608 (method of "
         "Mazarico2011: hourly over one 18.6-year cycle on LOLA 60 m topography, 2016 processing).",
@@ -280,11 +293,46 @@ def _ill_v2(store: DataStore) -> Outcome:
         "slope of the observer's own 60 m cell from 15 m away; a horizon built from neighbouring grid "
         "nodes does not), but the published method could not be checked, so this is not established. "
         "The registered comparison stays at ground level.",
+        "Update 2026-11-13: this case compares unlike metrics. The PDS label of the published map "
+        "defines its values as the percentage of time steps with any part of the disc visible, "
+        "while this case uses the mean visible fraction. ILL-V2b (pre-registered) repeats the "
+        "comparison with the label's metric: the difference on cells above 50 % falls from "
+        "-5.9 pp to -1.8 pp and the overall bias becomes +0.5 pp. The metric therefore explains "
+        "most of the deficit, and the observer-height explanation above is dropped. This case is "
+        "kept as recorded; ILL-V2b is the like-for-like comparison.",
     )
-    bias = float(difference.mean())
-    rms = float(np.sqrt(np.mean(difference**2)))
-    summary = f"bias {bias:+.2f} pp, RMS {rms:.2f} pp, r = {correlation:.3f} over {int(valid.sum())} cells"
     return Outcome(checks, summary, notes)
+
+
+def _ill_v2b(store: DataStore) -> Outcome:
+    theirs, stats, shape = _pgda69_window(store)
+    checks, summary = _map_checks(100.0 * stats.sunlit_time_fraction.reshape(shape), theirs)
+    lit = np.isfinite(theirs) & (theirs > 50.0)
+    lit_mean = next(c for c in checks if c.quantity.startswith("mean over cells published above"))
+    checks.append(
+        Check(
+            quantity="mean difference over cells published above 50 % (discriminating check)",
+            reference=0.0,
+            measured=float(lit_mean.measured - lit_mean.reference),  # type: ignore[operator]
+            tolerance=2.0,
+            unit="pp",
+        )
+    )
+    notes = (
+        "Same set-up as ILL-V2; the only change is the lunarenv statistic: the percentage of time "
+        "steps in which any part of the solar disc is above the horizon, instead of the mean "
+        "visible fraction of the disc.",
+        "Why: the PDS label of AVGVISIB_85S_060M_201608 (read 2026-11-13 with TLS verification on) "
+        "says the values 'indicate the percentage of timesteps where each pixel was sunlit (by any "
+        "fraction of the solar disc)', while describing the image object as 'average solar disc "
+        "visibility'. The label is ambiguous; this case decides between the two readings.",
+        "Pre-registered in docs/review/preregistration-2026-11-13.md (finding F08 of the "
+        "2026-11-13 scientific review) before it was implemented or run. The three ILL-V2 "
+        "tolerances are unchanged; the added check (mean difference on cells published above "
+        "50 % within 2 pp) is the reviewer's stated falsification criterion.",
+        f"Cells published above 50 %: {int(lit.sum())}.",
+    )
+    return Outcome(checks, summary + " [any part of the disc visible]", notes)
 
 
 # ------------------------------------------------------- published: Barker2021 Table 2
@@ -516,6 +564,120 @@ def _ill_v1(store: DataStore) -> Outcome:
     return Outcome(checks, summary, tuple(notes), status)
 
 
+# ------------------------------------------------------ published: Glaser2018 named points
+#: Glaser2018 Tables 1 (surface) and 2 (2 m), points inside the cached 5 m site DEMs.
+#: Columns: label, site DEM, observer height (m), latitude, east longitude (deg), average
+#: illumination (%), solar visibility (%), maximum time in shadow (h).
+GLASER2018 = (
+    ("C1-2m", "pgda78.site01.surf", 2.0, -89.4398, 222.83, 88.0, 92.1, 112.0),
+    ("S-2m-a", "pgda78.site04.surf", 2.0, -89.6866, 197.19, 85.5, 89.4, 66.0),
+    ("S-2m-b", "pgda78.site04.surf", 2.0, -89.7815, 204.70, 82.1, 89.8, 65.0),
+    ("C1-0m", "pgda78.site01.surf", 0.0, -89.4505, 222.84, 76.0, 81.3, 268.0),
+    ("S-0m", "pgda78.site04.surf", 0.0, -89.7849, 203.97, 81.0, 85.5, 221.0),
+)
+_NEIGHBOURHOOD_M = 40.0  # two pixels of the source's 20 m DTM
+
+
+def _ill_v5(store: DataStore) -> Outcome:
+    settings = IlluminationSettings()
+    utc = np.arange(
+        np.datetime64("2017-01-01T00:00"), np.datetime64("2037-01-01T00:00"), np.timedelta64(1, "h")
+    )
+    with spice_session(store, DE440) as ephemeris:
+        et = ephemeris.utc_to_et(utc)
+        sun = ephemeris.position_from_center("SUN", et)
+        radius = ephemeris.body_radius_m("SUN")
+    offsets = np.arange(-_NEIGHBOURHOOD_M, _NEIGHBOURHOOD_M + 1.0, 5.0)
+    ox, oy = np.meshgrid(offsets, offsets)
+    disc = np.hypot(ox, oy) <= _NEIGHBOURHOOD_M
+    ox, oy = ox[disc], oy[disc]  # the point itself is offset (0, 0)
+    centre = int(np.flatnonzero((ox == 0.0) & (oy == 0.0))[0])
+    checks: list[Check] = []
+    parts = []
+    stacks: dict[str, TerrainStack] = {}
+    for label, near_id, height, lat, lon, avg_ref, vis_ref, shadow_ref in GLASER2018:
+        if near_id not in stacks:
+            stacks[near_id] = load_site_stack(store, settings, near_id=near_id)
+        x0, y0 = PROJ.forward(np.radians(lon), np.radians(lat))
+        horizons = compute_horizons(
+            stacks[near_id],
+            float(x0) + ox,
+            float(y0) + oy,
+            height_above_surface_m=height,
+            n_azimuth=settings.n_azimuth,
+            diagnostics=False,
+        )
+        stats = illumination_statistics(
+            horizons,
+            et,
+            sun,
+            radius,
+            n_strips=settings.n_strips,
+            limb_u=settings.limb_darkening,
+            mode=settings.disc_mode_code,
+        )
+        average = 100.0 * stats.mean_visible_fraction
+        visibility = 100.0 * float(stats.sunlit_time_fraction[centre])
+        shadow_h = float(stats.longest_shadow_s[centre]) / 3600.0
+        checks += [
+            Check(
+                quantity=f"{label}: average illumination",
+                reference=avg_ref,
+                measured=float(average[centre]),
+                tolerance=3.0,
+                unit="%",
+            ),
+            Check(
+                quantity=f"{label}: solar visibility",
+                reference=vis_ref,
+                measured=visibility,
+                tolerance=3.0,
+                unit="%",
+            ),
+            Check(
+                quantity=f"{label}: maximum time in shadow",
+                reference=shadow_ref,
+                measured=shadow_h,
+                unit="h",
+                informational=True,
+            ),
+            Check(
+                quantity=f"{label}: average illumination, max / min within 40 m",
+                reference=float(average.max()),
+                measured=float(average.min()),
+                unit="%",
+                informational=True,
+            ),
+        ]
+        parts.append(f"{label} {average[centre]:.1f}/{visibility:.1f} %")
+    notes = (
+        "Reference: Glaser2018 Tables 1 (surface) and 2 (2 m above ground), read in full from the "
+        "accepted manuscript on NTRS (20170007365); the final journal version was not checked. "
+        "Source method: 20 m/pixel LOLA DTM, horizon method of Mazarico2011, 2017-01-01 to "
+        "2037-01-01 sampled hourly. 'Average illumination' is the mean visible fraction of the "
+        "disc (their section 2); 'solar visibility' is the share of time with any part visible.",
+        "lunarenv: default illumination settings (1440 azimuths, per-strip disc profile, nested "
+        "5 m / 80 m / coarsened regional terrain), nominal site DEM, the same period and step.",
+        "Connecting Ridge C2 (both tables) lies outside the cached site DEMs and is not run.",
+        "The published points are local maxima picked on a 20 m DTM; the source says such "
+        "locations are 20-40 m wide. Picking a maximum biases the published value upwards "
+        "relative to a point value on an independent DEM, so a lower lunarenv value is the "
+        "expected direction of a miss. The 'max / min within 40 m' rows show the sensitivity to "
+        "registration; they do not change the status.",
+        "Pre-registered in docs/review/preregistration-2026-11-13.md (finding F13 of the "
+        "2026-11-13 scientific review) before it was implemented or run. Tolerance 3 pp as "
+        "ILL-V1; longest-shadow statistics carry no tolerance in this project.",
+        "Exploratory, not pre-registered, does not change the status (2026-11-13): the same "
+        "points with the site DEM block-averaged to 10 m and 20 m. At 2 m the values move by "
+        "under 3 pp. At ground level they move a lot: S-0m 44.3 / 45.9 / 74.2 % and C1-0m "
+        "37.1 / 44.3 / 49.2 % average illumination at 5 / 10 / 20 m, against 81.0 and 76.0 % "
+        "published. Ground-level results depend strongly on terrain resolution, and the "
+        "published values come from a different 20 m DTM, so the surface-level misses are not "
+        "attributed to the engine or to the source; they show that 0 m outputs are not robust.",
+    )
+    return Outcome(checks, "; ".join(parts) + " (average / visibility)", notes)
+
+
 _PAYWALL = "The paper is behind a paywall and was not accessed; only its abstract was read."
 
 CASES: tuple[Case, ...] = (
@@ -579,6 +741,17 @@ CASES: tuple[Case, ...] = (
         run=_ill_v2,
     ),
     Case(
+        "ILL-V2b",
+        "18.6-year average illumination map, metric of the published label",
+        "published",
+        "PGDA-69 (method of Mazarico2011)",
+        "as ILL-V2, with lunarenv's percentage of time steps with any part of the disc visible",
+        "bias 2 pp, RMS 6 pp, r >= 0.95; cells above 50 %: 2 pp (pre-registered 2026-11-13)",
+        requires=("pgda69.avgvisib_85s_60m", "pgda78.site04.surf", _REGIONAL, *DE440.kernel_ids),
+        slow=True,
+        run=_ill_v2b,
+    ),
+    Case(
         "ILL-V3",
         "Continuous sunlight and longest darkness near the Shackleton rim",
         "published",
@@ -604,6 +777,22 @@ CASES: tuple[Case, ...] = (
             + " The abstract gives 92.27 % at 2 m and 95.65 % at 10 m on a 20 m terrain model, "
             "without the coordinates. Needs: the location from the paper."
         ),
+    ),
+    Case(
+        "ILL-V5",
+        "Named best-lit points at the south pole over 20 years",
+        "published",
+        "Glaser2018 Tables 1-2",
+        "average illumination and solar visibility at the point, surface and 2 m",
+        "3 percentage points (as ILL-V1; pre-registered 2026-11-13)",
+        requires=(
+            "pgda78.site01.surf",
+            "pgda78.site04.surf",
+            _REGIONAL,
+            *DE440.kernel_ids,
+        ),
+        slow=True,
+        run=_ill_v5,
     ),
 )
 

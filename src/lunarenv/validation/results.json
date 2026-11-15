@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "lunarenv_version": "0.1.0.dev0",
- "generated_utc": "2026-11-13T02:15:26Z",
+ "generated_utc": "2026-11-13T19:25:15Z",
  "results": [
   {
    "id": "ILL-A1",
@@ -836,7 +836,8 @@
     "lunarenv was run like-for-like: Site 4 DEM block-averaged from 5 m to 60 m on the published lattice, observers at ground level, single-chord solar disc, 720 azimuths, 100 x 100 cells (6 x 6 km on the Shackleton rim), 2010-01-01 plus 18.6 years every 2 h (the 2 h step changes the mean by 0.004 pp; the published start date is not known and does not matter for a full cycle).",
     "Known differences that the tolerances were set to cover: DEM generation (2020 track-adjusted site model vs 2016 gridded product), far-field DEM version, and the observer height of the published map, which its documentation does not state.",
     "Tolerances were fixed before the comparison from the terrain sensitivity measured in Phase 2 (coarsening the near DEM twofold moves a rim point by 0.3-1.5 pp; terrain clones by 1 pp).",
-    "The case passes, but not uniformly: on cells the published map puts above 50 %, lunarenv at ground level is about 6 pp darker. A follow-up run (2026-11-12, 6 h sampling) with the observer 2 m above the ground gave overall bias -0.7 pp, +1.2 pp on those cells and r = 0.950; at 10 m, +10 pp and r = 0.897. The difference therefore equals about 1.5 m of observer height. A likely cause is the treatment of terrain next to the observer (lunarenv samples the slope of the observer's own 60 m cell from 15 m away; a horizon built from neighbouring grid nodes does not), but the published method could not be checked, so this is not established. The registered comparison stays at ground level."
+    "The case passes, but not uniformly: on cells the published map puts above 50 %, lunarenv at ground level is about 6 pp darker. A follow-up run (2026-11-12, 6 h sampling) with the observer 2 m above the ground gave overall bias -0.7 pp, +1.2 pp on those cells and r = 0.950; at 10 m, +10 pp and r = 0.897. The difference therefore equals about 1.5 m of observer height. A likely cause is the treatment of terrain next to the observer (lunarenv samples the slope of the observer's own 60 m cell from 15 m away; a horizon built from neighbouring grid nodes does not), but the published method could not be checked, so this is not established. The registered comparison stays at ground level.",
+    "Update 2026-11-13: this case compares unlike metrics. The PDS label of the published map defines its values as the percentage of time steps with any part of the disc visible, while this case uses the mean visible fraction. ILL-V2b (pre-registered) repeats the comparison with the label's metric: the difference on cells above 50 % falls from -5.9 pp to -1.8 pp and the overall bias becomes +0.5 pp. The metric therefore explains most of the deficit, and the observer-height explanation above is dropped. This case is kept as recorded; ILL-V2b is the like-for-like comparison."
    ],
    "data": {
     "pgda69.avgvisib_85s_60m": "ccf67d4f39e0a970c111196da7d6551ffcf50d075470b93067fb3904c0b05806",
@@ -848,8 +849,94 @@
     "naif.pck.moon_pa_de440": "60cd55aa401ea2ea97360636f567554bfe4e37bb829f901b4460a455dfaf783f",
     "naif.fk.moon_de440": "a47c71e9c9f33796bdafb2c9d69a7ee447b6016ecad80f71cd6f3e479f9cf768"
    },
-   "seconds": 56.339462791976985,
-   "run_utc": "2026-11-13T02:15:26Z"
+   "seconds": 82.83506962499814,
+   "run_utc": "2026-11-13T19:25:15Z"
+  },
+  {
+   "id": "ILL-V2b",
+   "title": "18.6-year average illumination map, metric of the published label",
+   "kind": "published",
+   "source": "PGDA-69 (method of Mazarico2011)",
+   "metric": "as ILL-V2, with lunarenv's percentage of time steps with any part of the disc visible",
+   "tolerance": "bias 2 pp, RMS 6 pp, r >= 0.95; cells above 50 %: 2 pp (pre-registered 2026-11-13)",
+   "status": "PASS",
+   "summary": "bias +0.50 pp, RMS 3.76 pp, r = 0.961 over 10000 cells [any part of the disc visible]",
+   "checks": [
+    {
+     "quantity": "mean difference (lunarenv - published)",
+     "reference": 0.0,
+     "measured": 0.4962917860399901,
+     "tolerance": 2.0,
+     "unit": "pp",
+     "informational": false
+    },
+    {
+     "quantity": "RMS difference",
+     "reference": 0.0,
+     "measured": 3.7604087258119474,
+     "tolerance": 6.0,
+     "unit": "pp",
+     "informational": false
+    },
+    {
+     "quantity": "correlation coefficient",
+     "reference": 1.0,
+     "measured": 0.9607126545933741,
+     "tolerance": 0.05,
+     "unit": "",
+     "informational": false
+    },
+    {
+     "quantity": "published maximum in the window",
+     "reference": 87.05999851226807,
+     "measured": 86.30079854764912,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "mean over cells published above 50 %",
+     "reference": 60.6558814556641,
+     "measured": 58.82559588403809,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "cells below 0.5 % in both / in either",
+     "reference": 0.0784,
+     "measured": 0.0655,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "mean difference over cells published above 50 % (discriminating check)",
+     "reference": 0.0,
+     "measured": -1.830285571626014,
+     "tolerance": 2.0,
+     "unit": "pp",
+     "informational": false
+    }
+   ],
+   "notes": [
+    "Same set-up as ILL-V2; the only change is the lunarenv statistic: the percentage of time steps in which any part of the solar disc is above the horizon, instead of the mean visible fraction of the disc.",
+    "Why: the PDS label of AVGVISIB_85S_060M_201608 (read 2026-11-13 with TLS verification on) says the values 'indicate the percentage of timesteps where each pixel was sunlit (by any fraction of the solar disc)', while describing the image object as 'average solar disc visibility'. The label is ambiguous; this case decides between the two readings.",
+    "Pre-registered in docs/review/preregistration-2026-11-13.md (finding F08 of the 2026-11-13 scientific review) before it was implemented or run. The three ILL-V2 tolerances are unchanged; the added check (mean difference on cells published above 50 % within 2 pp) is the reviewer's stated falsification criterion.",
+    "Cells published above 50 %: 169."
+   ],
+   "data": {
+    "pgda69.avgvisib_85s_60m": "ccf67d4f39e0a970c111196da7d6551ffcf50d075470b93067fb3904c0b05806",
+    "pgda78.site04.surf": "38ff70dbdf2f066c2cfa94a646c3a59d653ce7f6b4528b15fc1b43ee397ce758",
+    "pgda90.ldem_80s_80mpp": "82030dcbdd7c4bb0c7d858e9b4b293b9f2cda5a543ba31ec0f42784bd6beee5a",
+    "naif.lsk": "678e32bdb5a744117a467cd9601cd6b373f0e9bc9bbde1371d5eee39600a039b",
+    "naif.pck.text": "3dff7b1dbeceaa01f25467767d3fa25816051c85d162d1edf04acb310ee28bb1",
+    "naif.spk.de440s": "c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2",
+    "naif.pck.moon_pa_de440": "60cd55aa401ea2ea97360636f567554bfe4e37bb829f901b4460a455dfaf783f",
+    "naif.fk.moon_de440": "a47c71e9c9f33796bdafb2c9d69a7ee447b6016ecad80f71cd6f3e479f9cf768"
+   },
+   "seconds": 81.0734847090207,
+   "run_utc": "2026-11-13T19:25:15Z"
   },
   {
    "id": "ILL-V3",
@@ -880,6 +967,198 @@
    "data": {},
    "seconds": null,
    "run_utc": null
+  },
+  {
+   "id": "ILL-V5",
+   "title": "Named best-lit points at the south pole over 20 years",
+   "kind": "published",
+   "source": "Glaser2018 Tables 1-2",
+   "metric": "average illumination and solar visibility at the point, surface and 2 m",
+   "tolerance": "3 percentage points (as ILL-V1; pre-registered 2026-11-13)",
+   "status": "FAIL",
+   "summary": "C1-2m 85.9/90.8 %; S-2m-a 83.9/88.8 %; S-2m-b 81.7/88.4 %; C1-0m 37.1/44.2 %; S-0m 44.3/51.1 % (average / visibility)",
+   "checks": [
+    {
+     "quantity": "C1-2m: average illumination",
+     "reference": 88.0,
+     "measured": 85.91344806412927,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "C1-2m: solar visibility",
+     "reference": 92.1,
+     "measured": 90.80709559662333,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "C1-2m: maximum time in shadow",
+     "reference": 112.0,
+     "measured": 116.0,
+     "tolerance": null,
+     "unit": "h",
+     "informational": true
+    },
+    {
+     "quantity": "C1-2m: average illumination, max / min within 40 m",
+     "reference": 88.13952146535196,
+     "measured": 67.52103631397249,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "S-2m-a: average illumination",
+     "reference": 85.5,
+     "measured": 83.92102731711228,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "S-2m-a: solar visibility",
+     "reference": 89.4,
+     "measured": 88.8227241615332,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "S-2m-a: maximum time in shadow",
+     "reference": 66.0,
+     "measured": 66.0,
+     "tolerance": null,
+     "unit": "h",
+     "informational": true
+    },
+    {
+     "quantity": "S-2m-a: average illumination, max / min within 40 m",
+     "reference": 85.1111649529799,
+     "measured": 49.699248213249156,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "S-2m-b: average illumination",
+     "reference": 82.1,
+     "measured": 81.71502042027925,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "S-2m-b: solar visibility",
+     "reference": 89.8,
+     "measured": 88.4263061829797,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "S-2m-b: maximum time in shadow",
+     "reference": 65.0,
+     "measured": 65.0,
+     "tolerance": null,
+     "unit": "h",
+     "informational": true
+    },
+    {
+     "quantity": "S-2m-b: average illumination, max / min within 40 m",
+     "reference": 81.71502042027925,
+     "measured": 5.042433627226519,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "C1-0m: average illumination",
+     "reference": 76.0,
+     "measured": 37.119667219863906,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "C1-0m: solar visibility",
+     "reference": 81.3,
+     "measured": 44.22256445357061,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "C1-0m: maximum time in shadow",
+     "reference": 268.0,
+     "measured": 2089.0,
+     "tolerance": null,
+     "unit": "h",
+     "informational": true
+    },
+    {
+     "quantity": "C1-0m: average illumination, max / min within 40 m",
+     "reference": 54.37268133501747,
+     "measured": 18.43195761960495,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "S-0m: average illumination",
+     "reference": 81.0,
+     "measured": 44.29526118243866,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "S-0m: solar visibility",
+     "reference": 85.5,
+     "measured": 51.08544375998175,
+     "tolerance": 3.0,
+     "unit": "%",
+     "informational": false
+    },
+    {
+     "quantity": "S-0m: maximum time in shadow",
+     "reference": 221.0,
+     "measured": 552.0,
+     "tolerance": null,
+     "unit": "h",
+     "informational": true
+    },
+    {
+     "quantity": "S-0m: average illumination, max / min within 40 m",
+     "reference": 46.598431573566444,
+     "measured": 6.38337346205278,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    }
+   ],
+   "notes": [
+    "Reference: Glaser2018 Tables 1 (surface) and 2 (2 m above ground), read in full from the accepted manuscript on NTRS (20170007365); the final journal version was not checked. Source method: 20 m/pixel LOLA DTM, horizon method of Mazarico2011, 2017-01-01 to 2037-01-01 sampled hourly. 'Average illumination' is the mean visible fraction of the disc (their section 2); 'solar visibility' is the share of time with any part visible.",
+    "lunarenv: default illumination settings (1440 azimuths, per-strip disc profile, nested 5 m / 80 m / coarsened regional terrain), nominal site DEM, the same period and step.",
+    "Connecting Ridge C2 (both tables) lies outside the cached site DEMs and is not run.",
+    "The published points are local maxima picked on a 20 m DTM; the source says such locations are 20-40 m wide. Picking a maximum biases the published value upwards relative to a point value on an independent DEM, so a lower lunarenv value is the expected direction of a miss. The 'max / min within 40 m' rows show the sensitivity to registration; they do not change the status.",
+    "Pre-registered in docs/review/preregistration-2026-11-13.md (finding F13 of the 2026-11-13 scientific review) before it was implemented or run. Tolerance 3 pp as ILL-V1; longest-shadow statistics carry no tolerance in this project.",
+    "Exploratory, not pre-registered, does not change the status (2026-11-13): the same points with the site DEM block-averaged to 10 m and 20 m. At 2 m the values move by under 3 pp. At ground level they move a lot: S-0m 44.3 / 45.9 / 74.2 % and C1-0m 37.1 / 44.3 / 49.2 % average illumination at 5 / 10 / 20 m, against 81.0 and 76.0 % published. Ground-level results depend strongly on terrain resolution, and the published values come from a different 20 m DTM, so the surface-level misses are not attributed to the engine or to the source; they show that 0 m outputs are not robust."
+   ],
+   "data": {
+    "pgda78.site01.surf": "3ba7b97cb00a2bcf21189c3aeb535f65afc21207154ab9f0d43c5bdc1f7e747e",
+    "pgda78.site04.surf": "38ff70dbdf2f066c2cfa94a646c3a59d653ce7f6b4528b15fc1b43ee397ce758",
+    "pgda90.ldem_80s_80mpp": "82030dcbdd7c4bb0c7d858e9b4b293b9f2cda5a543ba31ec0f42784bd6beee5a",
+    "naif.lsk": "678e32bdb5a744117a467cd9601cd6b373f0e9bc9bbde1371d5eee39600a039b",
+    "naif.pck.text": "3dff7b1dbeceaa01f25467767d3fa25816051c85d162d1edf04acb310ee28bb1",
+    "naif.spk.de440s": "c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2",
+    "naif.pck.moon_pa_de440": "60cd55aa401ea2ea97360636f567554bfe4e37bb829f901b4460a455dfaf783f",
+    "naif.fk.moon_de440": "a47c71e9c9f33796bdafb2c9d69a7ee447b6016ecad80f71cd6f3e479f9cf768"
+   },
+   "seconds": 73.52614966599504,
+   "run_utc": "2026-11-13T19:25:15Z"
   },
   {
    "id": "TH-A1",
@@ -1031,11 +1310,55 @@
    "notes": [
     "Reference values are those quoted in Hayne2017 Table A2 from Vasavada2012 (Diviner, equator, A0 = 0.12), described there as typical and rounded to 1 K. Vasavada2012 itself was not accessed.",
     "Level ground at the equator, Sun at 1 au, declination 0, standard parameters (H = 0.06 m).",
-    "Disclosure: the 2 K tolerance was written down after exploratory runs had already shown 385.2 / 100.3 / 93.7 K. It is anchored to the residual stated by the source, not to the result."
+    "Disclosure: the 2 K tolerance was written down after exploratory runs had already shown 385.2 / 100.3 / 93.7 K. It is anchored to the residual stated by the source, not to the result.",
+    "This case does not discriminate between albedo laws: with a constant albedo of 0.12 the same checks also pass (TH-V1b, pre-registered). It is therefore no evidence for the incidence-dependent albedo used at the pole."
    ],
    "data": {},
-   "seconds": 0.0695596250006929,
-   "run_utc": "2026-11-13T02:15:26Z"
+   "seconds": 0.0886583750252612,
+   "run_utc": "2026-11-13T19:25:15Z"
+  },
+  {
+   "id": "TH-V1b",
+   "title": "Equatorial diurnal temperatures, constant albedo (discrimination check)",
+   "kind": "published",
+   "source": "Hayne2017 Table A2 (Vasavada2012, Diviner)",
+   "metric": "noon, midnight and minimum surface temperature",
+   "tolerance": "2 K (as TH-V1; pre-registered 2026-11-13)",
+   "status": "PASS",
+   "summary": "385.2 / 101.8 / 95.1 K against 385 / 101 / 95 K [constant albedo]",
+   "checks": [
+    {
+     "quantity": "peak noon temperature",
+     "reference": 385.0,
+     "measured": 385.239513017856,
+     "tolerance": 2.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "midnight temperature",
+     "reference": 101.0,
+     "measured": 101.82080015422001,
+     "tolerance": 2.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "minimum night-time temperature",
+     "reference": 95.0,
+     "measured": 95.0965831368954,
+     "tolerance": 2.0,
+     "unit": "K",
+     "informational": false
+    }
+   ],
+   "notes": [
+    "Same as TH-V1 with a constant albedo of 0.12 (albedo_a = albedo_b = 0). Pre-registered in docs/review/preregistration-2026-11-13.md (finding F04 of the 2026-11-13 scientific review) before it was implemented or run; reference and tolerances are those of TH-V1.",
+    "Reading fixed beforehand: a PASS means TH-V1 does not discriminate between the incidence-dependent and the constant albedo, so it is not evidence for the albedo law used at the pole; a miss by more than 2 K means it does."
+   ],
+   "data": {},
+   "seconds": 0.057567167037632316,
+   "run_utc": "2026-11-13T19:25:15Z"
   },
   {
    "id": "TH-V2",
@@ -1135,11 +1458,12 @@
    "notes": [
     "Reference: Apollo 15 and 17 heat-flow experiment values (Keihm1973) as quoted, with their +/-5 K, in Hayne2017 Table A2. The original papers were not accessed, so what the 'mean surface temperature' was measured on (regolith surface or probe hardware) is not established here.",
     "Sun at 1.017 au, as stated in the caption of Hayne2017 Figure A1.",
-    "Same model with a constant albedo of 0.12. It then also matches the model curves of Hayne2017 Figure A1 (surface ~215 K, 1 m ~256 K at 20 N). This suggests that figure was computed with a constant albedo. It does not show which albedo is right: daytime Diviner temperatures are what the incidence-dependent law was fitted to."
+    "Same model with a constant albedo of 0.12. It then also matches the model curves of Hayne2017 Figure A1 (surface ~215 K, 1 m ~256 K at 20 N). An earlier note read this as the figure having been computed with a constant albedo; the caption says 'All model parameters are from Table A1', which includes the incidence-dependent law, so that reading is not supported (checked in the arXiv version, 2026-11-13). It does not show which albedo is right: daytime Diviner temperatures are what the incidence-dependent law was fitted to.",
+    "The Apollo comparison is also not like-for-like: per the 2026-11-13 scientific review, the 216 K of Apollo 17 is a brightness temperature (emissivity 1) from cable thermocouples above the surface, and both sites are dark mare. Not yet checked here."
    ],
    "data": {},
-   "seconds": 0.11394879099680111,
-   "run_utc": "2026-11-13T02:15:26Z"
+   "seconds": 0.12111850001383573,
+   "run_utc": "2026-11-13T19:25:15Z"
   },
   {
    "id": "TH-X1",
@@ -1274,5 +1598,16 @@
    "run_utc": null
   }
  ],
- "not_rerun": {}
+ "not_rerun": {
+  "ILL-A1": "not selected",
+  "ILL-A2": "not selected",
+  "ILL-A3": "not selected",
+  "ILL-X1": "not selected",
+  "ILL-V1": "not selected",
+  "TH-A1": "not selected",
+  "TH-A2": "not selected",
+  "TH-P1": "not selected",
+  "TH-V2": "not selected",
+  "TH-X1": "not selected"
+ }
 }

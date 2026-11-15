@@ -140,6 +140,7 @@ def _map_kernel(  # type: ignore[no-untyped-def]
         horizon = horizons[i].astype(np.float64)
         sum_geometric = 0.0
         sum_flux = 0.0
+        n_lit = 0
         dark = 0
         lit = 0
         longest_dark = 0
@@ -161,6 +162,7 @@ def _map_kernel(  # type: ignore[no-untyped-def]
             sum_geometric += geometric
             sum_flux += flux
             if geometric > 0.0:
+                n_lit += 1
                 lit += 1
                 dark = 0
                 if lit > longest_lit:
@@ -174,6 +176,7 @@ def _map_kernel(  # type: ignore[no-untyped-def]
         out[i, 1] = sum_flux / n_times
         out[i, 2] = longest_dark
         out[i, 3] = longest_lit
+        out[i, 4] = n_lit / n_times
 
 
 #: Largest departure from a uniform step accepted on a time axis, seconds. A grid that
@@ -243,6 +246,9 @@ class IlluminationStatistics:
     longest_illumination_s: FloatArray
     step_s: float
     n_times: int
+    #: Fraction of samples in which any part of the disc is visible ("solar visibility" in
+    #: Mazarico2011 and Glaser2018); always >= ``mean_visible_fraction``.
+    sunlit_time_fraction: FloatArray
 
 
 def illumination_statistics(
@@ -263,7 +269,7 @@ def illumination_statistics(
     body = np.ascontiguousarray(body_position_m, dtype=np.float64)
     if body.shape != (et.size, 3):
         raise ValueError("body positions must have shape (n_times, 3)")
-    out = np.empty((horizons.x_m.size, 4), dtype=np.float64)
+    out = np.empty((horizons.x_m.size, 5), dtype=np.float64)
     previous_chunk = get_parallel_chunksize()
     set_parallel_chunksize(PARALLEL_CHUNK)  # observers differ in cost; keep threads busy
     try:
@@ -289,4 +295,5 @@ def illumination_statistics(
         longest_illumination_s=out[:, 3] * step,
         step_s=step,
         n_times=int(et.size),
+        sunlit_time_fraction=np.ascontiguousarray(out[:, 4]),
     )

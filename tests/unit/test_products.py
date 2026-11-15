@@ -109,6 +109,10 @@ def test_statistics_agree_with_the_series(flat_world):
         assert stats.mean_flux_fraction[0] == pytest.approx(series.flux_fraction.mean(), abs=1e-14)
         assert stats.longest_shadow_s[0] == series.longest_shadow().duration_s
         assert stats.longest_illumination_s[0] == series.longest_illumination().duration_s
+        assert stats.sunlit_time_fraction[0] == pytest.approx(
+            float(np.mean(series.visible_fraction > 0.0)), abs=1e-14
+        )
+        assert stats.sunlit_time_fraction[0] > stats.mean_visible_fraction[0]
         assert 0.0 < series.mean_visible_fraction < 1.0 and series.longest_shadow().count > 1
     # a higher observer sees a lower horizon: never less illumination
     assert (

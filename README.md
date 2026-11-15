@@ -130,18 +130,21 @@ For agents: `lunarenv-mcp`, see [docs/mcp.md](docs/mcp.md).
 ## Validation
 
 [VALIDATION.md](VALIDATION.md) lists every case with its source, metric, tolerance and
-result. Summary (16 cases): 11 pass, 1 fails, 1 partial, 3 pending.
+result. Summary (19 cases): 13 pass, 2 fail, 1 partial, 3 pending. Three cases (TH-V1b,
+ILL-V2b, ILL-V5) follow an independent scientific review and were pre-registered in
+[docs/review/preregistration-2026-11-13.md](docs/review/preregistration-2026-11-13.md).
 
 | Compared with | Result |
 |---|---|
 | Closed-form solutions (horizon of a sphere and of an analytic hill, disc segment, damped thermal wave, steady conduction, energy conservation) | pass |
 | JPL Horizons, direction of the Sun and the Earth at the site | pass: 9e-10 and 9e-9 rad |
 | Barker et al. 2021, Table 2: illumination of seven regions at 1 m and 5 m, 1st percentile over 100 terrain clones | pass: within 2.2 percentage points at 1 m and 0.3 at 5 m (tolerance 3); region areas within 2.6 % |
-| PGDA 18.6-year illumination map (method of Mazarico et al. 2011) | pass: bias -1.6 pp, RMS 4.1 pp, r = 0.96; about 6 pp darker on well-lit cells |
-| Diviner equatorial temperatures quoted by Hayne et al. 2017 | pass: 385.2 / 100.3 / 93.7 K against 385 / 101 / 95 K |
+| PGDA 18.6-year illumination map (method of Mazarico et al. 2011) | pass: bias -1.6 pp, RMS 4.1 pp, r = 0.96; about 6 pp darker on well-lit cells, mostly a metric mismatch: with the map's own metric (any part of the disc visible) bias +0.5 pp and -1.8 pp on well-lit cells |
+| Gläser et al. 2018, named best-lit points over 20 years | 2 m: pass at all three points (within 2.1 pp; longest shadow 116 / 66 / 65 h against 112 / 66 / 65 h). Ground level: **fail** (37-44 % against 76-81 %), and strongly dependent on terrain resolution |
+| Diviner equatorial temperatures quoted by Hayne et al. 2017 | pass: 385.2 / 100.3 / 93.7 K against 385 / 101 / 95 K. A constant albedo passes too (TH-V1b), so this case does not test the albedo law |
 | Apollo 15 and 17 mean temperatures quoted by Hayne et al. 2017 | **fail** with the published parameters (8-10 K low); pass with a constant albedo |
 | heat1d, the reference code of Hayne et al. 2017 | **partial**: surface within 0.75 K; 2-3 K colder at depth |
-| Mazarico 2011 site table, Gläser 2014, Diviner polar maps | pending: references not obtained |
+| Mazarico 2011 site table, Gläser 2014, Diviner polar maps | pending: references not obtained (the Diviner polar products are archived; the comparison is not yet built) |
 
 ## Known limitations
 
@@ -157,6 +160,10 @@ Illumination
 - The terrain is the 5 m LOLA site model, about 90 % of whose pixels are interpolated
   between altimeter tracks. Relief below that scale (boulders, small craters) is absent.
   At ground level this matters; from a metre or more above the ground much less.
+  Against Gläser et al. 2018, ground-level values at two ridge points are 37-39 pp
+  below the published ones and move by up to 30 pp when the site DEM is coarsened from
+  5 m to 20 m, while 2 m values agree within 2.1 pp. Do not use 0 m illumination for
+  design.
 - Terrain uncertainty comes from the published error clones of the site tile only.
   Errors of the regional terrain are not sampled, so for observers whose skyline is
   distant the reported spread is a lower bound.

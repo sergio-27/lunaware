@@ -171,8 +171,8 @@ def _cycle(
     return run_thermal(flux, period_s / _PER_CYCLE, _PER_CYCLE, properties, ThermalSettings())
 
 
-def _th_v1(_: DataStore) -> Outcome:
-    result = _cycle(0.0, RegolithProperties())
+def _equator_checks(properties: RegolithProperties) -> tuple[list[Check], tuple[float, ...]]:
+    result = _cycle(0.0, properties)
     surface = result.surface_temperature_k
     values = (float(surface.max()), float(surface[_PER_CYCLE // 2]), float(surface.min()))
     checks = [
@@ -198,15 +198,40 @@ def _th_v1(_: DataStore) -> Outcome:
             unit="K",
         ),
     ]
+    return checks, values
+
+
+def _th_v1(_: DataStore) -> Outcome:
+    checks, values = _equator_checks(RegolithProperties())
     notes = (
         "Reference values are those quoted in Hayne2017 Table A2 from Vasavada2012 (Diviner, equator, "
         "A0 = 0.12), described there as typical and rounded to 1 K. Vasavada2012 itself was not accessed.",
         "Level ground at the equator, Sun at 1 au, declination 0, standard parameters (H = 0.06 m).",
         "Disclosure: the 2 K tolerance was written down after exploratory runs had already shown "
         "385.2 / 100.3 / 93.7 K. It is anchored to the residual stated by the source, not to the result.",
+        "This case does not discriminate between albedo laws: with a constant albedo of 0.12 the "
+        "same checks also pass (TH-V1b, pre-registered). It is therefore no evidence for the "
+        "incidence-dependent albedo used at the pole.",
     )
     return Outcome(
         checks, "{:.1f} / {:.1f} / {:.1f} K against 385 / 101 / 95 K".format(*values), notes
+    )
+
+
+def _th_v1b(_: DataStore) -> Outcome:
+    checks, values = _equator_checks(RegolithProperties(albedo_a=0.0, albedo_b=0.0))
+    notes = (
+        "Same as TH-V1 with a constant albedo of 0.12 (albedo_a = albedo_b = 0). Pre-registered "
+        "in docs/review/preregistration-2026-11-13.md (finding F04 of the 2026-11-13 scientific "
+        "review) before it was implemented or run; reference and tolerances are those of TH-V1.",
+        "Reading fixed beforehand: a PASS means TH-V1 does not discriminate between the "
+        "incidence-dependent and the constant albedo, so it is not evidence for the albedo law "
+        "used at the pole; a miss by more than 2 K means it does.",
+    )
+    return Outcome(
+        checks,
+        "{:.1f} / {:.1f} / {:.1f} K against 385 / 101 / 95 K [constant albedo]".format(*values),
+        notes,
     )
 
 
@@ -270,9 +295,15 @@ def _th_v2b(_: DataStore) -> Outcome:
     notes = (
         *_APOLLO_NOTES,
         "Same model with a constant albedo of 0.12. It then also matches the model curves of "
-        "Hayne2017 Figure A1 (surface ~215 K, 1 m ~256 K at 20 N). This suggests that figure was "
-        "computed with a constant albedo. It does not show which albedo is right: daytime Diviner "
-        "temperatures are what the incidence-dependent law was fitted to.",
+        "Hayne2017 Figure A1 (surface ~215 K, 1 m ~256 K at 20 N). An earlier note read this as "
+        "the figure having been computed with a constant albedo; the caption says 'All model "
+        "parameters are from Table A1', which includes the incidence-dependent law, so that "
+        "reading is not supported (checked in the arXiv version, 2026-11-13). It does not show "
+        "which albedo is right: daytime Diviner temperatures are what the incidence-dependent law "
+        "was fitted to.",
+        "The Apollo comparison is also not like-for-like: per the 2026-11-13 scientific review, "
+        "the 216 K of Apollo 17 is a brightness temperature (emissivity 1) from cable "
+        "thermocouples above the surface, and both sites are dark mare. Not yet checked here.",
     )
     return Outcome(checks, summary + " [constant albedo]", notes)
 
@@ -391,6 +422,15 @@ CASES: tuple[Case, ...] = (
         "noon, midnight and minimum surface temperature",
         "2 K (twice the < 1 K RMS residual Hayne2017 reports for its fits)",
         run=_th_v1,
+    ),
+    Case(
+        "TH-V1b",
+        "Equatorial diurnal temperatures, constant albedo (discrimination check)",
+        "published",
+        "Hayne2017 Table A2 (Vasavada2012, Diviner)",
+        "noon, midnight and minimum surface temperature",
+        "2 K (as TH-V1; pre-registered 2026-11-13)",
+        run=_th_v1b,
     ),
     Case(
         "TH-V2",

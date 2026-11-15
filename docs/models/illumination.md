@@ -107,7 +107,10 @@ block per thread most cores sat idle.
 - South polar region covered by the stack: observers inside the Site 4 tile.
 - Epochs 1849-2150 (DE440 short file); validated against JPL Horizons for 2026-2028.
 - Observer height above the surface: 0 m and up. Results at 0 m depend on relief the
-  DEM does not contain; heights of a metre or more are better supported.
+  DEM does not contain; heights of a metre or more are better supported. Evidence
+  (ILL-V5): at 2 m three Gläser2018 points agree within 2.1 pp; at 0 m two points are
+  37-39 pp low and move by up to 30 pp between 5 m and 20 m terrain. 0 m results are
+  not validated.
 - Outside these, the code runs but results are not validated.
 
 ## Verification (see VALIDATION.md for the full matrix)
@@ -120,5 +123,7 @@ block per thread most cores sat idle.
 | ILL-X1 Sun and Earth direction at the rim site | JPL Horizons (DE441, its own lunar frame and code), 288 epochs 2026-2028 | Sun 9.3e-10 rad, Earth 9.4e-9 rad (tolerance 2e-6 rad, fixed beforehand) |
 | Properties | fraction in [0, 1]; raising terrain never adds light; mirror symmetry; fast and exact body direction agree | hold over randomized inputs |
 
-Comparison with published illumination results (Barker2021 Table 2, PGDA average
-illumination map) is Phase 4.
+Comparisons with published illumination results (Barker2021 Table 2 in ILL-V1, the
+PGDA average illumination map in ILL-V2 and ILL-V2b, Glaser2018 named points in
+ILL-V5) are in VALIDATION.md. The PGDA map counts time steps with any part of the disc
+visible (its PDS label); ILL-V2b compares like for like.

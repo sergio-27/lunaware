@@ -153,6 +153,7 @@ linear in steps and cells, about 90 ns per cell and step. The 128-member ensembl
 | TH-P1 bounds and monotonicity | radiative-equilibrium bound; more flux never cools | hold for forward Euler, backward Euler, BDF2; Crank-Nicolson violates the bound (kept as a test) |
 | Periodic state | mean-`psi` identity; independence of initial state | 2e-5 relative; 0.01 K |
 | Equatorial cycle (pre-check of TH-V1) | Hayne2017 Table A2: 385 / 101 / 95 K at noon / midnight / minimum | 385.2 / 100.3 / 93.7 K |
+| Same, constant albedo 0.12 (TH-V1b) | same | 385.2 / 101.8 / 95.1 K: also passes, so TH-V1 does not discriminate |
 | Lunar eclipse of 2026-03-03 | NASA eclipse figure (Espenak) | site contacts inside the published windows |
 
 ## Findings to resolve in Phase 4
@@ -171,7 +172,14 @@ linear in steps and cells, about 90 ns per cell and step. The 128-member ensembl
    depth. The Apollo values quoted by Hayne2017 are 216 +/- 5 and 211 +/- 5 K at the
    surface, 256 +/- 5 and 252 +/- 5 K at depth: the model is 8-10 K low. With a
    constant albedo of 0.12 it gives 213.4 / 255.2 K and 211.2 / 250.7 K, inside the
-   quoted uncertainties, and matches the curves of Hayne2017's Figure A1. So that
-   figure appears to correspond to a constant albedo, not to the incidence-dependent
-   law of the same paper's Table A1. Which is right at grazing incidence decides the
-   polar result (26 K on the mean at the test point).
+   quoted uncertainties, and matches the curves of Hayne2017's Figure A1. An earlier
+   version of this note concluded that the figure corresponds to a constant albedo. The
+   figure caption says "All model parameters are from Table A1", which includes the
+   incidence-dependent law, so that conclusion is not supported; the discrepancy is
+   unresolved. Which albedo is right at grazing incidence decides the polar result
+   (26 K on the mean at the test point).
+3. **TH-V1 does not discriminate between albedo laws** (TH-V1b, pre-registered
+   2026-11-13). With a constant albedo of 0.12 the equatorial case gives
+   385.2 / 101.8 / 95.1 K and passes as well as the incidence-dependent law does
+   (385.2 / 100.3 / 93.7 K). TH-V1 is therefore no evidence for the albedo law used at
+   the pole.
