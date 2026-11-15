@@ -19,6 +19,7 @@ from __future__ import annotations
 import json
 import subprocess
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -106,10 +107,10 @@ def extract(slon: int) -> dict[str, object]:
 
 
 def main() -> int:
-    bins = []
-    for slon in range(1, 97):
-        bins.append(extract(slon))
-        print(f"slon{slon:02d}: {len(bins[-1]['tbol_k'])} of {len(CELLS)} cells", flush=True)  # type: ignore[arg-type]
+    with ThreadPoolExecutor(6) as pool:  # six files at a time; each file is read serially
+        bins = list(pool.map(extract, range(1, 97)))
+    for slon, entry in enumerate(bins, start=1):
+        print(f"slon{slon:02d}: {len(entry['tbol_k'])} of {len(CELLS)} cells")  # type: ignore[arg-type]
     out = {
         "source": "Diviner PCP (diurnal, summer), LRO-L-DLRE-5-GCP-V1.0 / "
         "urn:nasa:pds:lro_diviner_derived1:data_derived_pcp",
@@ -123,9 +124,7 @@ def main() -> int:
         "pixel_m": PIXEL_M,
         "radius_m": RADIUS_M,
         "test_point_m": list(TEST_POINT_M),
-        "cells": [
-            {"key": f"{i},{j}", "x_m": i * PIXEL_M, "y_m": j * PIXEL_M} for i, j in CELLS
-        ],
+        "cells": [{"key": f"{i},{j}", "x_m": i * PIXEL_M, "y_m": j * PIXEL_M} for i, j in CELLS],
         "bins": bins,
     }
     OUT.write_text(json.dumps(out, indent=1) + "\n", encoding="utf-8")

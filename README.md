@@ -130,9 +130,9 @@ For agents: `lunarenv-mcp`, see [docs/mcp.md](docs/mcp.md).
 ## Validation
 
 [VALIDATION.md](VALIDATION.md) lists every case with its source, metric, tolerance and
-result. Summary (19 cases): 13 pass, 2 fail, 1 partial, 3 pending. Three cases (TH-V1b,
-ILL-V2b, ILL-V5) follow an independent scientific review and were pre-registered in
-[docs/review/preregistration-2026-11-13.md](docs/review/preregistration-2026-11-13.md).
+result. Summary (20 cases): 14 pass, 3 fail, 1 partial, 2 pending. Five cases (TH-V1b,
+ILL-V2b, ILL-V5, TH-V3, TH-V3b) follow an independent scientific review and were
+pre-registered in [docs/review/](docs/review/) before they were run.
 
 | Compared with | Result |
 |---|---|
@@ -144,7 +144,8 @@ ILL-V2b, ILL-V5) follow an independent scientific review and were pre-registered
 | Diviner equatorial temperatures quoted by Hayne et al. 2017 | pass: 385.2 / 100.3 / 93.7 K against 385 / 101 / 95 K. A constant albedo passes too (TH-V1b), so this case does not test the albedo law |
 | Apollo 15 and 17 mean temperatures quoted by Hayne et al. 2017 | **fail** with the published parameters (8-10 K low); pass with a constant albedo |
 | heat1d, the reference code of Hayne et al. 2017 | **partial**: surface within 0.75 K; 2-3 K colder at depth |
-| Mazarico 2011 site table, Gläser 2014, Diviner polar maps | pending: references not obtained (the Diviner polar products are archived; the comparison is not yet built) |
+| Diviner polar summer temperatures, 720 m block on the Shackleton rim (TH-V3, TH-V3b) | published albedo law: **fail**, 24 K too cold over the sunlit summer bins; constant albedo: pass, +5.7 K (tolerance 10 K). Only 8 bins qualify; single 240 m cells differ by up to 70 K, and both laws are 43-67 K below the hottest Diviner bin |
+| Mazarico 2011 site table, Gläser 2014 | pending: references not obtained |
 
 ## Known limitations
 
@@ -177,10 +178,14 @@ Thermal
 - **The polar thermal results are outside the validated range**, and say so in every
   run. The regolith properties were fitted to data within 70 degrees of the equator;
   the heat-capacity fit is stated valid from about 90 K, and polar ground gets colder.
-- **The albedo law is unresolved at grazing incidence.** The published
-  incidence-dependent albedo and a constant albedo differ by 26 K in the yearly mean at
-  the test point. Validation supports each in a different comparison. Both results are
-  always reported; treat them as bounds of an open question.
+- **The albedo law at grazing incidence: the first polar comparison favours the constant
+  albedo.** The published incidence-dependent albedo and a constant albedo differ by
+  26 K in the yearly mean at the test point. Against Diviner summer data on a 720 m
+  block around it (TH-V3), the published law is 24 K too cold and the constant albedo
+  is within 6 K. The evidence is thin (8 sunlit bins, one site, one season), single
+  240 m cells disagree by up to 70 K in both directions, and the hottest Diviner bin is
+  well above both laws, so the model form is not validated either. The engine default
+  is unchanged; both results are always reported.
 - **Slope dominates and is poorly known.** With the Sun never more than 1.8 degrees
   high, a tilt of one degree changes the absorbed flux severalfold. The slope of a 5 m
   terrain model is used unless the scenario gives one.

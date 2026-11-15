@@ -386,6 +386,188 @@ def _th_x1(_: DataStore) -> Outcome:
     )
 
 
+# ------------------------------------------------- published: Diviner polar temperatures
+_TH_V3_CACHE: dict[str, dict] = {}  # type: ignore[type-arg]
+_TH_V3_TOLERANCE_K = 10.0
+
+
+def _th_v3_data(store: DataStore) -> dict:  # type: ignore[type-arg]
+    """Forward model and Diviner data, computed once per data store for TH-V3 and TH-V3b."""
+    from lunarenv.validation import diviner_pcp as dp
+
+    key = str(store.root)
+    if key in _TH_V3_CACHE:
+        return _TH_V3_CACHE[key]
+    reference = dp.load_reference()
+    keys = [c["key"] for c in reference["cells"]]
+    centres = [(float(c["x_m"]), float(c["y_m"])) for c in reference["cells"]]
+    cells = dp.forward(store, centres, 20.0)
+    tx, ty = reference["test_point_m"]
+    pixel = float(reference["pixel_m"])
+    middle = keys.index(f"{round(tx / pixel)},{round(ty / pixel)}")  # cell holding the test point
+    fine = dp.forward(store, [centres[middle]], 10.0)[0]
+    diviner = np.full((len(keys), dp.N_BINS), np.nan)
+    for b, entry in enumerate(reference["bins"]):
+        for c, k in enumerate(keys):
+            if k in entry["tbol_k"]:
+                diviner[c, b] = entry["tbol_k"][k]
+    _TH_V3_CACHE[key] = {
+        "keys": keys,
+        "cells": cells,
+        "middle": middle,
+        "fine": fine,
+        "diviner": diviner,
+        "reference": reference,
+    }
+    return _TH_V3_CACHE[key]
+
+
+def _tbol(radiance_sum: np.ndarray, count: np.ndarray) -> np.ndarray:
+    with np.errstate(invalid="ignore", divide="ignore"):
+        return np.asarray((radiance_sum / count) ** 0.25)
+
+
+def _th_v3_law(store: DataStore, law: str) -> Outcome:
+    d = _th_v3_data(store)
+    cells, diviner = d["cells"], d["diviner"]
+    model_cell = np.array([_tbol(c.sums[law], c.sums["count"]) for c in cells])  # (cell, bin)
+    visible = np.mean([c.sums["visible"] / c.sums["count"] for c in cells], axis=0)
+    model_block = np.mean(model_cell**4, axis=0) ** 0.25
+    complete = np.all(np.isfinite(diviner), axis=0)
+    diviner_block = np.where(
+        complete, np.mean(np.where(complete, diviner, 0.0) ** 4, axis=0) ** 0.25, np.nan
+    )
+    sunlit = visible >= 0.5
+    used = sunlit & complete
+    every = complete
+    diff = model_block - diviner_block
+    bias = float(np.mean(diff[used])) if used.any() else float("nan")
+    rms = float(np.sqrt(np.mean(diff[used] ** 2))) if used.any() else float("nan")
+    checks = [
+        Check(
+            quantity="bias of block Tbol over sunlit summer bins (model - Diviner)",
+            reference=0.0,
+            measured=bias,
+            tolerance=_TH_V3_TOLERANCE_K,
+            unit="K",
+        ),
+        Check(
+            quantity="RMS over sunlit bins",
+            reference=0.0,
+            measured=rms,
+            unit="K",
+            informational=True,
+        ),
+        Check(
+            quantity="bias over all summer bins with data",
+            reference=0.0,
+            measured=float(np.mean(diff[every])) if every.any() else None,
+            unit="K",
+            informational=True,
+        ),
+        Check(
+            quantity="sunlit bins used / bins with all nine cells",
+            reference=float(every.sum()),
+            measured=float(used.sum()),
+            informational=True,
+        ),
+    ]
+    if every.any():
+        hottest = int(np.nanargmax(np.where(every, diviner_block, -np.inf)))
+        checks.append(
+            Check(
+                quantity=f"bin with the highest Diviner block Tbol (sunlon {3.75 * hottest:.2f} deg): Diviner / model",
+                reference=float(diviner_block[hottest]),
+                measured=float(model_block[hottest]),
+                unit="K",
+                informational=True,
+            )
+        )
+    for c, k in enumerate(d["keys"]):
+        ok = sunlit & np.isfinite(diviner[c])
+        checks.append(
+            Check(
+                quantity=f"cell {k} (240 m units): bias over sunlit bins",
+                reference=0.0,
+                measured=float(np.mean(model_cell[c, ok] - diviner[c, ok])) if ok.any() else None,
+                unit="K",
+                informational=True,
+            )
+        )
+    # spread between individual summers of the model's sunlit-bin block Tbol
+    n_seasons = cells[0].sums["season_count"].size // model_cell.shape[1]
+    season_rad = np.mean(
+        [(c.sums[law + "_season"] / c.sums["season_count"]).reshape(n_seasons, -1) for c in cells],
+        axis=0,
+    )
+    with np.errstate(invalid="ignore"):
+        season_tbol = season_rad**0.25
+        spread = np.nanstd(season_tbol[:, sunlit], axis=0)
+    checks.append(
+        Check(
+            quantity="spread between summers of model sunlit-bin block Tbol (median of per-bin std)",
+            measured=float(np.nanmedian(spread)) if sunlit.any() else None,
+            unit="K",
+            informational=True,
+        )
+    )
+    fine = d["fine"]
+    coarse = cells[d["middle"]]
+    fine_t = _tbol(fine.sums[law], fine.sums["count"])
+    coarse_t = _tbol(coarse.sums[law], coarse.sums["count"])
+    checks.append(
+        Check(
+            quantity="centre cell sunlit-bin mean Tbol, pixels every 20 m / every 10 m",
+            reference=float(np.mean(coarse_t[sunlit])) if sunlit.any() else None,
+            measured=float(np.mean(fine_t[sunlit])) if sunlit.any() else None,
+            unit="K",
+            informational=True,
+        )
+    )
+    reference = d["reference"]
+    notes = (
+        "Reference: Diviner Polar Cumulative Product, diurnal, summer, south pole "
+        f"({reference['source']}), 3 x 3 cells of 240 m centred on the cell containing the test "
+        "point, extracted on "
+        + reference["retrieved_utc"]
+        + " by benchmarks/extract_diviner_pcp.py. "
+        "Radiances are binned before conversion to bolometric temperature (Diviner RDR SIS, "
+        "section 9.1).",
+        "Forward model: every 20 m inside each cell (144 pixels per cell) on the 5 m site DEM, "
+        "ground-level horizon, DEM facet normal, Earth occultation, default regolith "
+        "parameters (emissivity 0.95), hourly 2009-07-05 to 2019-02-17 after a one-year "
+        "spin-up; summer samples (subsolar latitude < 0) binned by subsolar longitude; "
+        "Tbol = (mean eps T^4)^(1/4) over pixels and samples; block = radiance mean of the "
+        "nine cells. Sunlit bins: model block mean visible solar fraction >= 0.5.",
+        "Pre-registered in docs/review/preregistration-th-v3-2026-11-15.md (finding F01 of the "
+        "2026-11-13 scientific review) before implementation and before any Diviner value at "
+        "the site was looked at. The 10 K tolerance is not a Diviner error budget (none was "
+        "found in the sources read); it is set so the two albedo laws, about 26 K apart in the "
+        "yearly mean, can be told apart.",
+        "Not modelled: terrain-scattered sunlight and terrain emission, sub-DEM roughness, the "
+        "timing of Diviner observations inside each bin (the model averages every summer hour), "
+        "the Diviner footprint beyond the 240 m cell, spectral emissivity.",
+    )
+    status = None if used.any() else Status.PARTIAL
+    summary = (
+        f"bias {bias:+.1f} K, RMS {rms:.1f} K over {int(used.sum())} sunlit summer bins"
+        if used.any()
+        else "no sunlit bin with data in all nine cells"
+    )
+    return Outcome(checks, summary, notes, status)
+
+
+def _th_v3(store: DataStore) -> Outcome:
+    return _th_v3_law(store, "hayne")
+
+
+def _th_v3b(store: DataStore) -> Outcome:
+    outcome = _th_v3_law(store, "constant")
+    return Outcome(
+        outcome.checks, outcome.summary + " [constant albedo]", outcome.notes, outcome.status
+    )
+
+
 CASES: tuple[Case, ...] = (
     Case(
         "TH-A1",
@@ -461,15 +643,24 @@ CASES: tuple[Case, ...] = (
     ),
     Case(
         "TH-V3",
-        "Polar surface temperatures at the test site",
+        "Polar summer temperatures on the Shackleton rim against Diviner",
         "published",
-        "Williams2019; Diviner polar products (DIV-PCP)",
-        "bolometric temperature at 240 m aggregation",
-        "not set",
-        pending_reason=(
-            "Not run. The archive location and format of the Diviner polar products were not confirmed, "
-            "and the model omits terrain-scattered and terrain-emitted radiation, so only sunlit, "
-            "level pixels would be comparable. Needs: the data path, and a decision on scattering."
-        ),
+        "Diviner PCP (diurnal, summer), PDS urn:nasa:pds:lro_diviner_derived1",
+        "bias of 720 m block bolometric temperature over sunlit summer bins",
+        "10 K (pre-registered 2026-11-15)",
+        requires=("pgda78.site04.surf", "pgda90.ldem_80s_80mpp"),
+        slow=True,
+        run=_th_v3,
+    ),
+    Case(
+        "TH-V3b",
+        "Polar summer temperatures against Diviner, constant albedo",
+        "published",
+        "Diviner PCP (diurnal, summer), PDS urn:nasa:pds:lro_diviner_derived1",
+        "bias of 720 m block bolometric temperature over sunlit summer bins",
+        "10 K (pre-registered 2026-11-15)",
+        requires=("pgda78.site04.surf", "pgda90.ldem_80s_80mpp"),
+        slow=True,
+        run=_th_v3b,
     ),
 )

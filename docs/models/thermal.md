@@ -183,3 +183,15 @@ linear in steps and cells, about 90 ns per cell and step. The 128-member ensembl
    385.2 / 101.8 / 95.1 K and passes as well as the incidence-dependent law does
    (385.2 / 100.3 / 93.7 K). TH-V1 is therefore no evidence for the albedo law used at
    the pole.
+4. **First polar comparison (TH-V3, TH-V3b, pre-registered 2026-11-15).** Diviner
+   summer Polar Cumulative Product, 3 x 3 cells of 240 m around the test point,
+   bolometric temperature of the 720 m block over the summer subsolar-longitude bins in
+   which the model block sees at least half of the solar disc on average. Published
+   albedo law: bias -23.8 K (FAIL at 10 K). Constant albedo 0.12: +5.7 K (PASS). Caveats
+   that limit what this shows: only 8 of the 64 complete bins qualify as sunlit; per-cell
+   biases range from -70 to +32 K, so the spatial pattern inside the block is not
+   reproduced (Diviner's footprint is larger than a cell, and the model has no terrain
+   radiation or sub-DEM roughness); the hottest Diviner bin (254 K) is 43-67 K above
+   both laws; over all summer bins, sunlit or not, both laws are too cold (-39 / -13 K),
+   as expected without terrain radiation. Pixel sampling (20 m vs 10 m) changes the
+   centre cell by under 0.1 K; the model's summer-to-summer spread is about 1 K.

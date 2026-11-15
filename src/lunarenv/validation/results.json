@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "lunarenv_version": "0.1.0.dev0",
- "generated_utc": "2026-11-13T19:25:15Z",
+ "generated_utc": "2026-11-15T19:08:17Z",
  "results": [
   {
    "id": "ILL-A1",
@@ -1584,18 +1584,307 @@
   },
   {
    "id": "TH-V3",
-   "title": "Polar surface temperatures at the test site",
+   "title": "Polar summer temperatures on the Shackleton rim against Diviner",
    "kind": "published",
-   "source": "Williams2019; Diviner polar products (DIV-PCP)",
-   "metric": "bolometric temperature at 240 m aggregation",
-   "tolerance": "not set",
-   "status": "PENDING",
-   "summary": "Not run. The archive location and format of the Diviner polar products were not confirmed, and the model omits terrain-scattered and terrain-emitted radiation, so only sunlit, level pixels would be comparable. Needs: the data path, and a decision on scattering.",
-   "checks": [],
-   "notes": [],
-   "data": {},
-   "seconds": null,
-   "run_utc": null
+   "source": "Diviner PCP (diurnal, summer), PDS urn:nasa:pds:lro_diviner_derived1",
+   "metric": "bias of 720 m block bolometric temperature over sunlit summer bins",
+   "tolerance": "10 K (pre-registered 2026-11-15)",
+   "status": "FAIL",
+   "summary": "bias -23.8 K, RMS 24.7 K over 8 sunlit summer bins",
+   "checks": [
+    {
+     "quantity": "bias of block Tbol over sunlit summer bins (model - Diviner)",
+     "reference": 0.0,
+     "measured": -23.835773721738683,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "RMS over sunlit bins",
+     "reference": 0.0,
+     "measured": 24.666089820208157,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "bias over all summer bins with data",
+     "reference": 0.0,
+     "measured": -38.67588075538839,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "sunlit bins used / bins with all nine cells",
+     "reference": 64.0,
+     "measured": 8.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "bin with the highest Diviner block Tbol (sunlon 101.25 deg): Diviner / model",
+     "reference": 254.15348134108103,
+     "measured": 187.1197892640349,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -13,-39 (240 m units): bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -30.858430505928165,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -13,-38 (240 m units): bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -6.090437985295078,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -13,-37 (240 m units): bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -35.832617014509516,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -12,-39 (240 m units): bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -0.7891213762375995,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -12,-38 (240 m units): bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -28.26631032448934,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -12,-37 (240 m units): bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -69.8510624708812,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -11,-39 (240 m units): bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -4.971110462619052,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -11,-38 (240 m units): bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -69.74671878393558,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -11,-37 (240 m units): bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -63.36454087926901,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "spread between summers of model sunlit-bin block Tbol (median of per-bin std)",
+     "reference": null,
+     "measured": 0.9963728986029802,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "centre cell sunlit-bin mean Tbol, pixels every 20 m / every 10 m",
+     "reference": 195.6400238394261,
+     "measured": 195.59465758098327,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    }
+   ],
+   "notes": [
+    "Reference: Diviner Polar Cumulative Product, diurnal, summer, south pole (Diviner PCP (diurnal, summer), LRO-L-DLRE-5-GCP-V1.0 / urn:nasa:pds:lro_diviner_derived1:data_derived_pcp), 3 x 3 cells of 240 m centred on the cell containing the test point, extracted on 2026-11-15T19:08:02Z by benchmarks/extract_diviner_pcp.py. Radiances are binned before conversion to bolometric temperature (Diviner RDR SIS, section 9.1).",
+    "Forward model: every 20 m inside each cell (144 pixels per cell) on the 5 m site DEM, ground-level horizon, DEM facet normal, Earth occultation, default regolith parameters (emissivity 0.95), hourly 2009-07-05 to 2019-02-17 after a one-year spin-up; summer samples (subsolar latitude < 0) binned by subsolar longitude; Tbol = (mean eps T^4)^(1/4) over pixels and samples; block = radiance mean of the nine cells. Sunlit bins: model block mean visible solar fraction >= 0.5.",
+    "Pre-registered in docs/review/preregistration-th-v3-2026-11-15.md (finding F01 of the 2026-11-13 scientific review) before implementation and before any Diviner value at the site was looked at. The 10 K tolerance is not a Diviner error budget (none was found in the sources read); it is set so the two albedo laws, about 26 K apart in the yearly mean, can be told apart.",
+    "Not modelled: terrain-scattered sunlight and terrain emission, sub-DEM roughness, the timing of Diviner observations inside each bin (the model averages every summer hour), the Diviner footprint beyond the 240 m cell, spectral emissivity."
+   ],
+   "data": {
+    "pgda78.site04.surf": "38ff70dbdf2f066c2cfa94a646c3a59d653ce7f6b4528b15fc1b43ee397ce758",
+    "pgda90.ldem_80s_80mpp": "82030dcbdd7c4bb0c7d858e9b4b293b9f2cda5a543ba31ec0f42784bd6beee5a"
+   },
+   "seconds": 1369.8766315419925,
+   "run_utc": "2026-11-15T19:08:17Z"
+  },
+  {
+   "id": "TH-V3b",
+   "title": "Polar summer temperatures against Diviner, constant albedo",
+   "kind": "published",
+   "source": "Diviner PCP (diurnal, summer), PDS urn:nasa:pds:lro_diviner_derived1",
+   "metric": "bias of 720 m block bolometric temperature over sunlit summer bins",
+   "tolerance": "10 K (pre-registered 2026-11-15)",
+   "status": "PASS",
+   "summary": "bias +5.7 K, RMS 8.1 K over 8 sunlit summer bins [constant albedo]",
+   "checks": [
+    {
+     "quantity": "bias of block Tbol over sunlit summer bins (model - Diviner)",
+     "reference": 0.0,
+     "measured": 5.668783226935105,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "RMS over sunlit bins",
+     "reference": 0.0,
+     "measured": 8.12101480318225,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "bias over all summer bins with data",
+     "reference": 0.0,
+     "measured": -12.535966956956429,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "sunlit bins used / bins with all nine cells",
+     "reference": 64.0,
+     "measured": 8.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "bin with the highest Diviner block Tbol (sunlon 101.25 deg): Diviner / model",
+     "reference": 254.15348134108103,
+     "measured": 211.22461898755262,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -13,-39 (240 m units): bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -5.759818294928465,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -13,-38 (240 m units): bias over sunlit bins",
+     "reference": 0.0,
+     "measured": 24.80204983927264,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -13,-37 (240 m units): bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -2.73251323611796,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -12,-39 (240 m units): bias over sunlit bins",
+     "reference": 0.0,
+     "measured": 32.483138817334826,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -12,-38 (240 m units): bias over sunlit bins",
+     "reference": 0.0,
+     "measured": 5.561433812069873,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -12,-37 (240 m units): bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -40.15952327624904,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -11,-39 (240 m units): bias over sunlit bins",
+     "reference": 0.0,
+     "measured": 29.25775480209178,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -11,-38 (240 m units): bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -44.88603127484437,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -11,-37 (240 m units): bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -57.70142456374819,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "spread between summers of model sunlit-bin block Tbol (median of per-bin std)",
+     "reference": null,
+     "measured": 0.9630659589042987,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "centre cell sunlit-bin mean Tbol, pixels every 20 m / every 10 m",
+     "reference": 229.4326094525984,
+     "measured": 229.52063876250256,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    }
+   ],
+   "notes": [
+    "Reference: Diviner Polar Cumulative Product, diurnal, summer, south pole (Diviner PCP (diurnal, summer), LRO-L-DLRE-5-GCP-V1.0 / urn:nasa:pds:lro_diviner_derived1:data_derived_pcp), 3 x 3 cells of 240 m centred on the cell containing the test point, extracted on 2026-11-15T19:08:02Z by benchmarks/extract_diviner_pcp.py. Radiances are binned before conversion to bolometric temperature (Diviner RDR SIS, section 9.1).",
+    "Forward model: every 20 m inside each cell (144 pixels per cell) on the 5 m site DEM, ground-level horizon, DEM facet normal, Earth occultation, default regolith parameters (emissivity 0.95), hourly 2009-07-05 to 2019-02-17 after a one-year spin-up; summer samples (subsolar latitude < 0) binned by subsolar longitude; Tbol = (mean eps T^4)^(1/4) over pixels and samples; block = radiance mean of the nine cells. Sunlit bins: model block mean visible solar fraction >= 0.5.",
+    "Pre-registered in docs/review/preregistration-th-v3-2026-11-15.md (finding F01 of the 2026-11-13 scientific review) before implementation and before any Diviner value at the site was looked at. The 10 K tolerance is not a Diviner error budget (none was found in the sources read); it is set so the two albedo laws, about 26 K apart in the yearly mean, can be told apart.",
+    "Not modelled: terrain-scattered sunlight and terrain emission, sub-DEM roughness, the timing of Diviner observations inside each bin (the model averages every summer hour), the Diviner footprint beyond the 240 m cell, spectral emissivity."
+   ],
+   "data": {
+    "pgda78.site04.surf": "38ff70dbdf2f066c2cfa94a646c3a59d653ce7f6b4528b15fc1b43ee397ce758",
+    "pgda90.ldem_80s_80mpp": "82030dcbdd7c4bb0c7d858e9b4b293b9f2cda5a543ba31ec0f42784bd6beee5a"
+   },
+   "seconds": 0.0012590830447152257,
+   "run_utc": "2026-11-15T19:08:17Z"
   }
  ],
  "not_rerun": {
@@ -1604,10 +1893,16 @@
   "ILL-A3": "not selected",
   "ILL-X1": "not selected",
   "ILL-V1": "not selected",
+  "ILL-V2": "not selected",
+  "ILL-V2b": "not selected",
+  "ILL-V5": "not selected",
   "TH-A1": "not selected",
   "TH-A2": "not selected",
   "TH-P1": "not selected",
+  "TH-V1": "not selected",
+  "TH-V1b": "not selected",
   "TH-V2": "not selected",
+  "TH-V2b": "not selected",
   "TH-X1": "not selected"
  }
 }
