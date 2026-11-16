@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from importlib import resources
 from multiprocessing import get_context
 
+import numba
 import numpy as np
 
 from lunarenv.data.store import DataStore
@@ -31,6 +32,7 @@ from lunarenv.illumination.horizon import compute_horizons
 from lunarenv.illumination.products import illumination_series
 from lunarenv.illumination.settings import IlluminationSettings, load_site_stack
 from lunarenv.illumination.terrain import TerrainLevel, TerrainStack, coarsen
+from lunarenv.thermal.albedo_laws import BURGER2024, FOOTE2020
 from lunarenv.thermal.model import ThermalSettings, run_thermal
 from lunarenv.thermal.properties import RegolithProperties
 from lunarenv.thermal.surface import absorbed_solar_flux, surface_normal
@@ -42,10 +44,14 @@ BIN_DEG = 3.75
 SPINUP_START = np.datetime64("2008-07-05T00:00")
 PERIOD_START = np.datetime64("2009-07-05T00:00")
 PERIOD_STOP = np.datetime64("2019-02-18T00:00")
-#: Albedo laws compared: the engine default (Hayne2017 Table A1) and a constant 0.12.
+#: Albedo laws compared: the engine default (Hayne2017 Table A1), a constant 0.12 and the
+#: two bounds of the albedo envelope (lunarenv.thermal.albedo_laws).
 LAWS: dict[str, RegolithProperties] = {
     "hayne": RegolithProperties(),
     "constant": RegolithProperties(albedo_a=0.0, albedo_b=0.0),
+    # envelope bounds, added for TH-V3c (pre-registered 2026-11-16)
+    "burger2024": BURGER2024.apply(RegolithProperties()),
+    "foote2020": FOOTE2020.apply(RegolithProperties()),
 }
 
 
@@ -82,7 +88,9 @@ def _horizon_stack(
 
 
 def _init_worker(data_root: str, horizon_coarsening: int = 1) -> None:
-    os.environ.setdefault("NUMBA_NUM_THREADS", "1")
+    # one numba thread per worker; set at run time (changing NUMBA_NUM_THREADS after numba
+    # is imported fails as soon as a kernel is compiled in the worker)
+    numba.set_num_threads(1)
     store = DataStore(data_root)
     settings = IlluminationSettings()
     utc = np.arange(SPINUP_START, PERIOD_STOP, np.timedelta64(1, "h"))

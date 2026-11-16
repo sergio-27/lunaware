@@ -135,6 +135,11 @@ class RegolithProperties(BaseModel):
     albedo_normal: float = Field(0.12, ge=0.0, lt=1.0, description="A0")
     albedo_a: float = Field(0.06, ge=0.0)
     albedo_b: float = Field(0.25, ge=0.0)
+    albedo_quadratic_deg: tuple[float, float, float] | None = Field(
+        None,
+        description="c0, c1, c2 of an albedo quadratic in incidence angle in degrees, "
+        "A = c0 + c1 i + c2 i^2 (Foote2020 form); replaces A0, a and b when set",
+    )
     heat_flow_w_m2: float = Field(0.018, ge=0.0, description="Q, interior heat flow")
     heat_capacity_model: Literal["hayne2017", "woods_robinson2019"] = Field(
         "hayne2017",
@@ -270,8 +275,15 @@ def albedo(incidence_rad: np.ndarray | float, properties: RegolithProperties) ->
     Vasavada2012, constants from Hayne2017). At grazing incidence it rises steeply
     (A0 + 8a + b at 90 degrees, 0.85 with the defaults), which matters at the poles,
     where sunlight is always grazing on level ground. The result is capped at 1.
+
+    With ``albedo_quadratic_deg`` set, the law is instead a quadratic in the incidence
+    angle in degrees (the form of Foote2020's laboratory fits), clipped to [0, 1].
     """
     theta = np.clip(np.asarray(incidence_rad, dtype=np.float64), 0.0, np.pi / 2.0)
+    if properties.albedo_quadratic_deg is not None:
+        c0, c1, c2 = properties.albedo_quadratic_deg
+        degrees = np.degrees(theta)
+        return np.asarray(np.clip(c0 + degrees * (c1 + degrees * c2), 0.0, 1.0))
     value = (
         properties.albedo_normal
         + properties.albedo_a * (theta / (np.pi / 4.0)) ** 3

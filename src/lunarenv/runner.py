@@ -29,21 +29,25 @@ from lunarenv.geometry.ephemeris import DE440, spice_session
 from lunarenv.geometry.projection import SouthPolarStereographic
 from lunarenv.illumination.eclipse import earth_occultation_factor
 from lunarenv.illumination.horizon import compute_horizons, sun_relevant_incomplete
-from lunarenv.illumination.products import illumination_series, illumination_statistics
+from lunarenv.illumination.products import illumination_series, illumination_statistics, longest_run
 from lunarenv.illumination.settings import NUMERICAL_ERROR_ESTIMATE as ILLUMINATION_ERROR
 from lunarenv.illumination.settings import IlluminationSettings
 from lunarenv.illumination.terrain import TerrainStack, build_stack
 from lunarenv.scenario.schema import Scenario, load_scenario
 from lunarenv.sites import TERRAIN_SETS
+from lunarenv.thermal.albedo_laws import ENVELOPE
 from lunarenv.thermal.model import NUMERICAL_ERROR_ESTIMATE as THERMAL_ERROR
 from lunarenv.thermal.model import run_thermal, summarize
 from lunarenv.thermal.properties import RegolithProperties
 from lunarenv.thermal.surface import (
     absorbed_solar_flux,
+    direct_irradiance,
     neglected_terrain_flux_bound,
     normal_from_slope,
+    plane_normal,
     slope_and_facing,
     surface_normal,
+    view_factors,
 )
 from lunarenv.thermal.uq import DEFAULT_RANGES, sample_properties
 from lunarenv.validation.core import get_validation_status
@@ -124,7 +128,7 @@ class IlluminationModel:
 
 class ThermalModel:
     name = "thermal"
-    version = "0.1"
+    version = "0.2"  # 0.2: albedo envelope, slope grid, asset surfaces, Woods-Robinson c_p option
     requires: tuple[str, ...] = ("illumination",)
 
     def describe(self) -> ModelDescription:
@@ -155,7 +159,8 @@ class ThermalModel:
                 "is an extrapolation.",
                 "Heat-capacity fit stated valid from below 90 K to above 400 K.",
                 "Albedo law fitted on level equatorial ground; at grazing polar incidence it is the "
-                "largest model-form uncertainty (see constant-albedo alternative).",
+                "largest model-form uncertainty; results are bounded by the published laws "
+                "(cold: Bürger 2024, hot: Foote 2020) and a constant-albedo alternative.",
             ),
             parameters=tuple(
                 ParameterInfo(
@@ -172,7 +177,8 @@ class ThermalModel:
             uncertainty_sources=(
                 "Regolith parameters: Latin hypercube over stated intervals (two of them assumptions).",
                 "Terrain: slope and illumination of each DEM error clone.",
-                "Not sampled: the albedo law (reported separately), chi, the heat-capacity polynomial.",
+                "Not sampled: the albedo law (bounded by the envelope instead), chi, the "
+                "heat-capacity law.",
             ),
             validation_cases=(
                 "TH-A1",
@@ -223,6 +229,29 @@ class RunResult:
 
 def _variable(values: np.ndarray, dims: tuple[str, ...], units: str, long_name: str) -> xr.Variable:
     return xr.Variable(dims, values, {"units": units, "long_name": long_name})
+
+
+#: Albedo cases of the envelope as stored in the results: the scenario's own properties
+#: are the middle case (the Hayne2017 law by default).
+ALBEDO_CASES = ("cold", "nominal", "hot")
+
+
+def _envelope_properties(properties: RegolithProperties) -> dict[str, RegolithProperties]:
+    return {
+        "cold": ENVELOPE["cold"].apply(properties),
+        "nominal": properties,
+        "hot": ENVELOPE["hot"].apply(properties),
+    }
+
+
+def _surface_stats(result: Any) -> dict[str, float]:
+    surface = result.surface_temperature_k
+    return {
+        "surface_min_k": float(surface.min()),
+        "surface_max_k": float(surface.max()),
+        "surface_mean_k": float(surface.mean()),
+        "mean_at_1m_k": float(result.at_depth(min(1.0, float(result.depth_m[-1]))).mean()),
+    }
 
 
 def _utc(moment: np.datetime64) -> str:
@@ -581,11 +610,170 @@ def run_scenario(
                 "surface_mean_k": alt.surface_mean_k,
                 "difference_surface_mean_k": alt.surface_mean_k - stats.surface_mean_k,
                 "difference_surface_max_k": alt.surface_max_k - stats.surface_max_k,
-                "status": "not settled: the first polar comparison (TH-V3, TH-V3b, 8 sunlit summer "
-                "bins at one site) favours the constant albedo; equatorial and Apollo cases do "
-                "not discriminate or are not like-for-like",
+                "status": "not settled: a constant 0.12 lies outside the published albedo "
+                "envelope (hot side); against Diviner at the site (8 sunlit summer bins) it is "
+                "+5.7 K (TH-V3b) and the envelope's hot bound -0.4 K (TH-V3c)",
+            }
+        if scenario.thermal.albedo_envelope:
+            envelope_results = {"nominal": thermal_nominal}
+            for case, case_properties in _envelope_properties(properties).items():
+                if case == "nominal":
+                    continue
+                case_flux = absorbed_solar_flux(
+                    nominal["sun_ground"],
+                    nominal["normal"],
+                    case_properties,
+                    eclipse_factor=nominal["eclipse"],
+                )
+                envelope_results[case] = run_thermal(
+                    case_flux, step_s, spin, case_properties, scenario.thermal.settings
+                )
+            coords["albedo_case"] = (
+                "albedo_case",
+                np.array(ALBEDO_CASES),
+                {"units": "1", "long_name": "albedo law: cold bound, scenario law, hot bound"},
+            )
+            variables["surface_temperature_albedo_envelope"] = _variable(
+                np.array([envelope_results[c].surface_temperature_k for c in ALBEDO_CASES]),
+                ("albedo_case", "time"),
+                "K",
+                "surface temperature under the bounds of the published albedo laws",
+            )
+            summary["thermal"]["albedo_envelope"] = {
+                "cold": {
+                    "law": ENVELOPE["cold"].name,
+                    "source": ENVELOPE["cold"].source,
+                    "note": ENVELOPE["cold"].note,
+                    **_surface_stats(envelope_results["cold"]),
+                },
+                "nominal": {
+                    "law": "scenario properties (Hayne2017 by default)",
+                    **_surface_stats(envelope_results["nominal"]),
+                },
+                "hot": {
+                    "law": ENVELOPE["hot"].name,
+                    "source": ENVELOPE["hot"].source,
+                    "note": ENVELOPE["hot"].note,
+                    **_surface_stats(envelope_results["hot"]),
+                },
+                "validation": "TH-V3c: Diviner summer temperatures on a 720 m block at the site "
+                "against both bounds (VALIDATION.md)",
+            }
+        grid = scenario.thermal.slope_grid
+        if grid is not None:
+            orientations = [
+                (s, 360.0 * k / grid.aspects)
+                for s in grid.slopes_deg
+                for k in range(1 if s == 0.0 else grid.aspects)
+            ]
+            laws = _envelope_properties(properties)
+            cases = ALBEDO_CASES if scenario.thermal.albedo_envelope else ("nominal",)
+            table = np.empty((len(orientations), len(cases), 3))
+            rows = []
+            for i, (slope_deg, facing_deg) in enumerate(orientations):
+                normal = normal_from_slope(np.radians(slope_deg), np.radians(facing_deg))
+                row: dict[str, Any] = {
+                    "slope_deg": slope_deg,
+                    "facing_grid_azimuth_deg": facing_deg,
+                }
+                for j, case in enumerate(cases):
+                    case_flux = absorbed_solar_flux(
+                        nominal["sun_ground"], normal, laws[case], eclipse_factor=nominal["eclipse"]
+                    )
+                    surface = run_thermal(
+                        case_flux, step_s, spin, laws[case], scenario.thermal.settings
+                    ).surface_temperature_k
+                    table[i, j] = (surface.min(), surface.max(), surface.mean())
+                    row[case] = dict(
+                        zip(
+                            ("surface_min_k", "surface_max_k", "surface_mean_k"),
+                            table[i, j].tolist(),
+                            strict=True,
+                        )
+                    )
+                rows.append(row)
+            coords["orientation"] = (
+                "orientation",
+                np.arange(len(orientations)),
+                {"units": "1", "long_name": "index of the slope grid orientation"},
+            )
+            coords["orientation_slope"] = (
+                "orientation",
+                np.array([o[0] for o in orientations]),
+                {"units": "degree", "long_name": "ground slope"},
+            )
+            coords["orientation_facing"] = (
+                "orientation",
+                np.array([o[1] for o in orientations]),
+                {"units": "degree", "long_name": "grid azimuth the slope faces"},
+            )
+            coords["statistic"] = (
+                "statistic",
+                np.array(["min", "max", "mean"]),
+                {"units": "1", "long_name": "statistic over the period"},
+            )
+            if "albedo_case" not in coords:
+                coords["albedo_case"] = (
+                    "albedo_case",
+                    np.array(cases),
+                    {"units": "1", "long_name": "albedo law"},
+                )
+            variables["slope_grid_surface_temperature"] = _variable(
+                table,
+                ("orientation", "albedo_case", "statistic"),
+                "K",
+                "surface temperature statistics over the period for ground slopes and aspects",
+            )
+            summary["thermal"]["slope_grid"] = {
+                "note": "nominal terrain horizon; slope of the ground under the observer only. The "
+                "5 m DEM slope is uncertain by about 2 degrees (Barker2021).",
+                "range_surface_max_k": [float(table[:, :, 1].min()), float(table[:, :, 1].max())],
+                "range_surface_min_k": [float(table[:, :, 0].min()), float(table[:, :, 0].max())],
+                "orientations": rows,
             }
         timing["thermal_s"] = time.perf_counter() - tick
+
+    # --------------------------------------------------------------- asset surfaces
+    if scenario.thermal.oriented_surfaces:
+        surfaces_out: dict[str, Any] = {}
+        irradiance_rows = []
+        horizon = nominal["structure"].elevation_rad[0]
+        for item in scenario.thermal.oriented_surfaces:
+            normal = plane_normal(np.radians(item.tilt_deg), np.radians(item.facing_azimuth_deg))
+            irradiance = direct_irradiance(
+                sun, normal, eclipse_factor=np.asarray(nominal["eclipse"])[spin:]
+            )
+            irradiance_rows.append(irradiance)
+            factors = view_factors(horizon, structure.azimuth_rad, normal)
+            dark = longest_run(irradiance <= 0.0, step_s)
+            surfaces_out[item.name] = {
+                "tilt_deg": item.tilt_deg,
+                "facing_grid_azimuth_deg": item.facing_azimuth_deg,
+                "mean_direct_irradiance_w_m2": float(irradiance.mean()),
+                "max_direct_irradiance_w_m2": float(irradiance.max()),
+                "fraction_of_time_with_direct_sun": float((irradiance > 0.0).mean()),
+                "longest_without_direct_sun_hours": dark.duration_s / 3600.0,
+                "sky_view_factor": factors.sky,
+                "ground_view_factor": factors.ground,
+            }
+        coords["surface"] = (
+            "surface",
+            np.array([s.name for s in scenario.thermal.oriented_surfaces]),
+            {"units": "1", "long_name": "asset surface name"},
+        )
+        variables["oriented_direct_irradiance"] = _variable(
+            np.array(irradiance_rows),
+            ("surface", "time"),
+            "W m-2",
+            "direct solar irradiance on the asset surface (no terrain-scattered light)",
+        )
+        summary["oriented_surfaces"] = {
+            "note": "Direct sunlight only, at the observer height of the site; terrain-scattered "
+            "sunlight, terrain infrared and Earthshine are not included (the ground view factor "
+            "scales them). Temperatures of asset surfaces belong in the asset's thermal model "
+            "(HLS-UG-001 section 9).",
+            "surfaces": surfaces_out,
+        }
 
     # ------------------------------------------------------------------- uncertainty
     uncertainty: dict[str, Any] = {
@@ -629,6 +817,10 @@ def run_scenario(
         pick = rng.integers(0, len(members), size=n_members) if members else None
         surfaces = np.empty((n_members, n_period + 1))
         scalars = np.empty((n_members, 4))
+        bounds_on = scenario.thermal.albedo_envelope
+        bound_cases = ("cold", "hot") if bounds_on else ()
+        bound_surfaces = {c: np.empty((n_members, n_period + 1)) for c in bound_cases}
+        bound_scalars = {c: np.empty((n_members, 4)) for c in bound_cases}
         for i, member_properties in enumerate(property_sets):
             terrain_member = members[int(pick[i])] if pick is not None else nominal
             member_flux = absorbed_solar_flux(
@@ -647,6 +839,21 @@ def run_scenario(
                 result.surface_temperature_k.mean(),
                 result.at_depth(min(1.0, float(result.depth_m[-1]))).mean(),
             )
+            # the same member under each bound of the albedo envelope (the law replaces
+            # every albedo parameter, the sampled A0 included)
+            for case in bound_cases:
+                law_properties = _envelope_properties(member_properties)[case]
+                law_flux = absorbed_solar_flux(
+                    terrain_member["sun_ground"],
+                    terrain_member["normal"],
+                    law_properties,
+                    eclipse_factor=terrain_member["eclipse"],
+                )
+                law_result = run_thermal(
+                    law_flux, step_s, spin, law_properties, scenario.thermal.settings
+                )
+                bound_surfaces[case][i] = law_result.surface_temperature_k
+                bound_scalars[case][i] = tuple(_surface_stats(law_result).values())
         coords["quantile"] = (
             "quantile",
             np.array(QUANTILES),
@@ -659,6 +866,47 @@ def run_scenario(
             "quantiles of the surface temperature over the uncertainty ensemble",
         )
         names = ("surface_min_k", "surface_max_k", "surface_mean_k", "mean_at_1m_k")
+        if bounds_on:
+            per_case = {
+                "cold": bound_scalars["cold"],
+                "nominal": scalars,
+                "hot": bound_scalars["hot"],
+            }
+            variables["surface_temperature_envelope_quantiles"] = _variable(
+                np.array(
+                    [
+                        np.quantile(
+                            surfaces if c == "nominal" else bound_surfaces[c], QUANTILES, axis=0
+                        )
+                        for c in ALBEDO_CASES
+                    ]
+                ),
+                ("albedo_case", "quantile", "time"),
+                "K",
+                "quantiles of the surface temperature over the ensemble, per albedo case",
+            )
+            uncertainty["thermal_envelope"] = {
+                "presentation": "Report polar temperatures as these bounds: the lower end is the "
+                "5 % quantile of the coldest albedo case, the upper end the 95 % quantile of the "
+                "hottest. The ensemble quantiles of one case are the spread within that "
+                "scenario, not the uncertainty of the result.",
+                "bounds": {
+                    name: [
+                        float(min(np.quantile(v[:, j], QUANTILES[0]) for v in per_case.values())),
+                        float(max(np.quantile(v[:, j], QUANTILES[-1]) for v in per_case.values())),
+                    ]
+                    for j, name in enumerate(names)
+                },
+                "cases": {
+                    case: {
+                        name: {"quantiles": np.quantile(v[:, j], QUANTILES).tolist()}
+                        for j, name in enumerate(names)
+                    }
+                    for case, v in per_case.items()
+                },
+                "not_included": "terrain-scattered sunlight and terrain infrared (raise minima "
+                "in shadow), low-temperature conductivity, sub-DEM roughness",
+            }
         uncertainty["thermal"] = {
             "members": n_members,
             **{

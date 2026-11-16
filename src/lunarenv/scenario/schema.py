@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from lunarenv.illumination.settings import IlluminationSettings
 from lunarenv.thermal.model import ThermalSettings
@@ -127,6 +127,47 @@ class SurfaceOrientation(_Strict):
     )
 
 
+class OrientedSurface(_Strict):
+    """A plane surface of an asset (panel, radiator, wall) at the site.
+
+    Only the direct solar irradiance on it and its sky and terrain view factors are
+    computed; its temperature depends on the asset and belongs in the asset's own thermal
+    model (HLS-UG-001 section 9).
+    """
+
+    name: str = Field(min_length=1, max_length=40, pattern=r"^[A-Za-z0-9][A-Za-z0-9_\-]*$")
+    tilt_deg: float = Field(
+        ge=0.0, le=90.0, description="Angle from horizontal: 0 faces up, 90 is vertical."
+    )
+    facing_azimuth_deg: float = Field(
+        0.0,
+        ge=0.0,
+        lt=360.0,
+        description="Grid azimuth (from map +y towards +x) the surface faces.",
+    )
+
+
+class SlopeGrid(_Strict):
+    """Regolith temperature over a grid of ground slopes and aspects at the site.
+
+    The DEM slope at one point is uncertain by about 2 degrees (Barker2021), and at
+    grazing sunlight a few degrees of slope change the maximum by tens of kelvin. The
+    grid shows that sensitivity under each law of the albedo envelope.
+    """
+
+    slopes_deg: list[float] = Field(
+        default_factory=lambda: [0.0, 2.0, 5.0, 10.0], min_length=1, max_length=12
+    )
+    aspects: int = Field(8, ge=1, le=36, description="Facing azimuths, equally spaced from 0.")
+
+    @field_validator("slopes_deg")
+    @classmethod
+    def _slopes(cls, value: list[float]) -> list[float]:
+        if any(not 0.0 <= s < 60.0 for s in value):
+            raise ValueError("slopes must be in [0, 60) degrees")
+        return value
+
+
 class ThermalBlock(_Strict):
     enabled: bool = True
     properties: RegolithProperties = Field(default_factory=RegolithProperties)
@@ -137,9 +178,25 @@ class ThermalBlock(_Strict):
         description=(
             "Also compute the result with a constant albedo. The incidence-dependent law was fitted on "
             "level equatorial ground; at grazing polar incidence the two differ by tens of kelvin. "
-            "The first polar comparison with Diviner favours the constant albedo, on thin evidence "
-            "(VALIDATION.md, TH-V3 and TH-V3b)."
+            "A constant 0.12 lies outside the published envelope on the hot side; against "
+            "Diviner at the site it is +5.7 K (VALIDATION.md, TH-V3b)."
         ),
+    )
+    albedo_envelope: bool = Field(
+        True,
+        description=(
+            "Also compute the surface temperature, with its uncertainty ensemble, under the "
+            "cold (Bürger 2024) and hot (Foote 2020) bounds of the published albedo laws; the "
+            "polar result is then reported as bounds, not as one nominal law (review change 2)."
+        ),
+    )
+    slope_grid: SlopeGrid | None = Field(
+        None, description="Regolith temperature over ground slopes and aspects (nominal terrain)."
+    )
+    oriented_surfaces: list[OrientedSurface] = Field(
+        default_factory=list,
+        max_length=32,
+        description="Asset surfaces: direct solar irradiance and sky / terrain view factors.",
     )
 
 

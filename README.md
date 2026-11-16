@@ -85,6 +85,13 @@ period:
   start_utc: 2026-01-01T00:00:00
   end_utc: 2027-01-01T00:00:00
   step_minutes: 60
+thermal:
+  albedo_envelope: true   # cold (Bürger 2024) and hot (Foote 2020) albedo laws
+  slope_grid: {slopes_deg: [0, 2, 5, 10], aspects: 8}
+  oriented_surfaces:      # asset surfaces: direct sunlight and view factors
+    - {name: roof, tilt_deg: 0}
+    - {name: wall-0, tilt_deg: 90, facing_azimuth_deg: 0}
+    # ... (three more walls and a 45 degree panel)
 uncertainty:
   members: 64             # regolith-parameter samples
   terrain_clones: 16      # terrain error clones (uses those in the cache)
@@ -100,18 +107,25 @@ uv run lunarenv run scenarios/shackleton_rim_2026.yaml
 uv run lunarenv report <run_id>
 ```
 
-Output of the run (16 clones in the cache, 109 s on an M1 Pro under load):
+Output of the run (16 clones in the cache, 203 s on an M1 Pro):
 
 ```text
-run f93b88484006a71f  ->  runs/f93b88484006a71f
+run 9c7c607e7f6e01e4  ->  runs/9c7c607e7f6e01e4
 illumination: mean visible solar disc 85.51 %, longest shadow 63 h, longest illumination 2803 h
               terrain ensemble 5/50/95 %: 85.35 / 85.54 / 85.69 %
-thermal: surface 43.3 to 119.2 K (mean 70.3 K) on a 0.39 deg slope
+thermal bounds (albedo envelope x ensemble 5-95 %): surface minimum 41.1-60.2 K, maximum 102.9-200.1 K, mean 60.9-108.5 K
+         nominal terrain: cold law max 106.7 K, scenario law 119.2 K, hot law 163.0 K
+thermal, scenario law: surface 43.3 to 119.2 K (mean 70.3 K) on a 0.39 deg slope
          surface maximum, ensemble 5/50/95 %: 105.6 / 118.4 / 146.8 K
          with constant albedo: mean 96.6 K (+26.3 K); not settled by validation
+         slope grid 0-10 deg, all aspects and laws: surface maximum 101.9 to 252.8 K
+surface roof (tilt 0, facing 0): direct sun mean 12 W m-2, max 45 W m-2, lit 50 %; view factor sky 1.000, ground 0.000
+surface wall-0 (tilt 90, facing 0): direct sun mean 373 W m-2, max 1401 W m-2, lit 46 %; view factor sky 0.517, ground 0.483
+...
 WARNING thermal: temperatures reach 43.3 K, below the 90 K down to which the heat-capacity fit is stated to be valid
 WARNING thermal: regolith properties were derived from data within 70 degrees of the equator; their use at this latitude is an extrapolation
 WARNING thermal: 17.7 % of the period has no direct sunlight; terrain-scattered and terrain-emitted radiation are neglected, so temperatures in shadow are lower bounds
+WARNING thermal: the neglected terrain flux may reach 0.0217 W m-2, 11 % of the 0.19 W m-2 the surface emits at its minimum of 43.3 K; the minimum is a lower bound and may be too cold by several kelvin
 ```
 
 The run directory holds `results.nc` (NetCDF-4, CF attributes, units on every
@@ -128,6 +142,7 @@ result = lunarenv.run_scenario("scenarios/shackleton_rim_2026.yaml", output_dir=
 ds = result.dataset  # xarray.Dataset
 ds["surface_temperature"].max()  # K
 result.metadata["uncertainty"]["thermal"]["surface_max_k"]["quantiles"]  # 5, 50, 95 %
+result.metadata["uncertainty"]["thermal_envelope"]["bounds"]["surface_max_k"]  # [lower, upper] K
 result.metadata["validity"]["warnings"]
 
 lunarenv.describe_models()  # assumptions, validity range, numerical error
@@ -156,8 +171,8 @@ For agents: `lunarenv-mcp`, see [docs/mcp.md](docs/mcp.md).
 ## Validation
 
 [VALIDATION.md](VALIDATION.md) lists every case with its source, metric, tolerance and
-result. Summary (22 cases): 15 pass, 4 fail, 1 partial, 2 pending. Seven cases (TH-V1b,
-ILL-V2b, ILL-V5, TH-V3, TH-V3b, TH-X1b, TH-X1c) follow an independent scientific review and were
+result. Summary (23 cases): 16 pass, 4 fail, 1 partial, 2 pending. Eight cases (TH-V1b,
+ILL-V2b, ILL-V5, TH-V3, TH-V3b, TH-V3c, TH-X1b, TH-X1c) follow an independent scientific review and were
 pre-registered in [docs/review/](docs/review/) before they were run.
 
 | Compared with | Result |
@@ -171,6 +186,7 @@ pre-registered in [docs/review/](docs/review/) before they were run.
 | Apollo 15 and 17 mean temperatures quoted by Hayne et al. 2017 | **fail** with the published parameters (8-10 K low); pass with a constant albedo |
 | heat1d 0.4.1, the current reference code of Hayne et al. 2017 | converged grid (TH-X1c): **pass**, surface within 0.8 K and depth within 0.8 K at 0, 20 and 26 deg. Default grid (TH-X1b): **fail**, night minimum and mean 1.1-1.6 K warmer, because that grid is not converged. The obsolete 0.3.2 (TH-X1): partial, 2-3 K colder at depth |
 | Diviner polar summer temperatures, 720 m block on the Shackleton rim (TH-V3, TH-V3b) | published albedo law: **fail**, 24 K too cold over the sunlit summer bins; constant albedo: pass, +5.7 K (tolerance 10 K). Only 8 bins qualify; single 240 m cells differ by up to 70 K, and both laws are 43-67 K below the hottest Diviner bin |
+| Diviner, same block, against the albedo envelope (TH-V3c) | **pass**, at the hot edge: cold law (Bürger 2024) -34.2 K, hot law (Foote 2020) -0.4 K over the sunlit bins. Diviner lies between the two laws in only 3 of 8 sunlit bins and 5 of 64 summer bins; elsewhere it is warmer than the hot law |
 | Mazarico 2011 site table, Gläser 2014 | pending: references not obtained |
 
 ## Known limitations
@@ -207,24 +223,33 @@ Thermal
   (the low-temperature Woods-Robinson 2019 heat capacity used by NASA's DSNE is an
   option and moves the results by less than 0.3 K; low-temperature conductivity, which
   matters more at depth, is not modelled).
-- **The albedo law at grazing incidence: the first polar comparison favours the constant
-  albedo.** The published incidence-dependent albedo and a constant albedo differ by
-  26 K in the yearly mean at the test point. Against Diviner summer data on a 720 m
-  block around it (TH-V3), the published law is 24 K too cold and the constant albedo
-  is within 6 K. The evidence is thin (8 sunlit bins, one site, one season), single
-  240 m cells disagree by up to 70 K in both directions, and the hottest Diviner bin is
-  well above both laws, so the model form is not validated either. The engine default
-  is unchanged; both results are always reported.
+- **The albedo law at grazing incidence is not known, so polar temperatures are given
+  as bounds.** Published highland laws give 0.24 to 0.86 at the test point's 88 degree
+  incidence. Every run reports the surface temperature under the cold (Bürger 2024) and
+  hot (Foote 2020) laws, each with its ensemble, and the bounds over both: at the test
+  point the yearly maximum lies between 103 and 200 K. Design with the bounds, not the
+  nominal Hayne law. Against Diviner summer data on a 720 m block (TH-V3, TH-V3c) the
+  Hayne law is 24 K too cold, the hot bound 0.4 K too cold and a constant albedo 0.12
+  (outside the envelope) 6 K too warm; Diviner sits at the hot edge of the envelope,
+  above it in most individual bins. The evidence is thin (8 sunlit bins, one site),
+  single 240 m cells disagree by up to 70 K, and terrain radiation is missing.
 - **Slope dominates and is poorly known.** With the Sun never more than 1.8 degrees
   high, a tilt of one degree changes the absorbed flux severalfold. The slope of a 5 m
-  terrain model is used unless the scenario gives one.
+  terrain model is used unless the scenario gives one; a slope grid (`slope_grid`)
+  reports the temperature over slopes and aspects under each albedo law (at the test
+  point, 0-10 degrees: maximum 102 to 253 K).
+- **Ground temperature is not the temperature of a structure.** For asset surfaces
+  (`oriented_surfaces`, any tilt up to vertical) the engine gives the direct solar
+  irradiance and the sky and ground view factors, the inputs of the asset's own thermal
+  model (HLS-UG-001 section 9). At the test point a vertical wall receives up to
+  1400 W m-2 of direct sunlight, level ground 45 W m-2. Terrain-scattered light and
+  terrain infrared on these surfaces are not computed yet.
 - No sunlight scattered or heat radiated by surrounding terrain. Temperatures in shadow
   are lower bounds; an upper bound of the neglected flux is reported (0.02 W m-2 at the
   test point). It is negligible for the mean and maximum there, but about 11 % of what
   the surface emits at its minimum, so minima may be several kelvin too cold; runs warn
   when the bound exceeds 5 % of that emission. Inside craters it would dominate.
 - One-dimensional; no rocks; no volatiles.
-- No thermal comparison with polar measurements exists yet.
 
 Software
 

@@ -165,13 +165,86 @@ def neglected_terrain_flux_bound(
     return NeglectedFluxBound(view, float(flux), float(floor))
 
 
+def plane_normal(tilt_rad: float, facing_azimuth_rad: float) -> FloatArray:
+    """Unit normal of a plane tilted by ``tilt_rad`` from horizontal (0 to 90 degrees
+    inclusive: a vertical wall is allowed), facing grid azimuth ``facing_azimuth_rad``."""
+    if not 0.0 <= tilt_rad <= np.pi / 2 + 1e-12:
+        raise ValueError("tilt must be in [0, 90] degrees")
+    s = np.sin(tilt_rad)
+    return np.array(
+        [s * np.sin(facing_azimuth_rad), s * np.cos(facing_azimuth_rad), np.cos(tilt_rad)]
+    )
+
+
+def direct_irradiance(
+    series: IlluminationSeries, normal: ArrayLike, *, eclipse_factor: ArrayLike | None = None
+) -> FloatArray:
+    """Direct solar irradiance (W m-2) on a plane, before any absorption.
+
+    Limb-darkened visible fraction of the disc above the terrain horizon, Earth
+    occultation, and the cosine of the incidence on the plane (zero from behind).
+    """
+    cosine = np.clip(incidence_cosine(normal, series.elevation_rad, series.azimuth_rad), 0.0, 1.0)
+    irradiance = series.normal_irradiance_w_m2
+    if eclipse_factor is not None:
+        irradiance = irradiance * np.asarray(eclipse_factor, dtype=np.float64)
+    return np.asarray(irradiance * cosine)
+
+
+@dataclass(frozen=True, slots=True)
+class ViewFactors:
+    """Fractions of a plane's diffuse (cosine-weighted) view filled by sky and by ground.
+
+    ``sky + ground = 1``. ``ground`` is the terrain above the local horizontal plus the
+    ground below it that faces the plane; it is the factor that scales terrain-scattered
+    sunlight and terrain infrared reaching the plane.
+    """
+
+    sky: float
+    ground: float
+
+
+def view_factors(
+    horizon_elevation_rad: ArrayLike,
+    azimuth_rad: ArrayLike,
+    normal: ArrayLike,
+    *,
+    n_elevation: int = 360,
+) -> ViewFactors:
+    """Sky and ground view factors of a plane from the horizon profile at its location.
+
+    The sky is every direction above the terrain horizon ``e_h(azimuth)`` (which may be
+    negative for an elevated observer). The view factor integrates ``max(cos, 0) / pi``
+    of the angle to the normal over that solid angle, by the midpoint rule in elevation
+    and the horizon's own azimuth grid. For a level plane and non-negative horizons it
+    equals ``1 - mean(sin^2 e_h)``.
+    """
+    horizon = np.asarray(horizon_elevation_rad, dtype=np.float64)
+    azimuth = np.asarray(azimuth_rad, dtype=np.float64)
+    if horizon.shape != azimuth.shape or horizon.ndim != 1:
+        raise ValueError("horizon and azimuth must be 1-D arrays of the same length")
+    d_azimuth = 2.0 * np.pi / azimuth.size
+    # midpoints between the horizon and the zenith, per azimuth
+    u = (np.arange(n_elevation) + 0.5) / n_elevation
+    elevation = horizon[:, None] + (np.pi / 2 - horizon[:, None]) * u[None, :]
+    d_elevation = (np.pi / 2 - horizon) / n_elevation
+    cosine = np.clip(incidence_cosine(normal, elevation, azimuth[:, None]), 0.0, None)
+    sky = float(np.sum(cosine * np.cos(elevation) * d_elevation[:, None]) * d_azimuth / np.pi)
+    sky = min(max(sky, 0.0), 1.0)
+    return ViewFactors(sky, 1.0 - sky)
+
+
 __all__ = [
     "NeglectedFluxBound",
+    "ViewFactors",
     "absorbed_solar_flux",
     "analytic_absorbed_flux",
+    "direct_irradiance",
     "incidence_cosine",
     "neglected_terrain_flux_bound",
     "normal_from_slope",
+    "plane_normal",
     "slope_and_facing",
     "surface_normal",
+    "view_factors",
 ]

@@ -43,8 +43,25 @@ def _run(args: argparse.Namespace) -> int:
         )
     thermal = meta["summary"].get("thermal")
     if thermal:
+        bounds = meta["uncertainty"].get("thermal_envelope", {}).get("bounds")
+        if bounds:
+            lo_min, hi_min = bounds["surface_min_k"]
+            lo_max, hi_max = bounds["surface_max_k"]
+            lo_mean, hi_mean = bounds["surface_mean_k"]
+            print(
+                "thermal bounds (albedo envelope x ensemble 5-95 %): surface minimum "
+                f"{lo_min:.1f}-{hi_min:.1f} K, maximum {lo_max:.1f}-{hi_max:.1f} K, "
+                f"mean {lo_mean:.1f}-{hi_mean:.1f} K"
+            )
+        envelope = thermal.get("albedo_envelope")
+        if envelope:
+            print(
+                f"         nominal terrain: cold law max {envelope['cold']['surface_max_k']:.1f} K, "
+                f"scenario law {envelope['nominal']['surface_max_k']:.1f} K, "
+                f"hot law {envelope['hot']['surface_max_k']:.1f} K"
+            )
         print(
-            f"thermal: surface {thermal['surface_min_k']:.1f} to {thermal['surface_max_k']:.1f} K "
+            f"thermal, scenario law: surface {thermal['surface_min_k']:.1f} to {thermal['surface_max_k']:.1f} K "
             f"(mean {thermal['surface_mean_k']:.1f} K) on a {thermal['surface_slope_deg']:.2f} deg slope"
         )
         spread = meta["uncertainty"].get("thermal")
@@ -58,6 +75,23 @@ def _run(args: argparse.Namespace) -> int:
             print(
                 f"         with constant albedo: mean {alternative['surface_mean_k']:.1f} K "
                 f"({alternative['difference_surface_mean_k']:+.1f} K); not settled by validation"
+            )
+        grid = thermal.get("slope_grid")
+        if grid:
+            lo, hi = grid["range_surface_max_k"]
+            slopes = sorted({o["slope_deg"] for o in grid["orientations"]})
+            print(
+                f"         slope grid {slopes[0]:g}-{slopes[-1]:g} deg, all aspects and laws: "
+                f"surface maximum {lo:.1f} to {hi:.1f} K"
+            )
+    surfaces = meta["summary"].get("oriented_surfaces")
+    if surfaces:
+        for name, s in surfaces["surfaces"].items():
+            print(
+                f"surface {name} (tilt {s['tilt_deg']:g}, facing {s['facing_grid_azimuth_deg']:g}): "
+                f"direct sun mean {s['mean_direct_irradiance_w_m2']:.0f} W m-2, max "
+                f"{s['max_direct_irradiance_w_m2']:.0f} W m-2, lit {100 * s['fraction_of_time_with_direct_sun']:.0f} %; "
+                f"view factor sky {s['sky_view_factor']:.3f}, ground {s['ground_view_factor']:.3f}"
             )
     for warning in meta["validity"]["warnings"]:
         print(f"WARNING {warning}")

@@ -25,6 +25,13 @@ SCENARIO = {
         "step_minutes": 120,
     },
     "uncertainty": {"members": 4, "terrain_clones": 2, "seed": 7},
+    "thermal": {
+        "slope_grid": {"slopes_deg": [0.0, 5.0], "aspects": 2},
+        "oriented_surfaces": [
+            {"name": "roof", "tilt_deg": 0.0},
+            {"name": "wall-north", "tilt_deg": 90.0, "facing_azimuth_deg": 0.0},
+        ],
+    },
     "illumination": {
         "settings": {"n_azimuth": 360},
         "map": {"half_width_m": 10.0, "n_azimuth": 90},
@@ -66,6 +73,10 @@ def test_every_variable_has_units_and_the_expected_shape(first):
         "surface_temperature_constant_albedo",
         "surface_temperature_quantiles",
         "map_mean_visible_fraction",
+        "surface_temperature_albedo_envelope",
+        "surface_temperature_envelope_quantiles",
+        "slope_grid_surface_temperature",
+        "oriented_direct_irradiance",
     }
     assert expected <= set(dataset.data_vars)
     assert dataset["temperature"].dims == ("time", "depth")
@@ -175,3 +186,26 @@ def test_command_line_run(store, require_data, tmp_path, capsys, monkeypatch):
         len(printed["run_id"]) == 16
         and (tmp_path / "out" / printed["run_id"] / "results.nc").exists()
     )
+
+
+def test_albedo_envelope_brackets_the_nominal_law(first):
+    envelope = first.dataset["surface_temperature_albedo_envelope"]
+    cold, nominal, hot = (envelope.sel(albedo_case=c).values for c in ("cold", "nominal", "hot"))
+    assert np.array_equal(nominal, first.dataset["surface_temperature"].values)
+    # at grazing polar incidence the Bürger law reflects most and the Foote law least
+    assert cold.max() <= nominal.max() <= hot.max()
+    bounds = first.metadata["uncertainty"]["thermal_envelope"]["bounds"]["surface_max_k"]
+    assert bounds[0] < bounds[1]
+    grid = first.dataset["slope_grid_surface_temperature"]
+    assert grid.sizes["orientation"] == 1 + 2 and grid.sizes["albedo_case"] == 3
+
+
+def test_oriented_surfaces_irradiance_and_view_factors(first):
+    surfaces = first.metadata["summary"]["oriented_surfaces"]["surfaces"]
+    roof, wall = surfaces["roof"], surfaces["wall-north"]
+    assert roof["sky_view_factor"] + roof["ground_view_factor"] == pytest.approx(1.0)
+    assert roof["sky_view_factor"] > 0.9 and 0.4 < wall["sky_view_factor"] < 0.6
+    irradiance = first.dataset["oriented_direct_irradiance"]
+    # with the Sun within 2 degrees of the horizon, a wall facing it gets far more than the roof
+    assert float(irradiance.sel(surface="roof").max()) < 60.0
+    assert np.all(irradiance.values >= 0.0)

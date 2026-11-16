@@ -669,6 +669,105 @@ def _th_v3b(store: DataStore) -> Outcome:
     )
 
 
+def _block_bias(store: DataStore, law: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Model minus Diviner block Tbol per bin, the sunlit-bin mask and the complete mask."""
+    d = _th_v3_data(store)
+    cells, diviner = d["cells"], d["diviner"]
+    model_cell = np.array([_tbol(c.sums[law], c.sums["count"]) for c in cells])
+    visible = np.mean([c.sums["visible"] / c.sums["count"] for c in cells], axis=0)
+    complete = np.all(np.isfinite(diviner), axis=0)
+    diviner_block = np.where(
+        complete, np.mean(np.where(complete, diviner, 0.0) ** 4, axis=0) ** 0.25, np.nan
+    )
+    model_block = np.mean(model_cell**4, axis=0) ** 0.25
+    return model_block - diviner_block, (visible >= 0.5) & complete, complete
+
+
+def _th_v3c(store: DataStore) -> Outcome:
+    cold, used, complete = _block_bias(store, "burger2024")
+    hot, _, _ = _block_bias(store, "foote2020")
+    middle, _, _ = _block_bias(store, "hayne")
+    inside = (cold <= 0.0) & (hot >= 0.0)
+    cold_bias, hot_bias = float(np.mean(cold[used])), float(np.mean(hot[used]))
+    checks = [
+        Check(
+            quantity="Diviner colder than the cold law (Bürger 2024), sunlit-bin mean; 0 if not",
+            reference=0.0,
+            measured=max(cold_bias, 0.0),
+            tolerance=_TH_V3_TOLERANCE_K,
+            unit="K",
+        ),
+        Check(
+            quantity="Diviner warmer than the hot law (Foote 2020), sunlit-bin mean; 0 if not",
+            reference=0.0,
+            measured=max(-hot_bias, 0.0),
+            tolerance=_TH_V3_TOLERANCE_K,
+            unit="K",
+        ),
+        Check(
+            quantity="bias of the cold law over sunlit bins (model - Diviner)",
+            measured=cold_bias,
+            unit="K",
+            informational=True,
+        ),
+        Check(
+            quantity="bias of the hot law over sunlit bins (model - Diviner)",
+            measured=hot_bias,
+            unit="K",
+            informational=True,
+        ),
+        Check(
+            quantity="bias of Hayne 2017 (middle) over sunlit bins",
+            measured=float(np.mean(middle[used])),
+            unit="K",
+            informational=True,
+        ),
+        Check(
+            quantity="sunlit bins with Diviner between the two laws / sunlit bins",
+            reference=float(used.sum()),
+            measured=float(inside[used].sum()),
+            informational=True,
+        ),
+        Check(
+            quantity="summer bins with Diviner between the two laws / bins with all nine cells",
+            reference=float(complete.sum()),
+            measured=float(inside[complete].sum()),
+            informational=True,
+        ),
+        Check(
+            quantity="bias over all summer bins with data, cold law",
+            measured=float(np.mean(cold[complete])),
+            unit="K",
+            informational=True,
+        ),
+        Check(
+            quantity="bias over all summer bins with data, hot law",
+            measured=float(np.mean(hot[complete])),
+            unit="K",
+            informational=True,
+        ),
+    ]
+    notes = (
+        "Pre-registered in docs/review/preregistration-th-v3c-2026-11-16.md (change 2 of the "
+        "2026-11-13 scientific review) before either envelope law was run at the site.",
+        "Same data, cells, forward model and sunlit-bin selection as TH-V3; the two envelope "
+        "laws were added to the forward model's law list. Cold bound: Bürger2024 Eq. 15, A0 "
+        "0.09, a 0.10, b 0.02 (0.860 at 88.2 deg). Hot bound: Foote2020 Eq. 9, Apollo 16 "
+        "highland soil, laboratory hemispheric albedo measured to 75 deg and extrapolated "
+        "beyond (0.238 at 88.2 deg). The review attributes the same bounds to DSNE Rev J, "
+        "which could not be obtained.",
+        "PASS means Diviner lies inside the envelope within the 10 K tolerance of TH-V3: cold "
+        "bias at most +10 K and hot bias at least -10 K. It does not select a law. Caveats of "
+        "TH-V3 apply: 8 sunlit bins, one 720 m block, no terrain radiation, per-cell "
+        "patterns not reproduced.",
+    )
+    summary = (
+        f"cold law {cold_bias:+.1f} K, hot law {hot_bias:+.1f} K over "
+        f"{int(used.sum())} sunlit summer bins"
+    )
+    return Outcome(checks, summary, notes)
+
+
 CASES: tuple[Case, ...] = (
     Case(
         "TH-A1",
@@ -781,5 +880,16 @@ CASES: tuple[Case, ...] = (
         requires=("pgda78.site04.surf", "pgda90.ldem_80s_80mpp"),
         slow=True,
         run=_th_v3b,
+    ),
+    Case(
+        "TH-V3c",
+        "Polar summer temperatures against Diviner, inside the albedo envelope",
+        "published",
+        "Diviner PCP (diurnal, summer), PDS urn:nasa:pds:lro_diviner_derived1",
+        "bias of 720 m block bolometric temperature over sunlit summer bins, cold and hot law",
+        "cold <= +10 K and hot >= -10 K (pre-registered 2026-11-16)",
+        requires=("pgda78.site04.surf", "pgda90.ldem_80s_80mpp"),
+        slow=True,
+        run=_th_v3c,
     ),
 )

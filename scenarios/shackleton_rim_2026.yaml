@@ -26,6 +26,17 @@ thermal:
   surface:
     source: dem           # slope of the 5 m terrain model at the site
   constant_albedo_alternative: true
+  albedo_envelope: true  # cold (Bürger 2024) and hot (Foote 2020) albedo bounds
+  slope_grid:            # the 5 m DEM slope is uncertain by about 2 degrees
+    slopes_deg: [0, 2, 5, 10]
+    aspects: 8
+  oriented_surfaces:     # asset surfaces: direct sunlight and view factors only
+    - {name: roof, tilt_deg: 0}
+    - {name: wall-0, tilt_deg: 90, facing_azimuth_deg: 0}
+    - {name: wall-90, tilt_deg: 90, facing_azimuth_deg: 90}
+    - {name: wall-180, tilt_deg: 90, facing_azimuth_deg: 180}
+    - {name: wall-270, tilt_deg: 90, facing_azimuth_deg: 270}
+    - {name: panel-45-0, tilt_deg: 45, facing_azimuth_deg: 0}
 
 uncertainty:
   members: 64

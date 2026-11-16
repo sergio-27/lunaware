@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "lunarenv_version": "0.1.0.dev0",
- "generated_utc": "2026-11-16T10:25:50Z",
+ "generated_utc": "2026-11-16T10:39:59Z",
  "results": [
   {
    "id": "ILL-A1",
@@ -1992,8 +1992,8 @@
     "pgda78.site04.surf": "38ff70dbdf2f066c2cfa94a646c3a59d653ce7f6b4528b15fc1b43ee397ce758",
     "pgda90.ldem_80s_80mpp": "82030dcbdd7c4bb0c7d858e9b4b293b9f2cda5a543ba31ec0f42784bd6beee5a"
    },
-   "seconds": 1369.8766315419925,
-   "run_utc": "2026-11-15T19:08:17Z"
+   "seconds": 2454.7327209170326,
+   "run_utc": "2026-11-16T10:39:59Z"
   },
   {
    "id": "TH-V3b",
@@ -2144,8 +2144,103 @@
     "pgda78.site04.surf": "38ff70dbdf2f066c2cfa94a646c3a59d653ce7f6b4528b15fc1b43ee397ce758",
     "pgda90.ldem_80s_80mpp": "82030dcbdd7c4bb0c7d858e9b4b293b9f2cda5a543ba31ec0f42784bd6beee5a"
    },
-   "seconds": 0.0012590830447152257,
-   "run_utc": "2026-11-15T19:08:17Z"
+   "seconds": 0.000921584025491029,
+   "run_utc": "2026-11-16T10:39:59Z"
+  },
+  {
+   "id": "TH-V3c",
+   "title": "Polar summer temperatures against Diviner, inside the albedo envelope",
+   "kind": "published",
+   "source": "Diviner PCP (diurnal, summer), PDS urn:nasa:pds:lro_diviner_derived1",
+   "metric": "bias of 720 m block bolometric temperature over sunlit summer bins, cold and hot law",
+   "tolerance": "cold <= +10 K and hot >= -10 K (pre-registered 2026-11-16)",
+   "status": "PASS",
+   "summary": "cold law -34.2 K, hot law -0.4 K over 8 sunlit summer bins",
+   "checks": [
+    {
+     "quantity": "Diviner colder than the cold law (B\u00fcrger 2024), sunlit-bin mean; 0 if not",
+     "reference": 0.0,
+     "measured": 0.0,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Diviner warmer than the hot law (Foote 2020), sunlit-bin mean; 0 if not",
+     "reference": 0.0,
+     "measured": 0.3906736997424929,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "bias of the cold law over sunlit bins (model - Diviner)",
+     "reference": null,
+     "measured": -34.18974583590194,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "bias of the hot law over sunlit bins (model - Diviner)",
+     "reference": null,
+     "measured": -0.3906736997424929,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "bias of Hayne 2017 (middle) over sunlit bins",
+     "reference": null,
+     "measured": -23.835773721738683,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "sunlit bins with Diviner between the two laws / sunlit bins",
+     "reference": 8.0,
+     "measured": 3.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "summer bins with Diviner between the two laws / bins with all nine cells",
+     "reference": 64.0,
+     "measured": 5.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "bias over all summer bins with data, cold law",
+     "reference": null,
+     "measured": -47.79122821949144,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "bias over all summer bins with data, hot law",
+     "reference": null,
+     "measured": -17.991719729250626,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    }
+   ],
+   "notes": [
+    "Pre-registered in docs/review/preregistration-th-v3c-2026-11-16.md (change 2 of the 2026-11-13 scientific review) before either envelope law was run at the site.",
+    "Same data, cells, forward model and sunlit-bin selection as TH-V3; the two envelope laws were added to the forward model's law list. Cold bound: B\u00fcrger2024 Eq. 15, A0 0.09, a 0.10, b 0.02 (0.860 at 88.2 deg). Hot bound: Foote2020 Eq. 9, Apollo 16 highland soil, laboratory hemispheric albedo measured to 75 deg and extrapolated beyond (0.238 at 88.2 deg). The review attributes the same bounds to DSNE Rev J, which could not be obtained.",
+    "PASS means Diviner lies inside the envelope within the 10 K tolerance of TH-V3: cold bias at most +10 K and hot bias at least -10 K. It does not select a law. Caveats of TH-V3 apply: 8 sunlit bins, one 720 m block, no terrain radiation, per-cell patterns not reproduced."
+   ],
+   "data": {
+    "pgda78.site04.surf": "38ff70dbdf2f066c2cfa94a646c3a59d653ce7f6b4528b15fc1b43ee397ce758",
+    "pgda90.ldem_80s_80mpp": "82030dcbdd7c4bb0c7d858e9b4b293b9f2cda5a543ba31ec0f42784bd6beee5a"
+   },
+   "seconds": 0.0007414169958792627,
+   "run_utc": "2026-11-16T10:39:59Z"
   }
  ],
  "not_rerun": {
@@ -2165,8 +2260,7 @@
   "TH-V2": "not selected",
   "TH-V2b": "not selected",
   "TH-X1": "not selected",
-  "TH-X1c": "not selected",
-  "TH-V3": "not selected",
-  "TH-V3b": "not selected"
+  "TH-X1b": "not selected",
+  "TH-X1c": "not selected"
  }
 }

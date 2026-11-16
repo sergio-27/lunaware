@@ -13,7 +13,9 @@ the terrain.
 
 It is the thermal environment of the *ground*. A structure has its own geometry,
 optical properties and heat capacity; what this model provides for it is the solar
-input, the ground temperature it sits on and radiates to, and how both vary.
+input, the ground temperature it sits on and radiates to, and how both vary. Asset
+surfaces of any orientation get their direct solar irradiance and view factors (see
+"Bounds" below), not a temperature.
 
 ## Physics
 
@@ -125,9 +127,52 @@ Quantiles are stable with ensemble size: the 5-95 % range of the surface maximum
 ensemble (124 K) is above the nominal value (119 K) because the nominal DEM happens to
 be flatter at this pixel (0.39 degrees) than most of its error clones.
 
-Not sampled: the albedo law itself (reported above as a model-form sensitivity), the
-radiative parameter `chi` and the heat-capacity polynomial (no spread available), and
-relief below the DEM resolution.
+Not sampled: the albedo law itself (bounded instead, see below), the radiative
+parameter `chi` and the heat-capacity polynomial (no spread available), and relief below
+the DEM resolution.
+
+## Bounds: albedo envelope x ensemble (review change 2)
+
+The ensemble above is the spread *within* one albedo law. At grazing polar incidence the
+law itself is the larger unknown (review finding F03): published highland laws give 0.24
+to 0.86 at the test point's 88.2 degree incidence. Results are therefore reported as
+bounds (`albedo_envelope: true`, the default):
+
+| Case | Law | Source | A at 88.2 deg |
+|---|---|---|---|
+| cold | Hayne form, A0 0.09, a 0.10, b 0.02 | Bürger2024 Eq. 15, section 4.2.2 (Diviner fit to 80 deg latitude) | 0.860 |
+| nominal | scenario properties (Hayne2017 Table A1 by default) | Hayne2017 | 0.784 |
+| hot | 1.3299e-5 i^2 - 1.0248e-4 i + 0.14382 (i in degrees) | Foote2020 Eq. 9, Apollo 16 highland soil, laboratory, measured to 75 deg | 0.238 |
+
+The review attributes these two bounds to the DSNE Rev J highland envelope, which could
+not be obtained; the laws are taken from the papers (`lunarenv.thermal.albedo_laws`).
+Each ensemble member is run under every law (the law replaces all albedo parameters,
+the sampled A0 included). The reported bounds are the 5 % quantile of the coldest case
+and the 95 % quantile of the hottest. At the test point (2026): surface minimum 41-60 K,
+maximum 103-200 K, mean 61-109 K, against 43.3 / 119.2 / 70.3 K for the nominal run.
+
+Validation (TH-V3c, pre-registered): Diviner summer temperatures on the 720 m block lie
+inside the envelope on average over the sunlit bins, but at its hot edge (hot law
+-0.4 K, cold law -34.2 K), and above the hot law in 5 of the 8 sunlit bins and in 59
+of 64 summer bins. The hot side of the envelope is therefore the realistic one at this
+site, and the missing terrain radiation and sub-DEM roughness (both of which warm the
+surface) are the likely reasons Diviner is warmer still. The constant albedo 0.12,
+outside the envelope, is kept as a separate alternative.
+
+**Slope grid** (`slope_grid`). The DEM slope at a point is uncertain by about 2 degrees
+(Barker2021). The grid runs the nominal terrain horizon with ground slopes and aspects
+under each law: at the test point, 0-10 degrees and 8 aspects give a surface maximum of
+102 to 253 K.
+
+**Asset surfaces** (`oriented_surfaces`). For plane surfaces of a structure at any tilt
+up to vertical: direct solar irradiance (visible disc above the terrain horizon, Earth
+occultation, incidence on the plane), time with direct sun, the longest period without
+it, and the sky and ground view factors from the horizon profile (`sky + ground = 1`;
+for a level plane `1 - mean(sin^2 e_h)`). Their temperature is not computed: it depends
+on the asset and belongs in its thermal model (HLS-UG-001 section 9). At the test point
+a vertical wall receives up to 1400 W m-2, level ground 45 W m-2. Terrain-scattered
+sunlight and terrain infrared on these surfaces are not computed yet (review change 3);
+the ground view factor scales them.
 
 ## Numerical error at the default settings
 

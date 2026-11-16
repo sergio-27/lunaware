@@ -123,6 +123,40 @@
    "title": "MapBlock",
    "type": "object"
   },
+  "OrientedSurface": {
+   "additionalProperties": false,
+   "description": "A plane surface of an asset (panel, radiator, wall) at the site.\n\nOnly the direct solar irradiance on it and its sky and terrain view factors are\ncomputed; its temperature depends on the asset and belongs in the asset's own thermal\nmodel (HLS-UG-001 section 9).",
+   "properties": {
+    "name": {
+     "maxLength": 40,
+     "minLength": 1,
+     "pattern": "^[A-Za-z0-9][A-Za-z0-9_\\-]*$",
+     "title": "Name",
+     "type": "string"
+    },
+    "tilt_deg": {
+     "description": "Angle from horizontal: 0 faces up, 90 is vertical.",
+     "maximum": 90.0,
+     "minimum": 0.0,
+     "title": "Tilt Deg",
+     "type": "number"
+    },
+    "facing_azimuth_deg": {
+     "default": 0.0,
+     "description": "Grid azimuth (from map +y towards +x) the surface faces.",
+     "exclusiveMaximum": 360.0,
+     "minimum": 0.0,
+     "title": "Facing Azimuth Deg",
+     "type": "number"
+    }
+   },
+   "required": [
+    "name",
+    "tilt_deg"
+   ],
+   "title": "OrientedSurface",
+   "type": "object"
+  },
   "Period": {
    "additionalProperties": false,
    "description": "Time span of the results, in UTC, sampled uniformly.",
@@ -257,6 +291,32 @@
      "title": "Albedo B",
      "type": "number"
     },
+    "albedo_quadratic_deg": {
+     "anyOf": [
+      {
+       "maxItems": 3,
+       "minItems": 3,
+       "prefixItems": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "number"
+        },
+        {
+         "type": "number"
+        }
+       ],
+       "type": "array"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "c0, c1, c2 of an albedo quadratic in incidence angle in degrees, A = c0 + c1 i + c2 i^2 (Foote2020 form); replaces A0, a and b when set",
+     "title": "Albedo Quadratic Deg"
+    },
     "heat_flow_w_m2": {
      "default": 0.018,
      "description": "Q, interior heat flow",
@@ -360,6 +420,31 @@
    "title": "Site",
    "type": "object"
   },
+  "SlopeGrid": {
+   "additionalProperties": false,
+   "description": "Regolith temperature over a grid of ground slopes and aspects at the site.\n\nThe DEM slope at one point is uncertain by about 2 degrees (Barker2021), and at\ngrazing sunlight a few degrees of slope change the maximum by tens of kelvin. The\ngrid shows that sensitivity under each law of the albedo envelope.",
+   "properties": {
+    "slopes_deg": {
+     "items": {
+      "type": "number"
+     },
+     "maxItems": 12,
+     "minItems": 1,
+     "title": "Slopes Deg",
+     "type": "array"
+    },
+    "aspects": {
+     "default": 8,
+     "description": "Facing azimuths, equally spaced from 0.",
+     "maximum": 36,
+     "minimum": 1,
+     "title": "Aspects",
+     "type": "integer"
+    }
+   },
+   "title": "SlopeGrid",
+   "type": "object"
+  },
   "SurfaceOrientation": {
    "additionalProperties": false,
    "description": "Orientation of the surface element whose temperature is computed.",
@@ -426,9 +511,36 @@
     },
     "constant_albedo_alternative": {
      "default": true,
-     "description": "Also compute the result with a constant albedo. The incidence-dependent law was fitted on level equatorial ground; at grazing polar incidence the two differ by tens of kelvin. The first polar comparison with Diviner favours the constant albedo, on thin evidence (VALIDATION.md, TH-V3 and TH-V3b).",
+     "description": "Also compute the result with a constant albedo. The incidence-dependent law was fitted on level equatorial ground; at grazing polar incidence the two differ by tens of kelvin. A constant 0.12 lies outside the published envelope on the hot side; against Diviner at the site it is +5.7 K (VALIDATION.md, TH-V3b).",
      "title": "Constant Albedo Alternative",
      "type": "boolean"
+    },
+    "albedo_envelope": {
+     "default": true,
+     "description": "Also compute the surface temperature, with its uncertainty ensemble, under the cold (B\u00fcrger 2024) and hot (Foote 2020) bounds of the published albedo laws; the polar result is then reported as bounds, not as one nominal law (review change 2).",
+     "title": "Albedo Envelope",
+     "type": "boolean"
+    },
+    "slope_grid": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/SlopeGrid"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Regolith temperature over ground slopes and aspects (nominal terrain)."
+    },
+    "oriented_surfaces": {
+     "description": "Asset surfaces: direct solar irradiance and sky / terrain view factors.",
+     "items": {
+      "$ref": "#/$defs/OrientedSurface"
+     },
+     "maxItems": 32,
+     "title": "Oriented Surfaces",
+     "type": "array"
     }
    },
    "title": "ThermalBlock",

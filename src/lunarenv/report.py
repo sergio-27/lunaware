@@ -174,6 +174,17 @@ def build_figures(
         figures["flux"] = fig
 
         fig, ax = _axes(themed, 3.4)
+        if "surface_temperature_envelope_quantiles" in dataset:
+            envelope = dataset["surface_temperature_envelope_quantiles"].values  # case, q, time
+            ax.fill_between(
+                time,
+                envelope[:, 0, :].min(axis=0),
+                envelope[:, -1, :].max(axis=0),
+                color=c("neutral"),
+                alpha=0.6,
+                linewidth=0,
+                label="bounds: albedo envelope x ensemble 5-95 %",
+            )
         if "surface_temperature_quantiles" in dataset:
             q = dataset["surface_temperature_quantiles"].values
             ax.fill_between(
@@ -421,7 +432,7 @@ CAPTIONS = {
     ),
     "surface_temperature": (
         "Surface temperature",
-        "Nominal result, its uncertainty band, and the same model with a constant albedo. Validation has not settled which albedo applies at grazing incidence; read the two lines as bounds of that open question.",
+        "Nominal result (Hayne 2017 albedo law) with its ensemble band, the wider bounds over the published albedo laws (cold: Bürger 2024, hot: Foote 2020) and the constant-albedo alternative. The bounds, not the nominal line, are the result to design with.",
     ),
     "depth_temperature": (
         "Temperature at depth",
@@ -577,6 +588,72 @@ def render_html(dataset: xr.Dataset, metadata: dict[str, Any]) -> str:
             f"<p><strong>Model-form alternative.</strong> With a constant albedo the surface mean is {alternative['surface_mean_k']:.1f} K "
             f"({alternative['difference_surface_mean_k']:+.1f} K) and the maximum {alternative['surface_max_k']:.1f} K "
             f"({alternative['difference_surface_max_k']:+.1f} K). {e(alternative['status'].capitalize())}. This difference is not part of the ensemble quantiles above.</p>"
+        )
+    bounds = metadata["uncertainty"].get("thermal_envelope", {}).get("bounds")
+    if bounds:
+        labels = {
+            "surface_min_k": "Surface minimum",
+            "surface_max_k": "Surface maximum",
+            "surface_mean_k": "Surface mean",
+            "mean_at_1m_k": "Mean at 1 m",
+        }
+        parts.append("<h3>Thermal bounds</h3>")
+        parts.append(
+            "<p>Lower end: 5 % quantile of the coldest albedo law; upper end: 95 % quantile of the "
+            "hottest (Bürger 2024 and Foote 2020, highland laws). Validation case TH-V3c tests "
+            "whether Diviner polar temperatures at the site fall inside. Terrain-scattered and "
+            "terrain-emitted radiation are not included, so minima in shadow are low.</p>"
+        )
+        parts.append(
+            _table(
+                [("Quantity", False), ("Lower", True), ("Upper", True), ("Unit", False)],
+                [
+                    [e(labels[k]), f"{v[0]:.1f}", f"{v[1]:.1f}", "K"]
+                    for k, v in bounds.items()
+                    if k in labels
+                ],
+            )
+        )
+    grid = metadata["summary"].get("thermal", {}).get("slope_grid")
+    if grid:
+        lo, hi = grid["range_surface_max_k"]
+        parts.append(
+            f"<p><strong>Slope grid.</strong> Over the ground slopes and aspects requested and the "
+            f"albedo laws, the surface maximum ranges from {lo:.1f} to {hi:.1f} K (nominal terrain). "
+            f"{e(grid['note'])}</p>"
+        )
+    surfaces = metadata["summary"].get("oriented_surfaces")
+    if surfaces:
+        parts.append("<h3>Asset surfaces</h3>")
+        parts.append(f"<p>{e(surfaces['note'])}</p>")
+        parts.append(
+            _table(
+                [
+                    ("Surface", False),
+                    ("Tilt (deg)", True),
+                    ("Facing (deg)", True),
+                    ("Mean direct (W m⁻²)", True),
+                    ("Max direct (W m⁻²)", True),
+                    ("Sunlit (%)", True),
+                    ("Longest dark (h)", True),
+                    ("Sky view", True),
+                    ("Ground view", True),
+                ],
+                [
+                    [
+                        e(name),
+                        f"{s['tilt_deg']:g}",
+                        f"{s['facing_grid_azimuth_deg']:g}",
+                        f"{s['mean_direct_irradiance_w_m2']:.0f}",
+                        f"{s['max_direct_irradiance_w_m2']:.0f}",
+                        f"{100 * s['fraction_of_time_with_direct_sun']:.0f}",
+                        f"{s['longest_without_direct_sun_hours']:.0f}",
+                        f"{s['sky_view_factor']:.3f}",
+                        f"{s['ground_view_factor']:.3f}",
+                    ]
+                    for name, s in surfaces["surfaces"].items()
+                ],
+            )
         )
     for name, svg in figures.items():
         title, caption = CAPTIONS[name]
