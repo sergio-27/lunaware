@@ -107,11 +107,12 @@ uv run lunarenv run scenarios/shackleton_rim_2026.yaml
 uv run lunarenv report <run_id>
 ```
 
-Output of the run (16 clones in the cache, 932 s on an M1 Pro, of which about 530 s
-for the terrain patches seen by the asset walls; another job shared the machine):
+Output of the run (16 clones in the cache, 563 s on an M1 Pro; an earlier run of the same
+scenario with another job sharing the machine took 932 s, about 530 s of it for the terrain
+patches seen by the asset walls):
 
 ```text
-run 0f77a7a04f9447cd  ->  runs/0f77a7a04f9447cd
+run 9ea1ea9db8b28cc2  ->  runs/9ea1ea9db8b28cc2
 illumination: mean visible solar disc 85.51 %, longest shadow 63 h, longest illumination 2803 h
               terrain ensemble 5/50/95 %: 85.35 / 85.54 / 85.69 %
 thermal bounds (albedo envelope x ensemble 5-95 %): surface minimum 41.3-60.4 K, maximum 102.9-200.1 K, mean 61.0-108.6 K
@@ -119,6 +120,7 @@ thermal bounds (albedo envelope x ensemble 5-95 %): surface minimum 41.3-60.4 K,
 thermal, scenario law: surface 43.6 to 119.2 K (mean 70.4 K) on a 0.39 deg slope
          surface maximum, ensemble 5/50/95 %: 105.6 / 118.4 / 146.8 K
          with constant albedo: mean 96.7 K (+26.3 K); not settled by validation
+         with woods_robinson2019 conductivity: minimum -3.3 K, mean -1.6 K; means at depth 0.05 m +2.5 K, 0.1 m +3.6 K, 0.3 m +5.2 K, 1 m +7.8 K
          slope grid 0-10 deg, all aspects and laws: surface maximum 101.9 to 252.9 K
          diffuse at the minimum: terrain 8.4e-05 W m-2, Earthshine absorbed 0.006 W m-2; minimum raised +0.01 K (terrain), +0.23 K (Earthshine)
 surface roof (tilt 0, facing 0): direct sun mean 12 W m-2, max 45 W m-2, lit 50 %; view factor sky 1.000, ground 0.000
@@ -129,6 +131,7 @@ surface wall-0 (tilt 90, facing 0): direct sun mean 373 W m-2, max 1401 W m-2, l
 WARNING thermal: temperatures reach 43.6 K, below the 90 K down to which the heat-capacity fit is stated to be valid
 WARNING thermal: regolith properties were derived from data within 70 degrees of the equator; their use at this latitude is an extrapolation
 WARNING thermal: 17.7 % of the period has no direct sunlight; single-bounce terrain radiation and Earthshine are included, multiple scattering and sub-DEM roughness are not
+WARNING thermal: mean temperatures at depth change by up to 7.8 K with the other low-temperature conductivity law (woods_robinson2019); treat depth results as bounded by both (model_form_sensitivity.conductivity)
 ```
 
 The run directory holds `results.nc` (NetCDF-4, CF attributes, units on every
@@ -174,8 +177,9 @@ For agents: `lunarenv-mcp`, see [docs/mcp.md](docs/mcp.md).
 ## Validation
 
 [VALIDATION.md](VALIDATION.md) lists every case with its source, metric, tolerance and
-result. Summary (26 cases): 18 pass, 5 fail, 1 partial, 2 pending. Eleven cases (TH-V1b,
-ILL-V2b, ILL-V5, TH-V3, TH-V3b, TH-V3c, TH-X1b, TH-X1c, TH-A3, TH-C1, TH-V2c) follow an independent scientific review and were
+result. Summary (28 cases): 19 pass, 5 fail, 1 partial, 1 informational, 2 pending. Thirteen
+cases (TH-V1b, ILL-V2b, ILL-V5, TH-V3, TH-V3b, TH-V3c, TH-X1b, TH-X1c, TH-A3, TH-C1,
+TH-V2c, TH-A2b, TH-C2) follow an independent scientific review and were
 pre-registered in [docs/review/](docs/review/) before they were run.
 
 | Compared with | Result |
@@ -193,6 +197,7 @@ pre-registered in [docs/review/](docs/review/) before they were run.
 | Diviner, same block, against the albedo envelope (TH-V3c) | **pass**, at the hot edge: cold law (Bürger 2024) -34.2 K, hot law (Foote 2020) -0.4 K over the sunlit bins. Diviner lies between the two laws in only 3 of 8 sunlit bins and 5 of 64 summer bins; elsewhere it is warmer than the hot law |
 | Spherical bowl crater, single-bounce terrain radiation (TH-A3, Ingersoll et al. 1992) | **pass**: scattered sunlight and terrain infrared within 0.4 % at three shadowed floor points (tolerance 5 %); default patch layout within 3 % |
 | Terrain irradiance at the rim minimum against the earlier 0.0217 W m-2 bound and the review's 0.05 W m-2 threshold (TH-C1) | **pass**: 8.5e-5 W m-2 at most over the three albedo laws; Earthshine 0.006 W m-2 absorbed, +0.23 K on the minimum. With twice the patches the terrain value is 4.5e-5 W m-2: not converged in relative terms, negligible in absolute ones |
+| Low-temperature conductivity, Woods-Robinson et al. 2019 shape below 150 K (TH-A2b, TH-C2) | analytic steady case with the option: **pass** (1e-15). Effect at the test point (sensitivity, no pass/fail): minimum -3.3 K, mean -1.6 K, mean at 0.3 m +5.2 K, at 1 m +7.8 K; equatorial night -0.6 K (still within TH-V1's 2 K) |
 | Mazarico 2011 site table, Gläser 2014 | pending: references not obtained |
 
 ## Known limitations
@@ -227,8 +232,10 @@ Thermal
   run. The regolith properties were fitted to data within 70 degrees of the equator;
   the heat-capacity fit is stated valid from about 90 K, and polar ground gets colder
   (the low-temperature Woods-Robinson 2019 heat capacity used by NASA's DSNE is an
-  option and moves the results by less than 0.3 K; low-temperature conductivity, which
-  matters more at depth, is not modelled).
+  option and moves the results by less than 0.3 K). Conductivity below 150 K is not
+  known for lunar regolith; a Woods-Robinson 2019 low-temperature shape is an option, and
+  every run reports its effect: at the test point the minimum drops by 3.3 K and the mean
+  at 1 m rises by 7.8 K (TH-C2). Treat temperatures at depth as bounded by both laws.
 - **The albedo law at grazing incidence is not known, so polar temperatures are given
   as bounds.** Published highland laws give 0.24 to 0.86 at the test point's 88 degree
   incidence. Every run reports the surface temperature under the cold (Bürger 2024) and
@@ -285,7 +292,7 @@ workloads loaded the machine and are upper bounds.
 | Horizon of one observer, 1440 directions | 0.10-0.13 CPU-s |
 | One year of hourly illumination at a point | 8 ms |
 | One year of hourly temperature at a point, with spin-up | 0.6 CPU-s |
-| Reference scenario: one year, 16 terrain clones, 64 parameter samples, six asset surfaces | 932 s wall-clock (about 530 s for terrain patches) |
+| Reference scenario: one year, 16 terrain clones, 64 parameter samples, six asset surfaces | 563 s wall-clock (932 s with another job sharing the machine, about 530 s of it for terrain patches) |
 | Terrain radiation at a ground point, one year hourly | 1-2 CPU-s per patch point (two-year run, 3 points per patch); at the test point the ground and its slope grid used 131 patches, the asset walls 317 |
 | Map, per pixel, 1440 directions | about 0.1 CPU-s |
 

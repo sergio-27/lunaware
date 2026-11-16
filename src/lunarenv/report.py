@@ -593,6 +593,17 @@ def render_html(dataset: xr.Dataset, metadata: dict[str, Any]) -> str:
             f"({alternative['difference_surface_mean_k']:+.1f} K) and the maximum {alternative['surface_max_k']:.1f} K "
             f"({alternative['difference_surface_max_k']:+.1f} K). {e(alternative['status'].capitalize())}. This difference is not part of the ensemble quantiles above.</p>"
         )
+    k_alt = metadata["model_form_sensitivity"].get("conductivity")
+    if k_alt:
+        changes = ", ".join(
+            f"{e(d)} {v:+.1f} K" for d, v in k_alt["difference_depth_mean_k"].items()
+        )
+        parts.append(
+            f"<p><strong>Low-temperature conductivity.</strong> With the {e(k_alt['conductivity_model'])} law "
+            f"the surface minimum changes by {k_alt['difference_surface_min_k']:+.1f} K and the mean by "
+            f"{k_alt['difference_surface_mean_k']:+.1f} K; the means at depth by {changes}. "
+            f"{e(k_alt['status'].capitalize())}.</p>"
+        )
     bounds = metadata["uncertainty"].get("thermal_envelope", {}).get("bounds")
     if bounds:
         labels = {
@@ -823,6 +834,13 @@ def render_markdown(dataset: xr.Dataset, metadata: dict[str, Any], figure_dir: P
         lines += [
             "",
             f"Model-form alternative (constant albedo): surface mean {alternative['surface_mean_k']:.1f} K ({alternative['difference_surface_mean_k']:+.1f} K), maximum {alternative['surface_max_k']:.1f} K ({alternative['difference_surface_max_k']:+.1f} K). {alternative['status'].capitalize()}.",
+        ]
+    k_alt = metadata["model_form_sensitivity"].get("conductivity")
+    if k_alt:
+        changes = ", ".join(f"{d} {v:+.1f} K" for d, v in k_alt["difference_depth_mean_k"].items())
+        lines += [
+            "",
+            f"Low-temperature conductivity ({k_alt['conductivity_model']}): surface minimum {k_alt['difference_surface_min_k']:+.1f} K, mean {k_alt['difference_surface_mean_k']:+.1f} K; means at depth {changes}. {k_alt['status'].capitalize()}.",
         ]
     for name, figure in build_figures(dataset, metadata, themed=False).items():
         path = figure_dir / f"{name}.png"

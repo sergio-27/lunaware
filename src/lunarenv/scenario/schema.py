@@ -182,6 +182,15 @@ class ThermalBlock(_Strict):
             "Diviner at the site it is +5.7 K (VALIDATION.md, TH-V3b)."
         ),
     )
+    conductivity_alternative: bool = Field(
+        True,
+        description=(
+            "Also compute the nominal case with the other low-temperature conductivity law "
+            "(Woods-Robinson 2019 shape below 150 K, or Hayne2017's constant contact term) and "
+            "report the change of the surface minimum and mean and of the means at depth "
+            "(review finding F09, VALIDATION.md TH-C2)."
+        ),
+    )
     albedo_envelope: bool = Field(
         True,
         description=(

@@ -1044,6 +1044,128 @@ def _th_v2c(_: DataStore) -> Outcome:
     return Outcome(checks, summary, notes)
 
 
+# ------------------------------------------------- F09: low-temperature conductivity
+_LOW_T = "woods_robinson2019"
+
+
+def _th_a2b(_: DataStore) -> Outcome:
+    heat_flow, k = 0.005, 1.0e-5
+    properties = RegolithProperties(
+        surface_conductivity_w_m_k=k,
+        deep_conductivity_w_m_k=k,
+        surface_density_kg_m3=1500.0,
+        deep_density_kg_m3=1500.0,
+        radiative_parameter=2.7,
+        heat_flow_w_m2=heat_flow,
+        conductivity_model=_LOW_T,
+    )
+    grid = geometric_grid(0.004, 1.3, 0.4)
+    result = solve_conduction(
+        grid,
+        properties,
+        np.full(grid.n_cells, 200.0),
+        np.full(400, 0.0),
+        1.0e9,
+        scheme="backward_euler",
+    )
+    surface = (heat_flow / (properties.emissivity * SIGMA)) ** 0.25
+    potential = kirchhoff(result.temperature_k[-1], k, 2.7, 1.0)
+    expected = kirchhoff(surface, k, 2.7, 1.0) + heat_flow * grid.centers_m
+    error = float(np.max(np.abs(potential - expected) / expected))
+    checks = [
+        Check(
+            quantity="surface temperature",
+            reference=float(surface),
+            measured=float(result.surface_temperature_k[-1]),
+            tolerance=1e-6,
+            unit="K",
+        ),
+        Check(
+            quantity="relative error of the Kirchhoff potential profile",
+            reference=0.0,
+            measured=error,
+            tolerance=1e-9,
+        ),
+    ]
+    deepest = float(result.temperature_k[-1, -1])
+    notes = (
+        "Pre-registered in docs/review/preregistration-f09-2026-11-16.md before the option was "
+        "implemented or run.",
+        "conductivity_model = woods_robinson2019: K = K_c [g(T) + chi (T/350)^3], g = 1 above "
+        "150 K, k_am(T)/k_am(150 K) between 20 and 150 K (Woods-Robinson et al. 2019, sec. 4.3, "
+        "G_am with the sign inferred from their Figure 6c) and linear to zero below 20 K. The "
+        "profile runs from the surface through all three branches.",
+    )
+    return Outcome(
+        checks,
+        f"profile error {error:.1e} (relative) from {surface:.1f} K at the surface to "
+        f"{deepest:.0f} K at the base [low-T conductivity]",
+        notes,
+    )
+
+
+def _th_c2(store: DataStore) -> Outcome:
+    from lunarenv.runner import run_scenario
+
+    run = run_scenario(_reference_scenario(terrain_radiation=False, earthshine=False), store=store)
+    alt = run.metadata["model_form_sensitivity"]["conductivity"]
+    nominal = run.metadata["summary"]["thermal"]
+    info: list[tuple[str, float, float]] = [
+        ("Rim, surface minimum", nominal["surface_min_k"], alt["surface_min_k"]),
+        ("Rim, surface mean", nominal["surface_mean_k"], alt["surface_mean_k"]),
+    ]
+    for depth in ("0.3 m", "1 m"):
+        info.append(
+            (
+                f"Rim, mean at {depth}",
+                float(nominal["at_depth"][depth]["mean_k"]),
+                float(alt["depth_mean_k"][depth]),
+            )
+        )
+    low_t = RegolithProperties(conductivity_model=_LOW_T)
+    _, equator = _equator_checks(low_t)
+    info += [
+        ("Equator (TH-V1 setting), noon peak, against 385 K", 385.0, equator[0]),
+        ("Equator, midnight, against 101 K", 101.0, equator[1]),
+        ("Equator, night minimum, against 95 K", 95.0, equator[2]),
+    ]
+    a17 = RegolithProperties(
+        albedo_normal=_SITE_ALBEDO, heat_flow_w_m2=_A17_HEAT_FLOW, conductivity_model=_LOW_T
+    )
+    surface, deep = _apollo_like(_A17_LATITUDE_DEG, a17, 1.30)
+    info += [
+        ("Apollo 17 (TH-V2c setting), surface brightness mean, against 216 K", 216.0, surface),
+        ("Apollo 17, mean at 1.30 m, against 256 K", 256.0, deep),
+    ]
+    checks = [
+        Check(quantity=q, reference=r, measured=m, unit="K", informational=True) for q, r, m in info
+    ]
+    change = alt["difference_depth_mean_k"]
+    notes = (
+        "Pre-registered in docs/review/preregistration-f09-2026-11-16.md (finding F09 of the "
+        "2026-11-13 scientific review) before the option was implemented or run. Sensitivity "
+        "case: no pass/fail.",
+        "Rim rows: reference = the run with the Hayne2017 conductivity, measured = the same run "
+        "with the Woods-Robinson 2019 low-temperature contact term (scenarios/"
+        "shackleton_rim_2026.yaml, nominal albedo law, no ensemble, no slope grid, terrain "
+        "radiation and Earthshine off: TH-C1 shows they move the rim minimum by less than "
+        "0.3 K).",
+        "Equator and Apollo rows: the TH-V1 and TH-V2c settings with the option; TH-V1's 2 K and "
+        "TH-V2c's 5 K are not applied here.",
+        "The option keeps Hayne2017's K_s, K_d and chi, which were fitted with a "
+        "temperature-independent contact term; it is a bound on the conductivity form, not a "
+        "refitted model. No measurement of lunar regolith conductivity below 100 K is known "
+        "to this project.",
+    )
+    summary = (
+        f"rim: minimum {alt['difference_surface_min_k']:+.1f} K, mean "
+        f"{alt['difference_surface_mean_k']:+.1f} K, 0.3 m {change['0.3 m']:+.1f} K, 1 m "
+        f"{change['1 m']:+.1f} K; equator night minimum {equator[2]:.1f} K (95 K); Apollo 17 "
+        f"{surface:.1f} / {deep:.1f} K (216 / 256 K)"
+    )
+    return Outcome(checks, summary, notes)
+
+
 CASES: tuple[Case, ...] = (
     Case(
         "TH-A1",
@@ -1062,6 +1184,15 @@ CASES: tuple[Case, ...] = (
         "relative error of the potential profile",
         "1e-9",
         run=_th_a2,
+    ),
+    Case(
+        "TH-A2b",
+        "Steady conduction with the low-temperature conductivity option",
+        "analytic",
+        "closed form (Kirchhoff transformation)",
+        "relative error of the potential profile, 17 K surface to above 150 K at the base",
+        "1e-9 (pre-registered 2026-11-16)",
+        run=_th_a2b,
     ),
     Case(
         "TH-P1",
@@ -1197,5 +1328,17 @@ CASES: tuple[Case, ...] = (
         requires=(*_REFERENCE_REQUIRES,),
         slow=True,
         run=_th_c1,
+    ),
+    Case(
+        "TH-C2",
+        "Effect of a low-temperature conductivity (Woods-Robinson 2019 shape)",
+        "cross-check",
+        "Woods-Robinson et al. 2019 (sec. 4.3); review finding F09",
+        "change of the rim minimum, mean and means at 0.3 m and 1 m; equator and Apollo 17 "
+        "with the option",
+        "none: sensitivity (pre-registered 2026-11-16)",
+        requires=(*_REFERENCE_REQUIRES,),
+        slow=True,
+        run=_th_c2,
     ),
 )

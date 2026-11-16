@@ -76,6 +76,16 @@ def _run(args: argparse.Namespace) -> int:
                 f"         with constant albedo: mean {alternative['surface_mean_k']:.1f} K "
                 f"({alternative['difference_surface_mean_k']:+.1f} K); not settled by validation"
             )
+        k_alt = meta["model_form_sensitivity"].get("conductivity")
+        if k_alt:
+            changes = ", ".join(
+                f"{d} {v:+.1f} K" for d, v in k_alt["difference_depth_mean_k"].items()
+            )
+            print(
+                f"         with {k_alt['conductivity_model']} conductivity: minimum "
+                f"{k_alt['difference_surface_min_k']:+.1f} K, mean "
+                f"{k_alt['difference_surface_mean_k']:+.1f} K; means at depth {changes}"
+            )
         grid = thermal.get("slope_grid")
         if grid:
             lo, hi = grid["range_surface_max_k"]

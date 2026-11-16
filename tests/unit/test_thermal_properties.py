@@ -127,3 +127,33 @@ def test_woods_robinson_heat_capacity_table_and_enthalpy():
         derivative = (enthalpy(t + h, wr) - enthalpy(t - h, wr)) / (2 * h)
         assert derivative == pytest.approx(heat_capacity(t, wr), rel=1e-6)
         assert temperature_from_enthalpy(enthalpy(t, wr), 0.7 * t, wr) == pytest.approx(t)
+
+
+def test_low_temperature_conductivity_branches() -> None:
+    from lunarenv.thermal.properties import WR_K_LOW_K, WR_K_TOP_K, low_temperature_factor
+
+    assert low_temperature_factor(300.0) == 1.0
+    assert low_temperature_factor(WR_K_TOP_K - 1e-9) == pytest.approx(1.0, abs=1e-8)
+    below = low_temperature_factor(WR_K_LOW_K - 1e-9)
+    assert below == pytest.approx(low_temperature_factor(WR_K_LOW_K), abs=1e-8)
+    # values fixed by the pre-registration (docs/review/preregistration-f09-2026-11-16.md)
+    assert low_temperature_factor(20.0) == pytest.approx(0.152, abs=5e-4)
+    assert low_temperature_factor(95.0) == pytest.approx(0.689, abs=5e-4)
+    assert low_temperature_factor(0.0) == 0.0
+
+
+@pytest.mark.parametrize("t", [5.0, 19.0, 21.0, 43.0, 100.0, 149.0, 151.0, 300.0])
+def test_low_temperature_kirchhoff_is_the_integral(t: float) -> None:
+    h = 1e-4
+    d_phi = (kirchhoff(t + h, 1e-3, 2.7, 1.0) - kirchhoff(t - h, 1e-3, 2.7, 1.0)) / (2 * h)
+    assert d_phi == pytest.approx(conductivity(t, 1e-3, 2.7, 1.0), rel=1e-7)
+    d_k = (conductivity(t + h, 1e-3, 2.7, 1.0) - conductivity(t - h, 1e-3, 2.7, 1.0)) / (2 * h)
+    assert d_k == pytest.approx(conductivity_dt(t, 1e-3, 2.7, 1.0), rel=1e-5)
+
+
+def test_low_temperature_option_leaves_warm_conductivity_and_default_unchanged() -> None:
+    for t in (150.0, 250.0, 400.0):
+        assert conductivity(t, 1e-3, 2.7, 1.0) == conductivity(t, 1e-3, 2.7)
+    assert conductivity(43.0, 1e-3, 2.7, 1.0) < 0.35 * conductivity(43.0, 1e-3, 2.7)
+    p = RegolithProperties(conductivity_model="woods_robinson2019").as_array()
+    assert p[-1] == 1.0 and RegolithProperties().as_array()[-1] == 0.0

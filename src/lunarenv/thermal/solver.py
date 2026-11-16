@@ -12,9 +12,11 @@ Spatial discretization (PLAN.md decision D8): conservative finite volumes.
 * The state variable advanced in time is the specific enthalpy ``e(T)``, the integral of
   ``c_p``; with a temperature-dependent heat capacity this is what makes the stored
   energy change by exactly the net boundary flux.
-* The conductivity is separable, ``K = K_c(z) k(T)`` with ``k(T) = 1 + chi (T/350)^3``,
-  so the heat flux is ``-K_c(z) d(psi)/dz`` with the Kirchhoff variable
-  ``psi(T) = T + chi T^4 / (4 * 350^3)``, which is continuous wherever temperature is.
+* The conductivity is separable, ``K = K_c(z) k(T)`` with ``k(T) = g(T) + chi (T/350)^3``
+  (``g = 1`` by default; the Woods-Robinson 2019 low-temperature shape with
+  ``conductivity_model="woods_robinson2019"``), so the heat flux is ``-K_c(z) d(psi)/dz``
+  with the Kirchhoff variable ``psi(T)``, the integral of ``k`` from 0 to T
+  (``T + chi T^4 / (4 * 350^3)`` by default), continuous wherever temperature is.
   Fluxes are therefore written as differences of ``psi`` across series resistances
   ``dz / (2 K_c)``. This is exact for steady conduction whatever the temperature
   contrast, including the factor-of-several change of conductivity across the top
@@ -59,6 +61,7 @@ from lunarenv.thermal.properties import (
     CP_POSITIVE_MIN_K,
     P_CHI,
     P_EMIS,
+    P_KM,
     P_Q,
     RegolithProperties,
     conductivity,
@@ -96,25 +99,28 @@ STATUS_NOT_FINITE = 2
 
 
 @njit(cache=True)
-def _surface_balance(q_abs, t0, kc0, chi, half_dz, emissivity, guess):  # type: ignore[no-untyped-def]
+def _surface_balance(q_abs, t0, kc0, chi, half_dz, emissivity, guess, low_t):  # type: ignore[no-untyped-def]
     """Surface temperature from Q_abs = eps sigma T^4 + G(T, T_0).
 
     The residual decreases monotonically in T, so Newton is safeguarded by bisection on
     a bracket that always contains the root.
     """
-    phi0 = kirchhoff(t0, kc0, chi)
+    phi0 = kirchhoff(t0, kc0, chi, low_t)
     low = CP_POSITIVE_MIN_K
     high = max(2.0 * guess, 2.0 * t0, 100.0)
-    while q_abs - emissivity * _SIGMA * high**4 - (kirchhoff(high, kc0, chi) - phi0) / half_dz > 0:
+    while (
+        q_abs - emissivity * _SIGMA * high**4 - (kirchhoff(high, kc0, chi, low_t) - phi0) / half_dz
+        > 0
+    ):
         high *= 2.0
     t = min(max(guess, low), high)
     for _ in range(100):
-        f = q_abs - emissivity * _SIGMA * t**4 - (kirchhoff(t, kc0, chi) - phi0) / half_dz
+        f = q_abs - emissivity * _SIGMA * t**4 - (kirchhoff(t, kc0, chi, low_t) - phi0) / half_dz
         if f > 0.0:
             low = t
         else:
             high = t
-        slope = -4.0 * emissivity * _SIGMA * t**3 - conductivity(t, kc0, chi) / half_dz
+        slope = -4.0 * emissivity * _SIGMA * t**3 - conductivity(t, kc0, chi, low_t) / half_dz
         candidate = t - f / slope
         if not (low < candidate < high):
             candidate = 0.5 * (low + high)
@@ -125,9 +131,9 @@ def _surface_balance(q_abs, t0, kc0, chi, half_dz, emissivity, guess):  # type: 
 
 
 @njit(cache=True)
-def _psi(temperature, chi):  # type: ignore[no-untyped-def]
-    """Kirchhoff variable: integral of k(T) = 1 + chi (T/350)^3."""
-    return kirchhoff(temperature, 1.0, chi)
+def _psi(temperature, chi, low_t):  # type: ignore[no-untyped-def]
+    """Kirchhoff variable: integral of k(T) = g(T) + chi (T/350)^3."""
+    return kirchhoff(temperature, 1.0, chi, low_t)
 
 
 @njit(cache=True)
@@ -146,12 +152,12 @@ def _conductances(dz, kc):  # type: ignore[no-untyped-def]
 
 
 @njit(cache=True)
-def _fluxes(t_surface, temp, g, chi, q_base, flux):  # type: ignore[no-untyped-def]
+def _fluxes(t_surface, temp, g, chi, low_t, q_base, flux):  # type: ignore[no-untyped-def]
     """Downward heat flux at every cell face; ``flux[i]`` is the top face of cell ``i``."""
     n = temp.size
-    flux[0] = g[0] * (_psi(t_surface, chi) - _psi(temp[0], chi))
+    flux[0] = g[0] * (_psi(t_surface, chi, low_t) - _psi(temp[0], chi, low_t))
     for i in range(n - 1):
-        flux[i + 1] = g[i + 1] * (_psi(temp[i], chi) - _psi(temp[i + 1], chi))
+        flux[i + 1] = g[i + 1] * (_psi(temp[i], chi, low_t) - _psi(temp[i + 1], chi, low_t))
     flux[n] = -q_base
 
 
@@ -167,6 +173,7 @@ def _implicit_step(  # type: ignore[no-untyped-def]
     """
     n = temp.size
     chi = p[P_CHI]
+    low_t = p[P_KM]
     emissivity = p[P_EMIS]
     q_base = p[P_Q]
     lower = np.empty(n + 1)
@@ -177,13 +184,13 @@ def _implicit_step(  # type: ignore[no-untyped-def]
     ts = t_surface
     for _ in range(_MAX_NEWTON):
         # ---- surface row (index 0)
-        k_above = conductivity(ts, 1.0, chi)
-        psi_above = _psi(ts, chi)
+        k_above = conductivity(ts, 1.0, chi, low_t)
+        psi_above = _psi(ts, chi, low_t)
         if boundary == BC_FLUX:
-            flux_top = g[0] * (psi_above - _psi(temp[0], chi))
+            flux_top = g[0] * (psi_above - _psi(temp[0], chi, low_t))
             residual[0] = forcing - emissivity * _SIGMA * ts**4 - flux_top
             diagonal[0] = -4.0 * emissivity * _SIGMA * ts**3 - g[0] * k_above
-            upper[0] = g[0] * conductivity(temp[0], 1.0, chi)
+            upper[0] = g[0] * conductivity(temp[0], 1.0, chi, low_t)
         else:
             residual[0] = ts - forcing
             diagonal[0] = 1.0
@@ -191,13 +198,13 @@ def _implicit_step(  # type: ignore[no-untyped-def]
         lower[0] = 0.0
         # ---- cells (index i + 1); the face above cell i has conductance g[i]
         for i in range(n):
-            k_self = conductivity(temp[i], 1.0, chi)
-            psi_self = _psi(temp[i], chi)
+            k_self = conductivity(temp[i], 1.0, chi, low_t)
+            psi_self = _psi(temp[i], chi, low_t)
             flux_top = g[i] * (psi_above - psi_self)
             if i < n - 1:
-                flux_bottom = g[i + 1] * (psi_self - _psi(temp[i + 1], chi))
+                flux_bottom = g[i + 1] * (psi_self - _psi(temp[i + 1], chi, low_t))
                 d_bottom_self = g[i + 1] * k_self
-                d_bottom_below = -g[i + 1] * conductivity(temp[i + 1], 1.0, chi)
+                d_bottom_below = -g[i + 1] * conductivity(temp[i + 1], 1.0, chi, low_t)
             else:
                 flux_bottom = -q_base
                 d_bottom_self = 0.0
@@ -266,6 +273,7 @@ def _integrate(  # type: ignore[no-untyped-def]
     """Integrate over the forcing series; outputs are stored at every forcing time."""
     n = initial.size
     chi = p[P_CHI]
+    low_t = p[P_KM]
     emissivity = p[P_EMIS]
     q_base = p[P_Q]
     dz, mass, kc = _cell_arrays(edges, p)
@@ -278,7 +286,7 @@ def _integrate(  # type: ignore[no-untyped-def]
         e_now[i] = enthalpy(temp[i], p)
     e_previous = e_now.copy()
     if boundary == BC_FLUX:
-        ts = _surface_balance(forcing[0], temp[0], kc[0], chi, half, emissivity, temp[0])
+        ts = _surface_balance(forcing[0], temp[0], kc[0], chi, half, emissivity, temp[0], low_t)
     else:
         ts = forcing[0]
     flux = np.empty(n + 1)
@@ -297,7 +305,7 @@ def _integrate(  # type: ignore[no-untyped-def]
             weight = (s + 1.0) / substeps
             forcing_new = forcing[k] * (1.0 - weight) + forcing[k + 1] * weight
             if scheme == EXPLICIT:
-                _fluxes(ts, temp, g, chi, q_base, flux)
+                _fluxes(ts, temp, g, chi, low_t, q_base, flux)
                 for i in range(n):
                     change = -dt * (flux[i + 1] - flux[i]) / mass[i]
                     e_now[i] += change
@@ -305,7 +313,9 @@ def _integrate(  # type: ignore[no-untyped-def]
                     temp[i] = temperature_from_enthalpy(e_now[i], temp[i], p)
                 boundary_input += dt * (flux[0] - flux[n])
                 if boundary == BC_FLUX:
-                    ts = _surface_balance(forcing_new, temp[0], kc[0], chi, half, emissivity, ts)
+                    ts = _surface_balance(
+                        forcing_new, temp[0], kc[0], chi, half, emissivity, ts, low_t
+                    )
                 else:
                     ts = forcing_new
             else:
@@ -320,7 +330,7 @@ def _integrate(  # type: ignore[no-untyped-def]
                     for i in range(n):
                         history[i] = -e_now[i]
                 if theta < 1.0:
-                    _fluxes(ts, temp, g, chi, q_base, flux)
+                    _fluxes(ts, temp, g, chi, low_t, q_base, flux)
                     for i in range(n):
                         old_divergence[i] = flux[i + 1] - flux[i]
                     old_net = flux[0] - flux[n]
@@ -342,7 +352,7 @@ def _integrate(  # type: ignore[no-untyped-def]
                 )
                 if status != STATUS_OK:
                     return status
-                _fluxes(ts, temp, g, chi, q_base, flux)
+                _fluxes(ts, temp, g, chi, low_t, q_base, flux)
                 boundary_input += dt * (theta * (flux[0] - flux[n]) + (1.0 - theta) * old_net)
                 for i in range(n):
                     e_new = enthalpy(temp[i], p)
@@ -374,7 +384,7 @@ def _explicit_limit(edges, p, t_hot):  # type: ignore[no-untyped-def]
     dz, mass, kc = _cell_arrays(edges, p)
     g = _conductances(dz, kc)
     n = dz.size
-    k_hot = conductivity(t_hot, 1.0, p[P_CHI])
+    k_hot = conductivity(t_hot, 1.0, p[P_CHI], p[P_KM])
     limit = math.inf
     for i in range(n):
         below = g[i + 1] if i < n - 1 else 0.0

@@ -118,15 +118,15 @@ class ThermalResult:
         return np.asarray(values[:, index] * (1.0 - weight) + values[:, index + 1] * weight)
 
 
-def _psi(temperature: FloatArray | float, chi: float) -> FloatArray:
-    return np.asarray(kirchhoff(np.asarray(temperature, dtype=np.float64), 1.0, chi))
+def _psi(temperature: FloatArray | float, chi: float, low_t: float = 0.0) -> FloatArray:
+    return np.asarray(kirchhoff(np.asarray(temperature, dtype=np.float64), 1.0, chi, low_t))
 
 
-def _psi_inverse(psi: FloatArray, guess: FloatArray, chi: float) -> FloatArray:
+def _psi_inverse(psi: FloatArray, guess: FloatArray, chi: float, low_t: float = 0.0) -> FloatArray:
     """Temperature whose Kirchhoff variable is ``psi`` (Newton; psi is monotonic)."""
     t = np.array(guess, dtype=np.float64)
     for _ in range(60):
-        step = (_psi(t, chi) - psi) / conductivity(t, 1.0, chi)
+        step = (_psi(t, chi, low_t) - psi) / conductivity(t, 1.0, chi, low_t)
         t = np.maximum(t - step, CP_POSITIVE_MIN_K)
         if float(np.abs(step).max()) < 1e-11:
             break
@@ -153,6 +153,7 @@ def spin_up(
     """Periodic steady state under one cycle of forcing (normally the preceding year)."""
     grid = settings.grid()
     chi = properties.radiative_parameter
+    low_t = 1.0 if properties.conductivity_model == "woods_robinson2019" else 0.0
     flux = np.asarray(absorbed_flux_w_m2, dtype=np.float64)
     if initial_temperature_k is None:
         equilibrium = radiative_equilibrium_temperature(flux, properties.emissivity)
@@ -171,11 +172,11 @@ def spin_up(
             substeps=settings.substeps,
         )
         # one full cycle: the last sample repeats the phase of the first, so it is left out
-        surface_mean = float(_psi(result.surface_temperature_k[1:], chi).mean())
-        cell_mean = _psi(result.temperature_k[1:], chi).mean(axis=0)
+        surface_mean = float(_psi(result.surface_temperature_k[1:], chi, low_t).mean())
+        cell_mean = _psi(result.temperature_k[1:], chi, low_t).mean(axis=0)
         end = result.temperature_k[-1]
-        target = _psi(end, chi) + (surface_mean + offset - cell_mean)
-        new_state = _psi_inverse(target, end, chi)
+        target = _psi(end, chi, low_t) + (surface_mean + offset - cell_mean)
+        new_state = _psi_inverse(target, end, chi, low_t)
         residual = float(np.abs(new_state - state).max())
         state = new_state
         if residual < settings.spinup_tolerance_k:

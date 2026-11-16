@@ -24,7 +24,9 @@ One-dimensional heat conduction, `rho(z) c_p(T) dT/dt = d/dz (K(T, rho) dT/dz)`,
 - density rising exponentially with depth, `rho_s = 1100` to `rho_d = 1800 kg m-3`,
   scale `H = 0.06 m`;
 - conductivity `K = K_c(rho) [1 + chi (T/350)^3]`, the second term being radiative
-  transfer between grains;
+  transfer between grains (alternative: `conductivity_model: woods_robinson2019`, which
+  replaces the 1 by the WoodsRobinson2019 temperature shape `g(T)` below 150 K; see
+  "Low-temperature conductivity" below);
 - heat capacity as a quartic polynomial in temperature (alternative:
   `heat_capacity_model: woods_robinson2019`, the WoodsRobinson2019 estimate as tabulated
   by DSNE);
@@ -76,7 +78,7 @@ each cycle every cell is shifted to satisfy it. *Measured*: convergence to 1e-3 
 | Assumption | Effect |
 |---|---|
 | Regolith properties from Diviner fits at latitudes within 70 degrees | Polar use is an extrapolation; flagged in every result. |
-| Heat-capacity fit stated valid from below 90 K | The test point reaches 43 K. Flagged. The WoodsRobinson2019 c_p adopted by DSNE (SLS-SPEC-159 Rev I, Table 3.4.6.2.2-1, 10-300 K, stated valid 10-400 K) is available as an option; it is 16 % lower at 43 K but changes the reference scenario by -0.13 K at the minimum, -0.03 K in the mean and at most -0.25 K at depth (nominal run, 2026-11-15). The default stays the Hayne2017 polynomial so that the code comparisons (TH-X1, TH-X1b) remain like-for-like. Low-temperature *conductivity* (DSNE: the Hayne relations "will likely over predict" it below 100 K) is not modelled and matters more at depth (review finding F09). |
+| Heat-capacity fit stated valid from below 90 K | The test point reaches 43 K. Flagged. The WoodsRobinson2019 c_p adopted by DSNE (SLS-SPEC-159 Rev I, Table 3.4.6.2.2-1, 10-300 K, stated valid 10-400 K) is available as an option; it is 16 % lower at 43 K but changes the reference scenario by -0.13 K at the minimum, -0.03 K in the mean and at most -0.25 K at depth (nominal run, 2026-11-15). The default stays the Hayne2017 polynomial so that the code comparisons (TH-X1, TH-X1b) remain like-for-like. Low-temperature *conductivity* (DSNE: the Hayne relations "will likely over predict" it below 100 K; review finding F09) is available as an option and every run reports its effect (TH-C2: rim minimum -3.3 K, 1 m mean +7.8 K). |
 | Albedo law fitted to level equatorial ground, applied at grazing polar incidence | **Largest model-form uncertainty.** At 88 degrees incidence the law gives an albedo of 0.79. With a constant albedo of 0.12 instead, the test point is 26 K warmer on average and 50 K warmer at its maximum. |
 | Slope from the 5 m DEM | **Largest input uncertainty.** With the Sun never more than 1.8 degrees high, a tilt of 1 degree changes the absorbed flux severalfold. Slope over a 20 m baseline instead of 5 m raises the maximum by 7 K. |
 | Terrain radiation single bounce; Earthshine from guidebook peak values | Before change 3 the neglected terrain flux was bounded at 0.02 W m-2 at the test point (11 % of the emission at the minimum). With single-bounce terrain radiation the ground at the test point receives 8e-5 W m-2 at its minimum (its 0.4 deg slope hides almost all terrain), and Earthshine 0.006 W m-2 absorbed: +0.01 K and +0.23 K on the minimum (TH-C1). Multiple scattering is not included: inside craters results are lower bounds. Runs warn when the diffuse input at the minimum exceeds 5 % of the emission. |
@@ -328,3 +330,24 @@ scenario law: about 530 s of the 932 s wall-clock reference run on 7 worker proc
    per-cell biases by at most 1.6 K. With 20 m horizons 10 bins qualify as sunlit and
    the biases become -24.2 / +4.5 K. The TH-V3 / TH-V3b outcome does not depend on the
    horizon resolution in this range (review concern on 0 m horizons, cf. ILL-V5).
+5. **Low-temperature conductivity (F09; TH-A2b, TH-C2, pre-registered 2026-11-16).**
+   Option `conductivity_model: woods_robinson2019`: `K = K_c(rho) [g(T) + chi (T/350)^3]`
+   with `g = 1` above 150 K, `g = k_am(T) / k_am(150 K)` between 20 and 150 K (k_am: the
+   WoodsRobinson2019 fit to amorphous SiO2, section 4.3) and linear to zero below 20 K,
+   where the source calls its model nonphysical. `g` is 0.31 at 43 K and 0.69 at 95 K.
+   The sign of the coefficient `G_am` is taken as negative: as printed (positive) the fit
+   gives 6.4 W m-1 K-1 at 300 K, against 1-2 in the source's own Figure 6c; with the
+   negative sign it gives 1.38. The full WoodsRobinson2019 model was not adopted: its
+   constants come from basalt powder, it would replace the Diviner-fitted conductivity at
+   all temperatures, and its density dependence is not separable. Martinez & Siegler
+   (2021) was not accessible. Results: the steady analytic case with the option passes
+   to 1e-15 (TH-A2b). At the rim the option lowers the minimum by 3.3 K and the surface
+   mean by 1.6 K, and raises the mean at 0.3 m by 5.2 K and at 1 m by 7.8 K (TH-C2, terrain
+   radiation off). At the equator it moves the night values by 0.6 K (93.1 K against
+   95 K, still within TH-V1's 2 K); at Apollo 17 (TH-V2c setting) 206.7 / 254.1 K, so it
+   does not close TH-V2c's surface gap. Reading fixed beforehand: the 1 m change exceeds
+   5 K, so depth results are reported with both laws: every run computes the nominal case
+   with the other law (`conductivity_alternative`, on by default) and warns when a mean at
+   depth moves by more than 1 K. The option is a bound on the conductivity form, not a
+   refitted model: Hayne2017's K_s, K_d and chi were fitted with a constant contact term,
+   and no measurement of lunar regolith conductivity below 100 K is known to this project.

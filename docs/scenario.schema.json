@@ -333,6 +333,16 @@
      ],
      "title": "Heat Capacity Model",
      "type": "string"
+    },
+    "conductivity_model": {
+     "default": "hayne2017",
+     "description": "contact-conductivity temperature law: Hayne2017 (constant) or the Woods-Robinson 2019 shape below 150 K (sensitivity option, review finding F09)",
+     "enum": [
+      "hayne2017",
+      "woods_robinson2019"
+     ],
+     "title": "Conductivity Model",
+     "type": "string"
     }
    },
    "title": "RegolithProperties",
@@ -513,6 +523,12 @@
      "default": true,
      "description": "Also compute the result with a constant albedo. The incidence-dependent law was fitted on level equatorial ground; at grazing polar incidence the two differ by tens of kelvin. A constant 0.12 lies outside the published envelope on the hot side; against Diviner at the site it is +5.7 K (VALIDATION.md, TH-V3b).",
      "title": "Constant Albedo Alternative",
+     "type": "boolean"
+    },
+    "conductivity_alternative": {
+     "default": true,
+     "description": "Also compute the nominal case with the other low-temperature conductivity law (Woods-Robinson 2019 shape below 150 K, or Hayne2017's constant contact term) and report the change of the surface minimum and mean and of the means at depth (review finding F09, VALIDATION.md TH-C2).",
+     "title": "Conductivity Alternative",
      "type": "boolean"
     },
     "albedo_envelope": {

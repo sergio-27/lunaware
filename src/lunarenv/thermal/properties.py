@@ -30,6 +30,19 @@ Woods-Robinson et al. (2019) estimate as tabulated by DSNE (SLS-SPEC-159 Rev I, 
 linear to zero below 10 K, and the Hayne polynomial above 300 K (0.3 % below the table
 there). It differs from the polynomial below about 100 K, where the polynomial falls
 towards zero; above 100 K the two agree within 2 %.
+
+Low-temperature conductivity (``conductivity_model="woods_robinson2019"``, review finding
+F09, pre-registered in docs/review/preregistration-f09-2026-11-16.md): the contact term
+gets the temperature shape of Woods-Robinson et al. (2019, section 4.3) below 150 K,
+
+    K = K_c(rho) [g(T) + chi (T / 350)^3],
+
+with g = 1 above 150 K, g = k_am(T) / k_am(150 K) between 20 and 150 K (k_am: their fit to
+amorphous SiO2) and linear to zero below 20 K, where the source calls its model
+nonphysical. The sign of G_am is taken as negative: as printed (positive) the fit gives
+6.4 W m-1 K-1 at 300 K, against 1-2 in the source's own Figure 6c; with the negative sign
+it gives 1.38. This is a sensitivity option: Hayne2017's K_s, K_d and chi, fitted with a
+temperature-independent contact term, are not refitted.
 """
 
 from __future__ import annotations
@@ -38,7 +51,7 @@ import math
 from typing import Literal
 
 import numpy as np
-from numba import njit
+from numba import njit, vectorize
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from lunarenv.core.constants import STEFAN_BOLTZMANN_W_M2_K4
@@ -116,6 +129,103 @@ _WR_E = np.concatenate(
 _WR_TOP = 300.0
 
 
+#: Woods-Robinson et al. (2019) k_am(T) coefficients A..I of
+#: A + B T^-4 + C T^-3 + D T^-2 + E T^-1 + F T + G T^2 + H T^3 + I T^4 (W m-1 K-1);
+#: G with the sign inferred from the source's Figure 6c (see module docstring).
+WR_KAM = np.array(
+    [
+        -2.03297e-1,
+        -11.472,
+        22.5793,
+        -14.3084,
+        3.41742,
+        0.01101,
+        -2.80491e-5,
+        3.35837e-8,
+        -1.40021e-11,
+    ],
+    dtype=np.float64,
+)
+#: Above this temperature the low-temperature option equals the default.
+WR_K_TOP_K = 150.0
+#: Below this temperature g(T) is taken linear to zero.
+WR_K_LOW_K = 20.0
+
+
+@njit(cache=True)
+def _kam(t):  # type: ignore[no-untyped-def]
+    c = WR_KAM
+    return (
+        c[0]
+        + c[1] / t**4
+        + c[2] / t**3
+        + c[3] / t**2
+        + c[4] / t
+        + t * (c[5] + t * (c[6] + t * (c[7] + t * c[8])))
+    )
+
+
+@njit(cache=True)
+def _kam_dt(t):  # type: ignore[no-untyped-def]
+    c = WR_KAM
+    return (
+        -4.0 * c[1] / t**5
+        - 3.0 * c[2] / t**4
+        - 2.0 * c[3] / t**3
+        - c[4] / t**2
+        + c[5]
+        + t * (2.0 * c[6] + t * (3.0 * c[7] + t * 4.0 * c[8]))
+    )
+
+
+@njit(cache=True)
+def _kam_integral(t):  # type: ignore[no-untyped-def]
+    c = WR_KAM
+    return (
+        c[0] * t
+        - c[1] / (3.0 * t**3)
+        - c[2] / (2.0 * t**2)
+        - c[3] / t
+        + c[4] * math.log(t)
+        + t * t * (c[5] / 2.0 + t * (c[6] / 3.0 + t * (c[7] / 4.0 + t * c[8] / 5.0)))
+    )
+
+
+@njit(cache=True)
+def low_temperature_factor(temperature):  # type: ignore[no-untyped-def]
+    """g(T): Woods-Robinson 2019 shape of the contact conductivity, 1 above 150 K."""
+    t = temperature
+    if t >= WR_K_TOP_K:
+        return 1.0
+    top = _kam(WR_K_TOP_K)
+    if t >= WR_K_LOW_K:
+        return _kam(t) / top
+    return _kam(WR_K_LOW_K) / top * t / WR_K_LOW_K
+
+
+@njit(cache=True)
+def _low_temperature_factor_dt(t):  # type: ignore[no-untyped-def]
+    if t >= WR_K_TOP_K:
+        return 0.0
+    top = _kam(WR_K_TOP_K)
+    if t >= WR_K_LOW_K:
+        return _kam_dt(t) / top
+    return _kam(WR_K_LOW_K) / top / WR_K_LOW_K
+
+
+@njit(cache=True)
+def _low_temperature_factor_integral(t):  # type: ignore[no-untyped-def]
+    """Integral of g from 0 to T."""
+    top = _kam(WR_K_TOP_K)
+    g_low = _kam(WR_K_LOW_K) / top
+    if t < WR_K_LOW_K:
+        return 0.5 * g_low * t * t / WR_K_LOW_K
+    below = 0.5 * g_low * WR_K_LOW_K
+    if t < WR_K_TOP_K:
+        return below + (_kam_integral(t) - _kam_integral(WR_K_LOW_K)) / top
+    return below + (_kam_integral(WR_K_TOP_K) - _kam_integral(WR_K_LOW_K)) / top + t - WR_K_TOP_K
+
+
 class RegolithProperties(BaseModel):
     """Parameters of the regolith model (defaults: Hayne2017, Table A1)."""
 
@@ -146,6 +256,11 @@ class RegolithProperties(BaseModel):
         description="c_p law: Hayne2017 polynomial (heat_capacity_coefficients) or the "
         "Woods-Robinson 2019 table of DSNE, polynomial above 300 K",
     )
+    conductivity_model: Literal["hayne2017", "woods_robinson2019"] = Field(
+        "hayne2017",
+        description="contact-conductivity temperature law: Hayne2017 (constant) or the "
+        "Woods-Robinson 2019 shape below 150 K (sensitivity option, review finding F09)",
+    )
 
     @model_validator(mode="after")
     def _check(self) -> RegolithProperties:
@@ -167,13 +282,16 @@ class RegolithProperties(BaseModel):
                 self.emissivity,
                 self.heat_flow_w_m2,
                 1.0 if self.heat_capacity_model == "woods_robinson2019" else 0.0,
+                1.0 if self.conductivity_model == "woods_robinson2019" else 0.0,
             ],
             dtype=np.float64,
         )
 
 
 # indices into RegolithProperties.as_array()
-P_KS, P_KD, P_RHOS, P_RHOD, P_H, P_CHI, P_C0, P_C1, P_C2, P_C3, P_C4, P_EMIS, P_Q, P_CPM = range(14)
+(P_KS, P_KD, P_RHOS, P_RHOD, P_H, P_CHI, P_C0, P_C1, P_C2, P_C3, P_C4, P_EMIS, P_Q, P_CPM, P_KM) = (
+    range(15)
+)
 
 
 @njit(cache=True)
@@ -191,23 +309,44 @@ def contact_conductivity(rho, p):  # type: ignore[no-untyped-def]
     return p[P_KD] - (p[P_KD] - p[P_KS]) * (p[P_RHOD] - rho) / span
 
 
+@vectorize(["float64(float64, float64)"], cache=True)  # type: ignore[no-untyped-call]
+def _contact(temperature, low_t):  # type: ignore[no-untyped-def]
+    return low_temperature_factor(temperature) if low_t > 0.5 else 1.0
+
+
+@vectorize(["float64(float64, float64)"], cache=True)  # type: ignore[no-untyped-call]
+def _contact_dt(temperature, low_t):  # type: ignore[no-untyped-def]
+    return _low_temperature_factor_dt(temperature) if low_t > 0.5 else 0.0
+
+
+@vectorize(["float64(float64, float64)"], cache=True)  # type: ignore[no-untyped-call]
+def _contact_integral(temperature, low_t):  # type: ignore[no-untyped-def]
+    return _low_temperature_factor_integral(temperature) if low_t > 0.5 else temperature
+
+
 @njit(cache=True)
-def conductivity(temperature, k_contact, chi):  # type: ignore[no-untyped-def]
-    """Thermal conductivity (W m-1 K-1) including the radiative T^3 term."""
+def conductivity(temperature, k_contact, chi, low_t=0.0):  # type: ignore[no-untyped-def]
+    """Thermal conductivity (W m-1 K-1) including the radiative T^3 term.
+
+    ``low_t`` > 0.5 selects the Woods-Robinson 2019 low-temperature contact term.
+    """
     ratio = temperature / _REFERENCE_T_K
-    return k_contact * (1.0 + chi * ratio * ratio * ratio)
+    contact = _contact(temperature, low_t)
+    return k_contact * (contact + chi * ratio * ratio * ratio)
 
 
 @njit(cache=True)
-def conductivity_dt(temperature, k_contact, chi):  # type: ignore[no-untyped-def]
+def conductivity_dt(temperature, k_contact, chi, low_t=0.0):  # type: ignore[no-untyped-def]
     """Derivative of the conductivity with respect to temperature."""
-    return k_contact * chi * 3.0 * temperature * temperature / _REFERENCE_T_K**3
+    contact = _contact_dt(temperature, low_t)
+    return k_contact * (contact + chi * 3.0 * temperature * temperature / _REFERENCE_T_K**3)
 
 
 @njit(cache=True)
-def kirchhoff(temperature, k_contact, chi):  # type: ignore[no-untyped-def]
+def kirchhoff(temperature, k_contact, chi, low_t=0.0):  # type: ignore[no-untyped-def]
     """Kirchhoff potential: integral of K from 0 to T (W m-1)."""
-    return k_contact * (temperature + chi * temperature**4 / (4.0 * _REFERENCE_T_K**3))
+    contact = _contact_integral(temperature, low_t)
+    return k_contact * (contact + chi * temperature**4 / (4.0 * _REFERENCE_T_K**3))
 
 
 @njit(cache=True)

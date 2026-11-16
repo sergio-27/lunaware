@@ -59,6 +59,8 @@ _SPINUP_DAYS = 365
 #: Warn when the neglected terrain flux bound exceeds this share of the emission at the
 #: surface minimum (scientific review 2026-11-13, finding F06).
 _NEGLECTED_FLUX_WARNING_RATIO = 0.05
+#: Warn when the other conductivity law moves a mean at depth by more than this.
+_CONDUCTIVITY_WARNING_K = 1.0
 #: Diffuse irradiance components, in the order stored in the results.
 DIFFUSE_COMPONENTS = (
     "terrain_scattered",
@@ -136,7 +138,7 @@ class IlluminationModel:
 
 class ThermalModel:
     name = "thermal"
-    version = "0.3"  # 0.3: single-bounce terrain radiation and Earthshine; 0.2: albedo envelope, slope grid, asset surfaces
+    version = "0.4"  # 0.4: low-temperature conductivity alternative; 0.3: single-bounce terrain radiation and Earthshine; 0.2: albedo envelope, slope grid, asset surfaces
     requires: tuple[str, ...] = ("illumination",)
 
     def describe(self) -> ModelDescription:
@@ -198,7 +200,8 @@ class ThermalModel:
                 "Regolith parameters: Latin hypercube over stated intervals (two of them assumptions).",
                 "Terrain: slope and illumination of each DEM error clone.",
                 "Not sampled: the albedo law (bounded by the envelope instead), chi, the "
-                "heat-capacity law.",
+                "heat-capacity law, the low-temperature conductivity law (the other law is run "
+                "separately and its change reported instead).",
             ),
             validation_cases=(
                 "TH-A1",
@@ -211,9 +214,13 @@ class ThermalModel:
                 "TH-V3",
                 "TH-A3",
                 "TH-C1",
+                "TH-V2c",
+                "TH-A2b",
+                "TH-C2",
             ),
             references=(
                 "Hayne2017",
+                "WoodsRobinson2019",
                 "Vasavada2012",
                 "Keihm1984",
                 "heat1d",
@@ -779,6 +786,52 @@ def run_scenario(
                 "envelope (hot side); against Diviner at the site (8 sunlit summer bins) it is "
                 "+5.7 K (TH-V3b) and the envelope's hot bound -0.4 K (TH-V3c)",
             }
+        if scenario.thermal.conductivity_alternative:
+            other = (
+                "hayne2017"
+                if properties.conductivity_model == "woods_robinson2019"
+                else "woods_robinson2019"
+            )
+            alt_k = run_thermal(
+                flux,
+                step_s,
+                spin,
+                properties.model_copy(update={"conductivity_model": other}),
+                scenario.thermal.settings,
+            )
+            k_stats = summarize(alt_k)
+            depth_change = {
+                f"{d:g} m": float(alt_mean - mean)
+                for d, alt_mean, mean in zip(
+                    k_stats.depth_m, k_stats.depth_mean_k, stats.depth_mean_k, strict=True
+                )
+            }
+            model_form["conductivity"] = {
+                "description": f"same run with conductivity_model = {other!r} (Woods-Robinson "
+                "2019 low-temperature contact term below 150 K, or the Hayne2017 constant one; "
+                "review finding F09, TH-C2)",
+                "conductivity_model": other,
+                "surface_min_k": k_stats.surface_min_k,
+                "surface_max_k": k_stats.surface_max_k,
+                "surface_mean_k": k_stats.surface_mean_k,
+                "difference_surface_min_k": k_stats.surface_min_k - stats.surface_min_k,
+                "difference_surface_mean_k": k_stats.surface_mean_k - stats.surface_mean_k,
+                "depth_mean_k": {
+                    f"{d:g} m": float(m)
+                    for d, m in zip(k_stats.depth_m, k_stats.depth_mean_k, strict=True)
+                },
+                "difference_depth_mean_k": depth_change,
+                "status": "not settled: no measurement of lunar regolith conductivity below "
+                "100 K is known; the option is a sensitivity, not a refitted model",
+            }
+            largest = max((abs(v) for v in depth_change.values()), default=0.0)
+            if largest > _CONDUCTIVITY_WARNING_K:
+                warnings.append(
+                    "thermal: mean temperatures at depth change by up to "
+                    f"{largest:.1f} K with the other low-temperature conductivity law "
+                    f"({other}); treat depth results as bounded by both "
+                    "(model_form_sensitivity.conductivity)"
+                )
         if scenario.thermal.albedo_envelope:
             envelope_results = {"nominal": thermal_nominal}
             for case, case_properties in _envelope_properties(properties).items():
@@ -1192,8 +1245,9 @@ def run_scenario(
                     }
                     for case, v in per_case.items()
                 },
-                "not_included": "terrain-scattered sunlight and terrain infrared (raise minima "
-                "in shadow), low-temperature conductivity, sub-DEM roughness",
+                "not_included": "multiple scattering, the low-temperature conductivity law "
+                "(its effect is reported in model_form_sensitivity.conductivity), sub-DEM "
+                "roughness",
             }
         uncertainty["thermal"] = {
             "members": n_members,

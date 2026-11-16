@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "lunarenv_version": "0.1.0.dev0",
- "generated_utc": "2026-11-16T12:36:52Z",
+ "generated_utc": "2026-11-16T13:23:54Z",
  "results": [
   {
    "id": "ILL-A1",
@@ -1221,8 +1221,43 @@
    ],
    "notes": [],
    "data": {},
-   "seconds": 0.008809957944322377,
-   "run_utc": "2026-11-13T02:15:26Z"
+   "seconds": 3.8892351659596898,
+   "run_utc": "2026-11-16T13:23:43Z"
+  },
+  {
+   "id": "TH-A2b",
+   "title": "Steady conduction with the low-temperature conductivity option",
+   "kind": "analytic",
+   "source": "closed form (Kirchhoff transformation)",
+   "metric": "relative error of the potential profile, 17 K surface to above 150 K at the base",
+   "tolerance": "1e-9 (pre-registered 2026-11-16)",
+   "status": "PASS",
+   "summary": "profile error 1.3e-15 (relative) from 17.5 K at the surface to 242 K at the base [low-T conductivity]",
+   "checks": [
+    {
+     "quantity": "surface temperature",
+     "reference": 17.45455036022379,
+     "measured": 17.454550360223788,
+     "tolerance": 1e-06,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "relative error of the Kirchhoff potential profile",
+     "reference": 0.0,
+     "measured": 1.2549536932898952e-15,
+     "tolerance": 1e-09,
+     "unit": "",
+     "informational": false
+    }
+   ],
+   "notes": [
+    "Pre-registered in docs/review/preregistration-f09-2026-11-16.md before the option was implemented or run.",
+    "conductivity_model = woods_robinson2019: K = K_c [g(T) + chi (T/350)^3], g = 1 above 150 K, k_am(T)/k_am(150 K) between 20 and 150 K (Woods-Robinson et al. 2019, sec. 4.3, G_am with the sign inferred from their Figure 6c) and linear to zero below 20 K. The profile runs from the surface through all three branches."
+   ],
+   "data": {},
+   "seconds": 0.10519629198824987,
+   "run_utc": "2026-11-16T13:23:43Z"
   },
   {
    "id": "TH-P1",
@@ -1314,8 +1349,8 @@
     "This case does not discriminate between albedo laws: with a constant albedo of 0.12 the same checks also pass (TH-V1b, pre-registered). It is therefore no evidence for the incidence-dependent albedo used at the pole."
    ],
    "data": {},
-   "seconds": 0.0886583750252612,
-   "run_utc": "2026-11-13T19:25:15Z"
+   "seconds": 0.3703999170102179,
+   "run_utc": "2026-11-16T13:23:43Z"
   },
   {
    "id": "TH-V1b",
@@ -2340,8 +2375,8 @@
     "Apollo 15 is informational: the final report gives 207 +/- 7 K (not the 211 K quoted by Hayne2017, whose source, Keihm et al. 1973 EPSL, was not read), computed from night data supplemented by daytime models, and lowered mainly by early-morning shadowing from the local topography, which a 1-D level model does not have."
    ],
    "data": {},
-   "seconds": 0.732612291991245,
-   "run_utc": "2026-11-16T12:36:52Z"
+   "seconds": 0.3389115000027232,
+   "run_utc": "2026-11-16T13:23:43Z"
   },
   {
    "id": "TH-A3",
@@ -2618,6 +2653,107 @@
    },
    "seconds": 400.40700929198647,
    "run_utc": "2026-11-16T12:18:39Z"
+  },
+  {
+   "id": "TH-C2",
+   "title": "Effect of a low-temperature conductivity (Woods-Robinson 2019 shape)",
+   "kind": "cross-check",
+   "source": "Woods-Robinson et al. 2019 (sec. 4.3); review finding F09",
+   "metric": "change of the rim minimum, mean and means at 0.3 m and 1 m; equator and Apollo 17 with the option",
+   "tolerance": "none: sensitivity (pre-registered 2026-11-16)",
+   "status": "INFO",
+   "summary": "rim: minimum -3.3 K, mean -1.6 K, 0.3 m +5.2 K, 1 m +7.8 K; equator night minimum 93.1 K (95 K); Apollo 17 206.7 / 254.1 K (216 / 256 K)",
+   "checks": [
+    {
+     "quantity": "Rim, surface minimum",
+     "reference": 43.31433671183577,
+     "measured": 39.981916986924304,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Rim, surface mean",
+     "reference": 70.30110179481908,
+     "measured": 68.7203743684965,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Rim, mean at 0.3 m",
+     "reference": 72.66450511480173,
+     "measured": 77.87849214952858,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Rim, mean at 1 m",
+     "reference": 76.82331869341293,
+     "measured": 84.65472466923245,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Equator (TH-V1 setting), noon peak, against 385 K",
+     "reference": 385.0,
+     "measured": 385.1963951062026,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Equator, midnight, against 101 K",
+     "reference": 101.0,
+     "measured": 99.72736934190814,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Equator, night minimum, against 95 K",
+     "reference": 95.0,
+     "measured": 93.06924824651799,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Apollo 17 (TH-V2c setting), surface brightness mean, against 216 K",
+     "reference": 216.0,
+     "measured": 206.74817362813903,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Apollo 17, mean at 1.30 m, against 256 K",
+     "reference": 256.0,
+     "measured": 254.14295999784218,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    }
+   ],
+   "notes": [
+    "Pre-registered in docs/review/preregistration-f09-2026-11-16.md (finding F09 of the 2026-11-13 scientific review) before the option was implemented or run. Sensitivity case: no pass/fail.",
+    "Rim rows: reference = the run with the Hayne2017 conductivity, measured = the same run with the Woods-Robinson 2019 low-temperature contact term (scenarios/shackleton_rim_2026.yaml, nominal albedo law, no ensemble, no slope grid, terrain radiation and Earthshine off: TH-C1 shows they move the rim minimum by less than 0.3 K).",
+    "Equator and Apollo rows: the TH-V1 and TH-V2c settings with the option; TH-V1's 2 K and TH-V2c's 5 K are not applied here.",
+    "The option keeps Hayne2017's K_s, K_d and chi, which were fitted with a temperature-independent contact term; it is a bound on the conductivity form, not a refitted model. No measurement of lunar regolith conductivity below 100 K is known to this project."
+   ],
+   "data": {
+    "pgda78.site04.surf": "38ff70dbdf2f066c2cfa94a646c3a59d653ce7f6b4528b15fc1b43ee397ce758",
+    "pgda90.ldem_80s_80mpp": "82030dcbdd7c4bb0c7d858e9b4b293b9f2cda5a543ba31ec0f42784bd6beee5a",
+    "naif.lsk": "678e32bdb5a744117a467cd9601cd6b373f0e9bc9bbde1371d5eee39600a039b",
+    "naif.pck.text": "3dff7b1dbeceaa01f25467767d3fa25816051c85d162d1edf04acb310ee28bb1",
+    "naif.spk.de440s": "c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2",
+    "naif.pck.moon_pa_de440": "60cd55aa401ea2ea97360636f567554bfe4e37bb829f901b4460a455dfaf783f",
+    "naif.fk.moon_de440": "a47c71e9c9f33796bdafb2c9d69a7ee447b6016ecad80f71cd6f3e479f9cf768"
+   },
+   "seconds": 10.023337292019278,
+   "run_utc": "2026-11-16T13:23:54Z"
   }
  ],
  "not_rerun": {
@@ -2631,6 +2767,7 @@
   "ILL-V5": "not selected",
   "TH-A1": "not selected",
   "TH-A2": "not selected",
+  "TH-A2b": "not selected",
   "TH-P1": "not selected",
   "TH-V1": "not selected",
   "TH-V1b": "not selected",
@@ -2642,6 +2779,7 @@
   "TH-V3": "not selected",
   "TH-V3b": "not selected",
   "TH-V3c": "not selected",
+  "TH-V2c": "not selected",
   "TH-A3": "not selected",
   "TH-C1": "not selected"
  }
