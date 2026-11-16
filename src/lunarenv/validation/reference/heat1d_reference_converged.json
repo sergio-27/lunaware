@@ -1,0 +1,134 @@
+{
+ "code": "heat1d",
+ "version": "0.4.1",
+ "source": "https://github.com/phayne/heat1d (GitHub, commit given on the command line)",
+ "commit": "5b73a6c1ba5047f59f6210185b37539e46e68136",
+ "generated": "2026-11-16",
+ "note": "Grids m=n=20 and m=n=40 (TH-X1c pre-registration, 2026-11-16), default solver, NYEARSEQ 20; the m=n=40 grid is the reference. Means time-weighted over local time; the plain sample mean is also stored.",
+ "planet": {
+  "albedo": 0.12,
+  "albedo_coefficients": [
+   0.06,
+   0.25
+  ],
+  "emissivity": 0.95,
+  "ks": 0.00074,
+  "kd": 0.0034,
+  "rhos": 1100.0,
+  "rhod": 1800.0,
+  "H": 0.07,
+  "Qb": 0.018,
+  "day_s": 2551442.976,
+  "S": 1361.0
+ },
+ "cases": [
+  {
+   "latitude_deg": 0.0,
+   "equilibration_years": 20,
+   "grid_m_n": [
+    20,
+    20
+   ],
+   "sun_distance_au": 0.9854903845599243,
+   "declination_rad": 0.013459888100886247,
+   "surface_mean_k": 211.45400846250394,
+   "surface_mean_k_plain_sample_mean": 224.77104320428714,
+   "surface_max_k": 388.5005359722228,
+   "surface_min_k": 93.2535207581558,
+   "bottom_depth_m": 0.622334824061349,
+   "bottom_mean_k": 255.66689143937452,
+   "layers": 64,
+   "first_layer_m": 0.0015088007570211112
+  },
+  {
+   "latitude_deg": 0.0,
+   "equilibration_years": 20,
+   "grid_m_n": [
+    40,
+    40
+   ],
+   "sun_distance_au": 0.9854903665831216,
+   "declination_rad": 0.013459836629022448,
+   "surface_mean_k": 211.4223787584696,
+   "surface_mean_k_plain_sample_mean": 224.68591752969715,
+   "surface_max_k": 388.49385554540424,
+   "surface_min_k": 93.19249917407427,
+   "bottom_depth_m": 0.6146182965891741,
+   "bottom_mean_k": 255.5754057286053,
+   "layers": 125,
+   "first_layer_m": 0.0007544003785105556
+  },
+  {
+   "latitude_deg": 20.0,
+   "equilibration_years": 20,
+   "grid_m_n": [
+    20,
+    20
+   ],
+   "sun_distance_au": 0.9854907562529207,
+   "declination_rad": 0.01346095228710747,
+   "surface_mean_k": 208.0391097133729,
+   "surface_mean_k_plain_sample_mean": 218.78134460947695,
+   "surface_max_k": 381.98498022856927,
+   "surface_min_k": 92.23427356748209,
+   "bottom_depth_m": 0.622334824061349,
+   "bottom_mean_k": 249.88256246097632,
+   "layers": 64,
+   "first_layer_m": 0.0015088007570211112
+  },
+  {
+   "latitude_deg": 20.0,
+   "equilibration_years": 20,
+   "grid_m_n": [
+    40,
+    40
+   ],
+   "sun_distance_au": 0.9854903906114468,
+   "declination_rad": 0.013459905427775806,
+   "surface_mean_k": 207.99725397247587,
+   "surface_mean_k_plain_sample_mean": 218.68534095169704,
+   "surface_max_k": 381.9787102424392,
+   "surface_min_k": 92.17644680461365,
+   "bottom_depth_m": 0.6146182965891741,
+   "bottom_mean_k": 249.79457351036478,
+   "layers": 125,
+   "first_layer_m": 0.0007544003785105556
+  },
+  {
+   "latitude_deg": 26.0,
+   "equilibration_years": 20,
+   "grid_m_n": [
+    20,
+    20
+   ],
+   "sun_distance_au": 0.9854907641461127,
+   "declination_rad": 0.013460974884709029,
+   "surface_mean_k": 205.46620046033428,
+   "surface_mean_k_plain_sample_mean": 214.37803680187886,
+   "surface_max_k": 377.254792522068,
+   "surface_min_k": 91.49427346954135,
+   "bottom_depth_m": 0.622334824061349,
+   "bottom_mean_k": 245.73429164067574,
+   "layers": 64,
+   "first_layer_m": 0.0015088007570211112
+  },
+  {
+   "latitude_deg": 26.0,
+   "equilibration_years": 20,
+   "grid_m_n": [
+    40,
+    40
+   ],
+   "sun_distance_au": 0.9854903083739749,
+   "declination_rad": 0.013459669960567642,
+   "surface_mean_k": 205.42314523292376,
+   "surface_mean_k_plain_sample_mean": 214.28279696300353,
+   "surface_max_k": 377.24791518981954,
+   "surface_min_k": 91.44477061471204,
+   "bottom_depth_m": 0.6146182965891741,
+   "bottom_mean_k": 245.64873327907483,
+   "layers": 125,
+   "first_layer_m": 0.0007544003785105556
+  }
+ ]
+}

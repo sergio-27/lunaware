@@ -2,6 +2,8 @@
 
 heat1d 0.3.2 (PyPI, obsolete) -> heat1d_reference.json (TH-X1, kept as history).
 heat1d 0.4.x (GitHub, current) -> heat1d_reference_current.json (TH-X1b), e.g.
+heat1d 0.4.x with a second argument "converged" -> heat1d_reference_converged.json (TH-X1c:
+grids m=n=20 and m=n=40, 20-year equilibration), e.g.
 
     uv run --isolated --with "heat1d @ git+https://github.com/phayne/heat1d.git@5b73a6c#subdirectory=python" \
         python benchmarks/make_heat1d_reference.py
@@ -15,6 +17,7 @@ import numpy as np
 import heat1d
 
 CURRENT = not getattr(heat1d, "__version__", "0.3.2").startswith("0.3")
+CONVERGED = CURRENT and len(sys.argv) > 2 and sys.argv[2] == "converged"
 if CURRENT:
     from heat1d import planets
 else:
@@ -32,9 +35,13 @@ out = {
         else "https://github.com/phayne/heat1d (PyPI heat1d 0.3.2)"
     ),
     "commit": sys.argv[1] if len(sys.argv) > 1 else None,
-    "generated": "2026-11-15" if CURRENT else "2026-11-12",
+    "generated": "2026-11-16" if CONVERGED else "2026-11-15" if CURRENT else "2026-11-12",
     "note": (
-        "Default grid and solver of this version. equilibration_years 20 = NYEARSEQ 20 (as "
+        "Grids m=n=20 and m=n=40 (TH-X1c pre-registration, 2026-11-16), default solver, "
+        "NYEARSEQ 20; the m=n=40 grid is the reference. Means time-weighted over local "
+        "time; the plain sample mean is also stored."
+        if CONVERGED
+        else "Default grid and solver of this version. equilibration_years 20 = NYEARSEQ 20 (as "
         "TH-X1, the primary reference); 0 = the version's automatic equilibration (DTBOT "
         "convergence), kept for information. Choice fixed before the run (TH-X1b "
         "pre-registration). Means are time-weighted (trapezoid over local time) because "
@@ -59,9 +66,14 @@ out = {
     "cases": [],
 }
 for lat in (0.0, 20.0, 26.0):
-    for years in (0, 20) if CURRENT else (1, 20):
+    if CONVERGED:
+        variants = [{"NYEARSEQ": 20, "m": k, "n": k} for k in (20, 40)]
+    else:
+        variants = [{"NYEARSEQ": y} for y in ((0, 20) if CURRENT else (1, 20))]
+    for config in variants:
+        years = config["NYEARSEQ"]
         m = heat1d.Model(
-            planet=moon, lat=np.radians(lat), ndays=1, config=heat1d.Configurator(NYEARSEQ=years)
+            planet=moon, lat=np.radians(lat), ndays=1, config=heat1d.Configurator(**config)
         )
         m.run()
         ts = m.T[:, 0]
@@ -79,6 +91,7 @@ for lat in (0.0, 20.0, 26.0):
             {
                 "latitude_deg": lat,
                 "equilibration_years": years,
+                "grid_m_n": [config["m"], config["n"]] if CONVERGED else None,
                 "sun_distance_au": float(m.r),
                 "declination_rad": float(m.dec),
                 "surface_mean_k": surface_mean,
@@ -92,6 +105,12 @@ for lat in (0.0, 20.0, 26.0):
             }
         )
         print(out["cases"][-1])
-name = "heat1d_reference_current.json" if CURRENT else "heat1d_reference.json"
+name = (
+    "heat1d_reference_converged.json"
+    if CONVERGED
+    else "heat1d_reference_current.json"
+    if CURRENT
+    else "heat1d_reference.json"
+)
 json.dump(out, open(name, "w"), indent=1)
 print("wrote", name)

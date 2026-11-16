@@ -12,6 +12,10 @@ try:
 except PackageNotFoundError:  # running from a source tree that is not installed
     __version__ = "0.0.0+unknown"
 
+from lunarenv._numba_cache import invalidate_if_stale
+
+invalidate_if_stale()  # before any compiled kernel is loaded from numba's cache
+
 _API = ("run_scenario", "describe_models", "get_validation_status", "load_scenario", "load_run")
 __all__ = ["__version__", *_API]
 

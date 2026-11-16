@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "lunarenv_version": "0.1.0.dev0",
- "generated_utc": "2026-11-15T22:15:51Z",
+ "generated_utc": "2026-11-16T10:25:50Z",
  "results": [
   {
    "id": "ILL-A1",
@@ -1696,11 +1696,152 @@
     "lunarenv is run with heat1d's parameters (scale height, Sun distance and declination at output time, day length), as in TH-X1; same checks and 1 K tolerance.",
     "Disclosure: the first run (2026-11-15) failed with surface means 7-12 K above lunarenv. Investigation showed heat1d 0.4.1 writes its output at non-uniform local-time steps (0.012 to 0.024 h, denser by day), and the reference script took a plain mean of the samples, biased warm. The reference means are now time-weighted (the plain sample means are kept in the file). This corrects how the reference is measured; no tolerance or check was changed.",
     "Result as pre-registered: FAIL. Surface maxima agree within 0.6 K and the deep means within 1 K (the 2.3 K depth gap of TH-X1 came from the obsolete release), but lunarenv's night minima are 1.5-1.6 K and its means 1.1-1.6 K warmer than heat1d's default run.",
-    "Investigation (post hoc, after the result; not part of the pre-registered checks), equator, 20 years: heat1d's solver settings move the minimum by at most 0.3 K (explicit, Crank-Nicolson, implicit, fixed step), but its grid moves it by about 2 K. Its default grid (m=10 layers per skin depth, n=4, i.e. thickness growth 1.25; about 20 layers) is not converged: with m=n=10, 20, 40 (33, 64, 125 layers) heat1d gives minimum 93.36, 93.25, 93.19 K, mean 211.53, 211.45, 211.42 K and maximum 388.51, 388.50, 388.49 K, against lunarenv's 93.14, 211.75 and 388.05 K. Against the converged heat1d the differences are within 0.5 K. The failure is read as discretisation error of heat1d's default grid, not as a difference in physics; a pre-registered comparison against a converged heat1d grid at all three latitudes would be needed to replace this case."
+    "Investigation (post hoc, after the result; not part of the pre-registered checks), equator, 20 years: heat1d's solver settings move the minimum by at most 0.3 K (explicit, Crank-Nicolson, implicit, fixed step), but its grid moves it by about 2 K. Its default grid (m=10 layers per skin depth, n=4, i.e. thickness growth 1.25; about 20 layers) is not converged: with m=n=10, 20, 40 (33, 64, 125 layers) heat1d gives minimum 93.36, 93.25, 93.19 K, mean 211.53, 211.45, 211.42 K and maximum 388.51, 388.50, 388.49 K, against lunarenv's 93.14, 211.75 and 388.05 K. Against the converged heat1d the differences are within 0.5 K. The failure is read as discretisation error of heat1d's default grid, not as a difference in physics; a pre-registered comparison against a converged heat1d grid at all three latitudes would be needed to replace this case.",
+    "Follow-up: TH-X1c (pre-registered 2026-11-16) makes that comparison and passes; TH-X1b stays recorded as FAIL."
    ],
    "data": {},
-   "seconds": 0.4225737910019234,
-   "run_utc": "2026-11-15T22:15:51Z"
+   "seconds": 0.8129920830251649,
+   "run_utc": "2026-11-16T10:25:50Z"
+  },
+  {
+   "id": "TH-X1c",
+   "title": "Code-to-code comparison with the reference implementation on a converged grid",
+   "kind": "cross-check",
+   "source": "heat1d 0.4.1 (GitHub 5b73a6c), grid m=n=40",
+   "metric": "surface mean, max, min and deep mean at 0, 20, 26 deg latitude",
+   "tolerance": "1 K (as TH-X1b; pre-registered 2026-11-16)",
+   "status": "PASS",
+   "summary": "surface max |diff| 0.79 K at three latitudes; at depth +0.3 K",
+   "checks": [
+    {
+     "quantity": "latitude 0: surface mean",
+     "reference": 211.4223787584696,
+     "measured": 211.74620952515787,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 0: surface max",
+     "reference": 388.49385554540424,
+     "measured": 388.05487392138514,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 0: surface min",
+     "reference": 93.19249917407427,
+     "measured": 93.13885321868192,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 0: mean at 0.61 m",
+     "reference": 255.5754057286053,
+     "measured": 255.27112984437,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 20: surface mean",
+     "reference": 207.99725397247587,
+     "measured": 208.67019137344963,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 20: surface max",
+     "reference": 381.9787102424392,
+     "measured": 381.9975871862782,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 20: surface min",
+     "reference": 92.17644680461365,
+     "measured": 92.28606750730113,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 20: mean at 0.61 m",
+     "reference": 249.79457351036478,
+     "measured": 250.29138794552588,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 26: surface mean",
+     "reference": 205.42314523292376,
+     "measured": 206.21234104242666,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 26: surface max",
+     "reference": 377.24791518981954,
+     "measured": 377.26888209288467,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 26: surface min",
+     "reference": 91.44477061471204,
+     "measured": 91.59934841385913,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 26: mean at 0.61 m",
+     "reference": 245.64873327907483,
+     "measured": 246.42465951491232,
+     "tolerance": 1.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "latitude 0: heat1d surface change, grid m=n=20 to 40",
+     "reference": 0.0,
+     "measured": 0.06102158408153002,
+     "tolerance": 0.25,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "latitude 20: heat1d surface change, grid m=n=20 to 40",
+     "reference": 0.0,
+     "measured": 0.05782676286844435,
+     "tolerance": 0.25,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "latitude 26: heat1d surface change, grid m=n=20 to 40",
+     "reference": 0.0,
+     "measured": 0.04950285482931349,
+     "tolerance": 0.25,
+     "unit": "K",
+     "informational": true
+    }
+   ],
+   "notes": [
+    "Reference: heat1d 0.4.1 from GitHub (commit 5b73a6c1ba5047f59f6210185b37539e46e68136) on refined grids m=n=20 and m=n=40 (the reference), default solver, 20-year equilibration, run on 2026-11-16; stored in reference/heat1d_reference_converged.json, produced by benchmarks/make_heat1d_reference.py in an isolated environment.",
+    "Pre-registered in docs/review/preregistration-th-x1c-2026-11-16.md after TH-X1b failed and before the refined reference at 20 and 26 deg was generated. Not blind at the equator: heat1d's refined values there were known from the TH-X1b investigation.",
+    "Same checks, parameters and 1 K tolerance as TH-X1b. Informational: the change in heat1d's surface values from m=n=20 to m=n=40; above 0.25 K the reference would be reported as not converged."
+   ],
+   "data": {},
+   "seconds": 8.241557750036009,
+   "run_utc": "2026-11-16T10:25:13Z"
   },
   {
    "id": "TH-V3",
@@ -2024,6 +2165,7 @@
   "TH-V2": "not selected",
   "TH-V2b": "not selected",
   "TH-X1": "not selected",
+  "TH-X1c": "not selected",
   "TH-V3": "not selected",
   "TH-V3b": "not selected"
  }

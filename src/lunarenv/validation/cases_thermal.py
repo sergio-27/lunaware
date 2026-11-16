@@ -308,7 +308,9 @@ def _th_v2b(_: DataStore) -> Outcome:
     return Outcome(checks, summary + " [constant albedo]", notes)
 
 
-def _heat1d_checks(file: str) -> tuple[list[Check], list[float], bool, dict]:  # type: ignore[type-arg]
+def _heat1d_checks(
+    file: str, grid: list[int] | None = None
+) -> tuple[list[Check], list[float], bool, dict]:  # type: ignore[type-arg]
     text = resources.files("lunarenv.validation").joinpath(f"reference/{file}").read_text()
     reference = json.loads(text)
     planet = reference["planet"]
@@ -318,6 +320,8 @@ def _heat1d_checks(file: str) -> tuple[list[Check], list[float], bool, dict]:  #
     deep_difference = []
     for case in reference["cases"]:
         if case["equilibration_years"] != 20:
+            continue
+        if grid is not None and case.get("grid_m_n") != grid:
             continue
         result = _cycle(
             case["latitude_deg"],
@@ -428,6 +432,8 @@ def _th_x1b(_: DataStore) -> Outcome:
         "discretisation error of heat1d's default grid, not as a difference in physics; a "
         "pre-registered comparison against a converged heat1d grid at all three latitudes "
         "would be needed to replace this case.",
+        "Follow-up: TH-X1c (pre-registered 2026-11-16) makes that comparison and passes; "
+        "TH-X1b stays recorded as FAIL.",
     )
     return Outcome(
         checks,
@@ -435,6 +441,49 @@ def _th_x1b(_: DataStore) -> Outcome:
         f"at three latitudes; at depth {np.mean(deep_difference):+.1f} K",
         notes,
         _heat1d_status(checks, surface_ok),
+    )
+
+
+def _th_x1c(_: DataStore) -> Outcome:
+    checks, deep_difference, surface_ok, reference = _heat1d_checks(
+        "heat1d_reference_converged.json", grid=[40, 40]
+    )
+    by_grid: dict[tuple[float, int], dict] = {  # type: ignore[type-arg]
+        (c["latitude_deg"], c["grid_m_n"][0]): c for c in reference["cases"]
+    }
+    for lat in (0.0, 20.0, 26.0):
+        coarse, fine = by_grid[(lat, 20)], by_grid[(lat, 40)]
+        change = max(
+            abs(fine[f"surface_{q}_k"] - coarse[f"surface_{q}_k"]) for q in ("mean", "max", "min")
+        )
+        checks.append(
+            Check(
+                quantity=f"latitude {lat:.0f}: heat1d surface change, grid m=n=20 to 40",
+                reference=0.0,
+                measured=change,
+                tolerance=0.25,
+                unit="K",
+                informational=True,
+            )
+        )
+    notes = (
+        f"Reference: heat1d {reference['version']} from GitHub (commit {reference['commit']}) "
+        "on refined grids m=n=20 and m=n=40 (the reference), default solver, 20-year "
+        "equilibration, run on 2026-11-16; stored in reference/heat1d_reference_converged.json, "
+        "produced by benchmarks/make_heat1d_reference.py in an isolated environment.",
+        "Pre-registered in docs/review/preregistration-th-x1c-2026-11-16.md after TH-X1b "
+        "failed and before the refined reference at 20 and 26 deg was generated. Not blind at "
+        "the equator: heat1d's refined values there were known from the TH-X1b investigation.",
+        "Same checks, parameters and 1 K tolerance as TH-X1b. Informational: the change in "
+        "heat1d's surface values from m=n=20 to m=n=40; above 0.25 K the reference would be "
+        "reported as not converged.",
+    )
+    return Outcome(
+        checks,
+        f"surface max |diff| {max(abs(c.measured - c.reference) for c in checks if 'surface ' in c.quantity and 'heat1d' not in c.quantity):.2f} K "  # type: ignore[operator]
+        f"at three latitudes; at depth {np.mean(deep_difference):+.1f} K",
+        notes,
+        _heat1d_status([c for c in checks if not c.informational], surface_ok),
     )
 
 
@@ -701,6 +750,15 @@ CASES: tuple[Case, ...] = (
         "surface mean, max, min and deep mean at 0, 20, 26 deg latitude",
         "1 K (as TH-X1; pre-registered 2026-11-15)",
         run=_th_x1b,
+    ),
+    Case(
+        "TH-X1c",
+        "Code-to-code comparison with the reference implementation on a converged grid",
+        "cross-check",
+        "heat1d 0.4.1 (GitHub 5b73a6c), grid m=n=40",
+        "surface mean, max, min and deep mean at 0, 20, 26 deg latitude",
+        "1 K (as TH-X1b; pre-registered 2026-11-16)",
+        run=_th_x1c,
     ),
     Case(
         "TH-V3",

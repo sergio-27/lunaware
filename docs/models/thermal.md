@@ -160,20 +160,17 @@ linear in steps and cells, about 90 ns per cell and step. The 128-member ensembl
 
 ## Findings to resolve in Phase 4
 
-1. **Reference code** (validation cases TH-X1, TH-X1b). Against heat1d 0.4.1, the
-   current GitHub code (TH-X1b, pre-registered), with heat1d's own parameters, the
-   surface maxima agree within 0.6 K and the means at heat1d's deepest node within 1 K,
-   but lunarenv's night minima are 1.5-1.6 K and its means 1.1-1.6 K warmer than
-   heat1d's default run, so the case fails its 1 K tolerance. A post-hoc check
-   (`benchmarks/heat1d_grid_check.py`, equator) shows that heat1d's default grid (about
-   20 layers, thickness growth 1.25) is not converged: refining it to 33, 64 and 125
-   layers moves heat1d's minimum to 93.36, 93.25 and 93.19 K and its mean to 211.5 K,
-   within 0.5 K of lunarenv (93.14 K, 211.75 K); heat1d's solver choice moves it by at
-   most 0.3 K. The failure is therefore read as discretisation error in the reference,
-   to be confirmed by a pre-registered comparison against a converged heat1d grid at all
-   three latitudes. The 2-3 K deep gap against the obsolete PyPI release 0.3.2 (TH-X1),
-   previously attributed to heat1d's averaging of conductivities, does not appear with
-   0.4.1 and is attributed to that release.
+1. **Reference code** (validation cases TH-X1, TH-X1b, TH-X1c). Resolved. Against
+   heat1d 0.4.1, the current GitHub code, with heat1d's own parameters:
+   - default heat1d grid (TH-X1b, pre-registered): FAIL; lunarenv's night minima are
+     1.5-1.6 K and its means 1.1-1.6 K warmer, maxima within 0.6 K, depth within 1 K;
+   - heat1d grid m=n=40, 125 layers (TH-X1c, pre-registered after TH-X1b): PASS; all
+     surface values within 0.8 K and the means at heat1d's deepest node within 0.8 K at
+     0, 20 and 26 deg; heat1d itself changes by at most 0.06 K from m=n=20 to 40.
+   The TH-X1b failure is therefore discretisation error of heat1d's default grid (about
+   20 layers, thickness growth 1.25). The 2-3 K deep gap against the obsolete PyPI
+   release 0.3.2 (TH-X1), previously attributed to heat1d's averaging of conductivities,
+   does not appear with 0.4.1 and is attributed to that release.
 2. **Apollo temperatures.** With the published parameter set the model gives a mean
    surface temperature of 205.6 K at 20 N and 203.0 K at 26 N, and 247.0 / 241.7 K at
    depth. The Apollo values quoted by Hayne2017 are 216 +/- 5 and 211 +/- 5 K at the

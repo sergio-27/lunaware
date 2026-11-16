@@ -156,8 +156,8 @@ For agents: `lunarenv-mcp`, see [docs/mcp.md](docs/mcp.md).
 ## Validation
 
 [VALIDATION.md](VALIDATION.md) lists every case with its source, metric, tolerance and
-result. Summary (21 cases): 14 pass, 4 fail, 1 partial, 2 pending. Six cases (TH-V1b,
-ILL-V2b, ILL-V5, TH-V3, TH-V3b, TH-X1b) follow an independent scientific review and were
+result. Summary (22 cases): 15 pass, 4 fail, 1 partial, 2 pending. Seven cases (TH-V1b,
+ILL-V2b, ILL-V5, TH-V3, TH-V3b, TH-X1b, TH-X1c) follow an independent scientific review and were
 pre-registered in [docs/review/](docs/review/) before they were run.
 
 | Compared with | Result |
@@ -169,7 +169,7 @@ pre-registered in [docs/review/](docs/review/) before they were run.
 | Gläser et al. 2018, named best-lit points over 20 years | 2 m: pass at all three points (within 2.1 pp; longest shadow 116 / 66 / 65 h against 112 / 66 / 65 h). Ground level: **fail** (37-44 % against 76-81 %), and strongly dependent on terrain resolution |
 | Diviner equatorial temperatures quoted by Hayne et al. 2017 | pass: 385.2 / 100.3 / 93.7 K against 385 / 101 / 95 K. A constant albedo passes too (TH-V1b), so this case does not test the albedo law |
 | Apollo 15 and 17 mean temperatures quoted by Hayne et al. 2017 | **fail** with the published parameters (8-10 K low); pass with a constant albedo |
-| heat1d 0.4.1, the current reference code of Hayne et al. 2017 (TH-X1b) | **fail**: night minimum 1.5-1.6 K and mean 1.1-1.6 K warmer than heat1d's default grid (tolerance 1 K); maximum within 0.6 K, depth within 1 K. Post hoc, heat1d's default grid is not converged: on finer grids it agrees with lunarenv within 0.5 K. The obsolete 0.3.2 (TH-X1) gave partial, 2-3 K colder at depth |
+| heat1d 0.4.1, the current reference code of Hayne et al. 2017 | converged grid (TH-X1c): **pass**, surface within 0.8 K and depth within 0.8 K at 0, 20 and 26 deg. Default grid (TH-X1b): **fail**, night minimum and mean 1.1-1.6 K warmer, because that grid is not converged. The obsolete 0.3.2 (TH-X1): partial, 2-3 K colder at depth |
 | Diviner polar summer temperatures, 720 m block on the Shackleton rim (TH-V3, TH-V3b) | published albedo law: **fail**, 24 K too cold over the sunlit summer bins; constant albedo: pass, +5.7 K (tolerance 10 K). Only 8 bins qualify; single 240 m cells differ by up to 70 K, and both laws are 43-67 K below the hottest Diviner bin |
 | Mazarico 2011 site table, Gläser 2014 | pending: references not obtained |
 
