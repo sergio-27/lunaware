@@ -11,7 +11,12 @@ of the 3 x 3 grid cells centred on the cell that contains the test point and eac
 subsolar-longitude bin, the bolometric brightness temperature, plus provenance.
 
 Run:  uv run python benchmarks/extract_diviner_pcp.py
+      uv run python benchmarks/extract_diviner_pcp.py --sites   (TH-V3e blocks)
 Prints only counts and coordinates, not temperatures.
+
+With ``--sites`` the blocks are read from the selection already recorded in
+``diviner_pcp_sites.json`` (``benchmarks/select_th_v3e_blocks.py``) and the values are
+added to that file.
 """
 
 from __future__ import annotations
@@ -25,6 +30,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "src/lunarenv/validation/reference/diviner_pcp_shackleton.json"
+SITES = ROOT / "src/lunarenv/validation/reference/diviner_pcp_sites.json"
 BASE = (
     "https://pds-geosciences.wustl.edu/lro/urn-nasa-pds-lro_diviner_derived1/"
     "data_derived_pcp/diurnal/slon/pols/"
@@ -80,12 +86,12 @@ def _first_row_with_x_at_least(url: str, rows: int, x: float) -> int:
     return lo
 
 
-def extract(slon: int) -> dict[str, object]:
+def extract(slon: int, cells: list[tuple[int, int]] = CELLS) -> dict[str, object]:
     url = BASE + NAME.format(slon)
     size = _size(url)
     rows = size // RECORD - 1
-    kx = sorted({c[0] for c in CELLS})
-    ky = sorted({c[1] for c in CELLS})
+    kx = sorted({c[0] for c in cells})
+    ky = sorted({c[1] for c in cells})
     x_lo = (kx[0] - 0.5) * STEP
     x_hi = (kx[-1] + 0.5) * STEP
     start = _first_row_with_x_at_least(url, rows, x_lo)
@@ -95,7 +101,7 @@ def extract(slon: int) -> dict[str, object]:
     for line in chunk.splitlines():
         x, y, _, _, tbol = (float(v) for v in line.split(","))
         cell = (round(x / STEP), round(y / STEP))
-        if cell in CELLS and ky[0] <= cell[1] <= ky[-1]:
+        if cell in cells and ky[0] <= cell[1] <= ky[-1]:
             values[f"{cell[0]},{cell[1]}"] = tbol
     return {
         "file": NAME.format(slon),
@@ -104,6 +110,38 @@ def extract(slon: int) -> dict[str, object]:
         "sunlon_deg": [3.75 * (slon - 1), 3.75 * slon],
         "tbol_k": values,
     }
+
+
+def block_cells(centre: tuple[int, int]) -> list[tuple[int, int]]:
+    return [(centre[0] + i, centre[1] + j) for i in (-1, 0, 1) for j in (-1, 0, 1)]
+
+
+def main_sites() -> int:
+    data = json.loads(SITES.read_text(encoding="utf-8"))
+    data["source"] = (
+        "Diviner PCP (diurnal, summer), LRO-L-DLRE-5-GCP-V1.0 / "
+        "urn:nasa:pds:lro_diviner_derived1:data_derived_pcp"
+    )
+    data["url"] = BASE
+    data["sites"] = {}
+    for label, block in data["selection"].items():
+        cells = block_cells(tuple(block["centre_cell"]))
+        with ThreadPoolExecutor(6) as pool:
+            bins = list(pool.map(lambda n, c=cells: extract(n, c), range(1, 97)))
+        counts = [len(entry["tbol_k"]) for entry in bins]  # type: ignore[arg-type]
+        print(
+            f"{label}: bins with all 9 cells {sum(c == 9 for c in counts)}, any {sum(c > 0 for c in counts)}"
+        )
+        data["sites"][label] = {
+            "cells": [
+                {"key": f"{i},{j}", "x_m": i * PIXEL_M, "y_m": j * PIXEL_M} for i, j in cells
+            ],
+            "bins": bins,
+        }
+    data["retrieved_utc"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    SITES.write_text(json.dumps(data, indent=1) + "\n", encoding="utf-8")
+    print(f"wrote {SITES.relative_to(ROOT)}")
+    return 0
 
 
 def main() -> int:
@@ -133,4 +171,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    import sys
+
+    raise SystemExit(main_sites() if "--sites" in sys.argv[1:] else main())

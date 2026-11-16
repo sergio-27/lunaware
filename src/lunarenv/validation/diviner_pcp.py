@@ -29,8 +29,8 @@ from lunarenv.geometry.ephemeris import spice_session
 from lunarenv.geometry.projection import SouthPolarStereographic
 from lunarenv.illumination.eclipse import earth_occultation_factor
 from lunarenv.illumination.horizon import compute_horizons
-from lunarenv.illumination.products import illumination_series
-from lunarenv.illumination.settings import IlluminationSettings, load_site_stack
+from lunarenv.illumination.products import illumination_series, illumination_statistics
+from lunarenv.illumination.settings import SITE04_NEAR, IlluminationSettings, load_site_stack
 from lunarenv.illumination.terrain import TerrainLevel, TerrainStack, coarsen
 from lunarenv.thermal import terrain_radiation as tr
 from lunarenv.thermal.albedo_laws import BURGER2024, FOOTE2020
@@ -88,7 +88,7 @@ def _horizon_stack(
     return TerrainStack((level, *stack.levels[1:]))
 
 
-def _init_worker(data_root: str, horizon_coarsening: int = 1) -> None:
+def _init_worker(data_root: str, horizon_coarsening: int = 1, near_id: str = SITE04_NEAR) -> None:
     # one numba thread per worker; set at run time (changing NUMBA_NUM_THREADS after numba
     # is imported fails as soon as a kernel is compiled in the worker)
     numba.set_num_threads(1)
@@ -109,7 +109,7 @@ def _init_worker(data_root: str, horizon_coarsening: int = 1) -> None:
     # label each southern summer (consecutive run of samples with subsolar latitude < 0)
     starts = np.flatnonzero(summer & ~np.concatenate([[False], summer[:-1]]))
     season = np.cumsum(np.isin(np.arange(summer.size), starts)) - 1
-    stack = load_site_stack(store, settings)
+    stack = load_site_stack(store, settings, near_id=near_id)
     _W.update(
         store=store,
         settings=settings,
@@ -302,6 +302,7 @@ def forward(
     cells: list[tuple[float, float]],
     spacing_m: float,
     horizon_coarsening: int = 1,
+    near_id: str = SITE04_NEAR,
 ) -> list[CellSums]:
     """Sum the per-pixel bin statistics over the pixels of each cell.
 
@@ -319,7 +320,7 @@ def forward(
         workers,
         mp_context=get_context("spawn"),
         initializer=_init_worker,
-        initargs=(str(store.root), horizon_coarsening),
+        initargs=(str(store.root), horizon_coarsening, near_id),
     ) as pool:
         for (c, _), result in zip(
             tasks, pool.map(_pixel, [t[1] for t in tasks], chunksize=8), strict=True
@@ -328,3 +329,112 @@ def forward(
             for key, value in result.items():
                 totals[c][key] = totals[c].get(key, 0.0) + value
     return [CellSums(n, t) for n, t in zip(counts, totals, strict=True)]
+
+
+# ------------------------------------------------------- TH-V3e: block selection
+#: Sites of TH-V3e (pre-registered 2026-11-17): label, site DEM.
+TH_V3E_SITES = (
+    ("Site01", "pgda78.site01.surf"),
+    ("Site07", "pgda78.site07.surf"),
+    ("Site11", "pgda78.site11.surf"),
+    ("Site23", "pgda78.site23.surf"),
+)
+#: Cell indices (x / 240 m, y / 240 m) of the TH-V3 block, excluded from the selection.
+TH_V3_CELLS = frozenset((i, j) for i in (-13, -12, -11) for j in (-39, -38, -37))
+CELL_M = 240.0
+SELECTION_MARGIN_M = 1000.0
+
+
+def summer_axis(store: DataStore) -> tuple[list[np.ndarray], list[np.ndarray], float]:
+    """Hourly epochs and Sun positions of each southern summer of the TH-V3 period.
+
+    Each summer is a contiguous run of samples with subsolar latitude < 0, so it has a
+    uniform step. Returns (epochs per summer, Sun positions per summer, Sun radius).
+    """
+    utc = np.arange(PERIOD_START, PERIOD_STOP, np.timedelta64(1, "h"))
+    with spice_session(store) as eph:
+        et = eph.utc_to_et(utc)
+        sun = eph.position_from_center("SUN", et)
+        r_sun = eph.body_radius_m("SUN")
+    summer = sun[:, 2] < 0.0
+    edges = np.flatnonzero(np.diff(np.concatenate([[0], summer.astype(np.int8), [0]])))
+    runs = list(zip(edges[::2], edges[1::2], strict=True))
+    return [et[a:b] for a, b in runs], [sun[a:b] for a, b in runs], r_sun
+
+
+def select_block(
+    store: DataStore, near_id: str, exclude: frozenset[tuple[int, int]] = TH_V3_CELLS
+) -> dict[str, object]:
+    """The 3 x 3 Diviner block of a site tile with the highest summer visible fraction.
+
+    Pre-registered rule (docs/review/preregistration-th-v3e-2026-11-17.md): candidate
+    cells are the 240 m cells whose centres lie at least 1 km inside the tile; each cell
+    centre gets its ground-level horizon and mean visible solar disc over the summer
+    samples; the block with the highest mean of its nine values wins, blocks touching
+    ``exclude`` are skipped, ties go to the first block in row-major order (largest y
+    first, then smallest x). Uses model geometry only.
+    """
+    settings = IlluminationSettings()
+    stack = load_site_stack(store, settings, near_id=near_id)
+    bounds = stack.levels[0].dem.grid.bounds
+    i_range = np.arange(
+        int(np.ceil((bounds.x_min + SELECTION_MARGIN_M) / CELL_M)),
+        int(np.floor((bounds.x_max - SELECTION_MARGIN_M) / CELL_M)) + 1,
+    )
+    j_range = np.arange(
+        int(np.floor((bounds.y_max - SELECTION_MARGIN_M) / CELL_M)),
+        int(np.ceil((bounds.y_min + SELECTION_MARGIN_M) / CELL_M)) - 1,
+        -1,
+    )  # rows from largest y down
+    jj, ii = np.meshgrid(j_range, i_range, indexing="ij")
+    horizons = compute_horizons(
+        stack,
+        (ii * CELL_M).ravel().astype(np.float64),
+        (jj * CELL_M).ravel().astype(np.float64),
+        n_azimuth=settings.n_azimuth,
+        diagnostics=False,
+    )
+    ets, suns, r_sun = summer_axis(store)
+    total = np.zeros(ii.size)
+    count = 0
+    for et, sun in zip(ets, suns, strict=True):
+        stats = illumination_statistics(
+            horizons,
+            et,
+            sun,
+            r_sun,
+            n_strips=settings.n_strips,
+            limb_u=settings.limb_darkening,
+            mode=settings.disc_mode_code,
+        )
+        total += stats.mean_visible_fraction * et.size
+        count += et.size
+    visible = (total / count).reshape(ii.shape)
+    best: tuple[float, int, int] | None = None
+    for r in range(1, visible.shape[0] - 1):
+        for c in range(1, visible.shape[1] - 1):
+            cells = {
+                (int(ii[r + a, c + b]), int(jj[r + a, c + b]))
+                for a in (-1, 0, 1)
+                for b in (-1, 0, 1)
+            }
+            if cells & exclude:
+                continue
+            value = float(visible[r - 1 : r + 2, c - 1 : c + 2].mean())
+            if best is None or value > best[0]:
+                best = (value, r, c)
+    if best is None:
+        raise ValueError(f"no admissible block in {near_id}")
+    value, r, c = best
+    centre = (int(ii[r, c]), int(jj[r, c]))
+    lon, lat = PROJ.inverse(centre[0] * CELL_M, centre[1] * CELL_M)
+    return {
+        "near_id": near_id,
+        "centre_cell": list(centre),
+        "centre_m": [centre[0] * CELL_M, centre[1] * CELL_M],
+        "latitude_deg": float(np.degrees(lat)),
+        "east_longitude_deg": float(np.degrees(lon) % 360.0),
+        "block_mean_visible_fraction": value,
+        "candidate_cells": int(ii.size),
+        "summer_samples": count,
+    }

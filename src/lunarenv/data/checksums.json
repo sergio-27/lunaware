@@ -855,6 +855,18 @@
     "sha256": "416c4baa3b64def0182bb3379a1a9228482efd8ce32a39309ea8de5d0330fbe6",
     "bytes": 40980808
   },
+  "pgda78.site07.surf": {
+    "sha256": "38aaee10bb4da4d63e7427aa1ca25c79bdbc649d212079a04990e135462091f8",
+    "bytes": 40980808
+  },
+  "pgda78.site11.surf": {
+    "sha256": "58f3372c35bbd6baf38ffd5633c1c96b59bd89dbd252150581d12893a43136e5",
+    "bytes": 40980806
+  },
+  "pgda78.site23.surf": {
+    "sha256": "12d280a59cd7580415f6bada638d0abe025ce6727541fddf68d5dc371a6c94cf",
+    "bytes": 70586804
+  },
   "pgda90.ldem_80s_40mpp": {
     "sha256": "b7f3567bfa405dbcb42f867f6cd3c9932ca9752b4363ce1eef835f9115c1dd76",
     "bytes": 716299920

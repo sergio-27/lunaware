@@ -1334,6 +1334,154 @@ def _th_c2(store: DataStore) -> Outcome:
     return Outcome(checks, summary, notes)
 
 
+# --------------------------------------------- TH-V3e: four more sites (2026-11-17)
+_TH_V3E_MIN_SUNLIT = 4
+_TH_V3E_LAWS = ("foote2020", "burger2024", "hayne", "constant")
+_TH_V3E_NAMES = {
+    "foote2020": "hot bound (Foote 2020)",
+    "burger2024": "cold bound (Burger 2024)",
+    "hayne": "Hayne2017",
+    "constant": "constant 0.12",
+}
+
+
+def _th_v3e(store: DataStore) -> Outcome:
+    import json
+    from importlib import resources
+
+    from lunarenv.validation import diviner_pcp as dp
+
+    path = resources.files("lunarenv.validation") / "reference" / "diviner_pcp_sites.json"
+    reference = json.loads(path.read_text(encoding="utf-8"))
+    checks: list[Check] = []
+    parts: list[str] = []
+    qualifying: list[bool] = []
+    passed: list[bool] = []
+    cold_side: list[bool] = []
+    for label, near_id in dp.TH_V3E_SITES:
+        selection = reference["selection"][label]
+        data = reference["sites"][label]
+        keys = [c["key"] for c in data["cells"]]
+        centres = [(float(c["x_m"]), float(c["y_m"])) for c in data["cells"]]
+        diviner = np.full((len(keys), dp.N_BINS), np.nan)
+        for b, entry in enumerate(data["bins"]):
+            for c, k in enumerate(keys):
+                if k in entry["tbol_k"]:
+                    diviner[c, b] = entry["tbol_k"][k]
+        cells = dp.forward(store, centres, 20.0, near_id=near_id)
+        visible = np.mean([c.sums["visible"] / c.sums["count"] for c in cells], axis=0)
+        blocks = {}
+        for law in _TH_V3E_LAWS:
+            radiance = np.array([c.sums[law] / c.sums["count"] for c in cells])
+            blocks[law] = _block_from_radiance(radiance, diviner, visible)
+        _, _, used, complete = blocks["hayne"]
+        n_used = int(used.sum())
+        ok = n_used >= _TH_V3E_MIN_SUNLIT
+        qualifying.append(ok)
+        bias = {
+            law: float(np.mean(b[1][used])) if n_used else float("nan") for law, b in blocks.items()
+        }
+        hot = bias["foote2020"]
+        if ok:
+            passed.append(abs(hot) <= _TH_V3_TOLERANCE_K)
+            cold_side.append(bias["burger2024"] < -_TH_V3_TOLERANCE_K)
+        where = (
+            f"{label} ({selection['latitude_deg']:.2f} deg, block centre "
+            f"{selection['centre_m'][0]:.0f}, {selection['centre_m'][1]:.0f} m)"
+        )
+        checks.append(
+            Check(
+                quantity=f"{where}: hot bound, bias of block Tbol over sunlit summer bins"
+                + ("" if ok else f" (fewer than {_TH_V3E_MIN_SUNLIT} sunlit bins: not in verdict)"),
+                reference=0.0,
+                measured=hot if n_used else None,
+                tolerance=_TH_V3_TOLERANCE_K if ok else None,
+                unit="K",
+                informational=not ok,
+            )
+        )
+        for law in _TH_V3E_LAWS[1:]:
+            checks.append(
+                Check(
+                    quantity=f"{label}: {_TH_V3E_NAMES[law]}, bias over sunlit bins",
+                    reference=0.0,
+                    measured=bias[law] if n_used else None,
+                    unit="K",
+                    informational=True,
+                )
+            )
+        diviner_block = blocks["hayne"][0] - blocks["hayne"][1]
+        between = (blocks["burger2024"][0] <= diviner_block) & (
+            diviner_block <= blocks["foote2020"][0]
+        )
+        checks += [
+            Check(
+                quantity=f"{label}: RMS over sunlit bins, hot bound / Hayne2017",
+                reference=float(np.sqrt(np.mean(blocks["foote2020"][1][used] ** 2)))
+                if n_used
+                else None,
+                measured=float(np.sqrt(np.mean(blocks["hayne"][1][used] ** 2))) if n_used else None,
+                unit="K",
+                informational=True,
+            ),
+            Check(
+                quantity=f"{label}: bias over all summer bins with data, hot bound / Hayne2017",
+                reference=float(np.mean(blocks["foote2020"][1][complete]))
+                if complete.any()
+                else None,
+                measured=float(np.mean(blocks["hayne"][1][complete])) if complete.any() else None,
+                unit="K",
+                informational=True,
+            ),
+            Check(
+                quantity=f"{label}: sunlit bins used / bins with all nine cells",
+                reference=float(complete.sum()),
+                measured=float(n_used),
+                informational=True,
+            ),
+            Check(
+                quantity=f"{label}: sunlit bins with Diviner between the cold and hot bounds",
+                reference=float(n_used),
+                measured=float(between[used].sum()),
+                informational=True,
+            ),
+            Check(
+                quantity=f"{label}: block mean visible fraction, selection (cell centres) / "
+                "summer (all pixels)",
+                reference=float(selection["block_mean_visible_fraction"]),
+                measured=float(np.mean(visible)),
+                informational=True,
+            ),
+        ]
+        parts.append(
+            f"{label} hot {hot:+.1f} / cold {bias['burger2024']:+.1f} / Hayne "
+            f"{bias['hayne']:+.1f} K ({n_used} bins)"
+        )
+    n_ok = sum(qualifying)
+    if n_ok < 3:
+        status: Status | None = Status.PARTIAL
+    else:
+        status = None  # PASS if every toleranced (qualifying) check passes
+    reading = (
+        "hot bound within 10 K and cold bound more than 10 K too cold at every qualifying site"
+        if passed and all(passed) and all(cold_side)
+        else "the Shackleton pattern does not hold at every qualifying site"
+    )
+    notes = (
+        "Pre-registered in docs/review/preregistration-th-v3e-2026-11-17.md before it was "
+        "implemented, before the site DEMs were downloaded and before any Diviner value "
+        "outside the TH-V3 block was read.",
+        "Blocks chosen from model geometry only (highest summer mean visible disc at the nine "
+        "cell centres, 1 km inside the tile, TH-V3 block excluded) and recorded in "
+        "diviner_pcp_sites.json before the Diviner values were extracted.",
+        "Forward model, bins and data as TH-V3 (no terrain radiation or Earthshine: under 1 K "
+        "at Shackleton, TH-V3d). A site needs at least 4 sunlit bins with all nine cells to "
+        f"enter the verdict; {n_ok} of {len(qualifying)} sites qualify.",
+        f"Reading: {reading}.",
+    )
+    return Outcome(checks, "; ".join(parts), notes, status)
+
+
 CASES: tuple[Case, ...] = (
     Case(
         "TH-A1",
@@ -1477,6 +1625,24 @@ CASES: tuple[Case, ...] = (
         requires=("pgda78.site04.surf", "pgda90.ldem_80s_80mpp"),
         slow=True,
         run=_th_v3d,
+    ),
+    Case(
+        "TH-V3e",
+        "Polar summer temperatures at four more sites",
+        "published",
+        "Diviner PCP (diurnal, summer), PDS urn:nasa:pds:lro_diviner_derived1 (as TH-V3); "
+        "PGDA 78 Sites 1, 7, 11, 23",
+        "bias of block Tbol over sunlit summer bins, hot bound of the albedo envelope, per site",
+        "10 K at every site with at least 4 sunlit bins (pre-registered 2026-11-17)",
+        requires=(
+            "pgda78.site01.surf",
+            "pgda78.site07.surf",
+            "pgda78.site11.surf",
+            "pgda78.site23.surf",
+            "pgda90.ldem_80s_80mpp",
+        ),
+        slow=True,
+        run=_th_v3e,
     ),
     Case(
         "TH-V2c",

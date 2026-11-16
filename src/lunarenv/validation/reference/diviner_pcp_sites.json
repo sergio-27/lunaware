@@ -1,0 +1,70 @@
+{
+ "selected_utc": "2026-11-16T23:28:35Z",
+ "rule": "docs/review/preregistration-th-v3e-2026-11-17.md, block selection",
+ "selection": {
+  "Site01": {
+   "near_id": "pgda78.site01.surf",
+   "centre_cell": [
+    -51,
+    -53
+   ],
+   "centre_m": [
+    -12240.0,
+    -12720.0
+   ],
+   "latitude_deg": -89.41785797347382,
+   "east_longitude_deg": 223.89829388479365,
+   "block_mean_visible_fraction": 0.5099095474665386,
+   "candidate_cells": 3481,
+   "summer_samples": 42851
+  },
+  "Site07": {
+   "near_id": "pgda78.site07.surf",
+   "centre_cell": [
+    124,
+    -111
+   ],
+   "centre_m": [
+    29760.0,
+    -26640.0
+   ],
+   "latitude_deg": -88.68286194992818,
+   "east_longitude_deg": 131.83367348099654,
+   "block_mean_visible_fraction": 0.5198839367038477,
+   "candidate_cells": 3422,
+   "summer_samples": 42851
+  },
+  "Site11": {
+   "near_id": "pgda78.site11.surf",
+   "centre_cell": [
+    -165,
+    70
+   ],
+   "centre_m": [
+    -39600.0,
+    16800.0
+   ],
+   "latitude_deg": -88.58148660530026,
+   "east_longitude_deg": 292.9887168020806,
+   "block_mean_visible_fraction": 0.5083692624050373,
+   "candidate_cells": 3422,
+   "summer_samples": 42851
+  },
+  "Site23": {
+   "near_id": "pgda78.site23.surf",
+   "centre_cell": [
+    -40,
+    517
+   ],
+   "centre_m": [
+    -9600.0,
+    124080.0
+   ],
+   "latitude_deg": -85.89762852608534,
+   "east_longitude_deg": 355.5758712864394,
+   "block_mean_visible_fraction": 0.5050798191180761,
+   "candidate_cells": 6241,
+   "summer_samples": 42851
+  }
+ }
+}

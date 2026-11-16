@@ -140,6 +140,36 @@ version = "final_adj (2020-06)"
 citation = "Barker2021"
 description = "Site 1 (connecting ridge) surface height, 5 m/pix; used by validation case ILL-V1."
 
+[[file]]
+id = "pgda78.site07.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site07/Site07_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["site07"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "Site 7 (peak near Shackleton) surface height, 5 m/pix; used by validation case TH-V3e."
+
+[[file]]
+id = "pgda78.site11.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site11/Site11_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["site11"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "Site 11 (de Gerlache rim) surface height, 5 m/pix; used by validation case TH-V3e."
+
+[[file]]
+id = "pgda78.site23.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site23/Site23_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["site23"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "Site 23 (Malapert massif) surface height, 5 m/pix; used by validation case TH-V3e."
+
 # Error clones: 100 statistically consistent realizations per site.
 [[series]]
 id = "pgda78.site04.clone.{n:04d}"
