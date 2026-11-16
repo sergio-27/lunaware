@@ -80,3 +80,27 @@ single-bounce flux at the test-point minimum exceeds about 0.05 W m-2".
   holds.
 - Not tested here: multiple scattering, sub-DEM roughness, non-Lambertian scattering,
   shadowing of the terrain by the asset itself.
+
+## Amendment (2026-11-16, before TH-A3 and TH-C1 were recorded)
+
+While the code was being written, the bowl was run (fine settings above, and the default
+patch settings as the informational item) to find implementation errors. One error was
+found and fixed: patches of three receivers at different points had been merged,
+although sectors and bands are relative to one point. After the fix:
+
+- With the pre-registered method (one point per patch, the sample of largest solid
+  angle) the fine settings were within 1.1 % of the reference at all three receivers;
+  the default settings of the time (24 sectors, bands doubling from 50 m) were 37-43 %
+  too high, because the largest-solid-angle sample favours steep, sunward wall facets.
+- The method is therefore changed before recording: each patch is represented by 3
+  points, stratified by solid angle along distance (the middle sample of each third of
+  the patch's weight), and its exitance is the mean over them. The default layout
+  becomes 36 sectors and bands growing by sqrt(2) from 25 m (bowl: -1.6 % to -3.0 %;
+  doubling bands: -5 % to -9 %).
+- The TH-A3 check (fine settings, 5 %, six checks) and the TH-C1 checks are unchanged.
+  The fine-settings result with the original one-point method is recorded in the case
+  notes.
+- Cost: to keep scenario runs practical, the patch temperatures of the cold and hot
+  albedo cases are computed only for patches that can send more than 1e-4 W m-2 to the
+  ground receivers (site normal and slope grid); asset surfaces get the scenario law
+  only. Patches left out are reported with an upper bound of what they could send.
