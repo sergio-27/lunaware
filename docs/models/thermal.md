@@ -289,6 +289,20 @@ scenario law: about 530 s of the 932 s wall-clock reference run on 7 worker proc
    incidence-dependent law, so that conclusion is not supported; the discrepancy is
    unresolved. Which albedo is right at grazing incidence decides the polar result
    (26 K on the mean at the test point).
+   **Like for like (TH-V2c, pre-registered 2026-11-16): fail.** Read from the primary
+   source (Keihm & Langseth 1973), the Apollo 17 surface mean of 216 +/- 5 K is a
+   brightness temperature (reduced with e_m = 1, mean solar constant, albedo 0.08), not
+   a physical temperature. Compared with the model's mean of eps^(1/4) T_s, with the
+   site albedo A0 = 0.08 (incidence dependence of Hayne2017 kept) and the measured heat
+   flow 0.016 W m-2, the model gives 207.0 K (-9.0 K, outside 5 K) at the surface and
+   252.7 K at 1.30 m (-3.3 K, inside). Changing the quantity and the site albedo
+   therefore does not close the gap: with the published incidence law the model stays
+   about 9 K too cold at an equatorial mare site measured day and night. A constant
+   albedo 0.08 gives 214.4 / 260.6 K (informational). Apollo 15 (informational, its mean
+   partly modelled and lowered by topographic shadowing): 204.4 K against the final
+   report's 207 +/- 7 K. TH-V2 stays FAIL in the ledger. This favours a weaker
+   incidence dependence at low latitudes; it does not say which law holds at grazing
+   polar incidence (TH-V3c).
 3. **TH-V1 does not discriminate between albedo laws** (TH-V1b, pre-registered
    2026-11-13). With a constant albedo of 0.12 the equatorial case gives
    385.2 / 101.8 / 95.1 K and passes as well as the incidence-dependent law does

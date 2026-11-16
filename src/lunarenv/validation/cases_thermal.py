@@ -966,6 +966,84 @@ def _th_c1(store: DataStore) -> Outcome:
     return Outcome(checks, summary, notes)
 
 
+# ------------------------------------------------------------ TH-V2c (like for like)
+_A17_LATITUDE_DEG = 20.0
+_A17_HEAT_FLOW = 0.016  # W m-2, Langseth final report Table 1 (Taurus Littrow)
+_A15_HEAT_FLOW = 0.021  # W m-2, same table (Hadley Rille)
+_SITE_ALBEDO = 0.08  # Keihm & Langseth 1973, reduction equation
+
+
+def _apollo_like(
+    latitude_deg: float, properties: RegolithProperties, depth_m: float, distance_au: float = 1.0
+) -> tuple[float, float]:
+    """Diurnal mean brightness temperature (e_m = 1) at the surface and mean temperature
+    at depth."""
+    result = _cycle(latitude_deg, properties, distance_au=distance_au)
+    brightness = properties.emissivity**0.25 * result.surface_temperature_k[:-1]
+    return float(brightness.mean()), float(result.at_depth(depth_m)[:-1].mean())
+
+
+def _th_v2c(_: DataStore) -> Outcome:
+    a17 = RegolithProperties(albedo_normal=_SITE_ALBEDO, heat_flow_w_m2=_A17_HEAT_FLOW)
+    surface, deep = _apollo_like(_A17_LATITUDE_DEG, a17, 1.30)
+    checks = [
+        Check(
+            quantity="Apollo 17 (20 N): diurnal mean surface brightness temperature (e_m = 1)",
+            reference=216.0,
+            measured=surface,
+            tolerance=5.0,
+            unit="K",
+        ),
+        Check(
+            quantity="Apollo 17 (20 N): diurnal mean temperature at 1.30 m",
+            reference=256.0,
+            measured=deep,
+            tolerance=5.0,
+            unit="K",
+        ),
+    ]
+    constant = a17.model_copy(update={"albedo_a": 0.0, "albedo_b": 0.0})
+    c_surface, c_deep = _apollo_like(_A17_LATITUDE_DEG, constant, 1.30)
+    f_surface, f_deep = _apollo_like(_A17_LATITUDE_DEG, a17, 1.30, distance_au=1.017)
+    a15 = RegolithProperties(albedo_normal=_SITE_ALBEDO, heat_flow_w_m2=_A15_HEAT_FLOW)
+    s15, d15_hayne = _apollo_like(26.0, a15, 0.83)
+    d15_report = _apollo_like(26.0, a15, 1.38)[1]
+    info = [
+        ("Apollo 17, constant albedo 0.08: surface brightness mean", 216.0, c_surface),
+        ("Apollo 17, constant albedo 0.08: mean at 1.30 m", 256.0, c_deep),
+        ("Apollo 17, Sun at 1.017 au: surface brightness mean", 216.0, f_surface),
+        ("Apollo 17, Sun at 1.017 au: mean at 1.30 m", 256.0, f_deep),
+        ("Apollo 15 (26 N): surface brightness mean, against Hayne2017's 211 K", 211.0, s15),
+        ("Apollo 15: mean at 0.83 m, against Hayne2017's 252 K", 252.0, d15_hayne),
+        ("Apollo 15: surface brightness mean, against the final report's 207 K", 207.0, s15),
+        ("Apollo 15: mean at 1.38 m, against the final report's 253.0 K", 253.0, d15_report),
+    ]
+    checks += [
+        Check(quantity=q, reference=r, measured=m, unit="K", informational=True) for q, r, m in info
+    ]
+    notes = (
+        "Pre-registered in docs/review/preregistration-th-v2c-2026-11-16.md (change 3 (d) and "
+        "finding F05 of the 2026-11-13 scientific review) before it was implemented or run.",
+        "Reference: Keihm & Langseth (1973), Proc. Lunar Sci. Conf. 4th, 2503-2513, read from "
+        "the ADS scan: thermocouples about 15 cm above the surface, reduced with surface "
+        "emissivity 1.0 (blackbody brightness temperatures), mean solar constant 0.1352 W cm-2 "
+        "and lunar albedo 0.08; mean surface temperature 216 +/- 5 K and 256 K at 130 cm.",
+        "Model: Hayne2017 parameters with the site's albedo A0 = 0.08 (incidence dependence "
+        "kept) and the measured Taurus Littrow heat flow 0.016 W m-2 (Langseth et al. final "
+        "report, NTRS 19780010035, Table 1); Sun at 1 au, the lunation of the source's data "
+        "being unstated. The surface value compared is the mean of eps^(1/4) T_s, eps = 0.95.",
+        "Apollo 15 is informational: the final report gives 207 +/- 7 K (not the 211 K quoted "
+        "by Hayne2017, whose source, Keihm et al. 1973 EPSL, was not read), computed from "
+        "night data supplemented by daytime models, and lowered mainly by early-morning "
+        "shadowing from the local topography, which a 1-D level model does not have.",
+    )
+    summary = (
+        f"Apollo 17 brightness mean {surface:.1f} K against 216 K, {deep:.1f} K at 1.30 m "
+        f"against 256 K (+/-5 K) [site albedo 0.08, e_m = 1]"
+    )
+    return Outcome(checks, summary, notes)
+
+
 CASES: tuple[Case, ...] = (
     Case(
         "TH-A1",
@@ -1089,6 +1167,15 @@ CASES: tuple[Case, ...] = (
         requires=("pgda78.site04.surf", "pgda90.ldem_80s_80mpp"),
         slow=True,
         run=_th_v3c,
+    ),
+    Case(
+        "TH-V2c",
+        "Apollo 17 mean temperatures, like for like",
+        "published",
+        "Keihm & Langseth 1973 (Proc. LSC 4th); Langseth et al. final report (NTRS 19780010035)",
+        "diurnal mean surface brightness temperature (e_m = 1) and mean at 1.30 m",
+        "5 K (stated by the source; pre-registered 2026-11-16)",
+        run=_th_v2c,
     ),
     Case(
         "TH-A3",

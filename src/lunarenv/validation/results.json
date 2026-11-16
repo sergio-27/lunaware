@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "lunarenv_version": "0.1.0.dev0",
- "generated_utc": "2026-11-16T12:18:39Z",
+ "generated_utc": "2026-11-16T12:36:52Z",
  "results": [
   {
    "id": "ILL-A1",
@@ -2243,6 +2243,107 @@
    "run_utc": "2026-11-16T10:39:59Z"
   },
   {
+   "id": "TH-V2c",
+   "title": "Apollo 17 mean temperatures, like for like",
+   "kind": "published",
+   "source": "Keihm & Langseth 1973 (Proc. LSC 4th); Langseth et al. final report (NTRS 19780010035)",
+   "metric": "diurnal mean surface brightness temperature (e_m = 1) and mean at 1.30 m",
+   "tolerance": "5 K (stated by the source; pre-registered 2026-11-16)",
+   "status": "FAIL",
+   "summary": "Apollo 17 brightness mean 207.0 K against 216 K, 252.7 K at 1.30 m against 256 K (+/-5 K) [site albedo 0.08, e_m = 1]",
+   "checks": [
+    {
+     "quantity": "Apollo 17 (20 N): diurnal mean surface brightness temperature (e_m = 1)",
+     "reference": 216.0,
+     "measured": 206.9822448059888,
+     "tolerance": 5.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Apollo 17 (20 N): diurnal mean temperature at 1.30 m",
+     "reference": 256.0,
+     "measured": 252.67044860085548,
+     "tolerance": 5.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Apollo 17, constant albedo 0.08: surface brightness mean",
+     "reference": 216.0,
+     "measured": 214.35996998301124,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Apollo 17, constant albedo 0.08: mean at 1.30 m",
+     "reference": 256.0,
+     "measured": 260.5647215519811,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Apollo 17, Sun at 1.017 au: surface brightness mean",
+     "reference": 216.0,
+     "measured": 205.4286488827795,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Apollo 17, Sun at 1.017 au: mean at 1.30 m",
+     "reference": 256.0,
+     "measured": 250.2169136749457,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Apollo 15 (26 N): surface brightness mean, against Hayne2017's 211 K",
+     "reference": 211.0,
+     "measured": 204.37346248913846,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Apollo 15: mean at 0.83 m, against Hayne2017's 252 K",
+     "reference": 252.0,
+     "measured": 248.17714291120566,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Apollo 15: surface brightness mean, against the final report's 207 K",
+     "reference": 207.0,
+     "measured": 204.37346248913846,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Apollo 15: mean at 1.38 m, against the final report's 253.0 K",
+     "reference": 253.0,
+     "measured": 249.8990663482899,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    }
+   ],
+   "notes": [
+    "Pre-registered in docs/review/preregistration-th-v2c-2026-11-16.md (change 3 (d) and finding F05 of the 2026-11-13 scientific review) before it was implemented or run.",
+    "Reference: Keihm & Langseth (1973), Proc. Lunar Sci. Conf. 4th, 2503-2513, read from the ADS scan: thermocouples about 15 cm above the surface, reduced with surface emissivity 1.0 (blackbody brightness temperatures), mean solar constant 0.1352 W cm-2 and lunar albedo 0.08; mean surface temperature 216 +/- 5 K and 256 K at 130 cm.",
+    "Model: Hayne2017 parameters with the site's albedo A0 = 0.08 (incidence dependence kept) and the measured Taurus Littrow heat flow 0.016 W m-2 (Langseth et al. final report, NTRS 19780010035, Table 1); Sun at 1 au, the lunation of the source's data being unstated. The surface value compared is the mean of eps^(1/4) T_s, eps = 0.95.",
+    "Apollo 15 is informational: the final report gives 207 +/- 7 K (not the 211 K quoted by Hayne2017, whose source, Keihm et al. 1973 EPSL, was not read), computed from night data supplemented by daytime models, and lowered mainly by early-morning shadowing from the local topography, which a 1-D level model does not have."
+   ],
+   "data": {},
+   "seconds": 0.732612291991245,
+   "run_utc": "2026-11-16T12:36:52Z"
+  },
+  {
    "id": "TH-A3",
    "title": "Shadowed floor of a spherical bowl crater, single bounce",
    "kind": "analytic",
@@ -2541,6 +2642,7 @@
   "TH-V3": "not selected",
   "TH-V3b": "not selected",
   "TH-V3c": "not selected",
-  "TH-A3": "not selected"
+  "TH-A3": "not selected",
+  "TH-C1": "not selected"
  }
 }
