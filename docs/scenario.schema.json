@@ -263,6 +263,16 @@
      "minimum": 0.0,
      "title": "Heat Flow W M2",
      "type": "number"
+    },
+    "heat_capacity_model": {
+     "default": "hayne2017",
+     "description": "c_p law: Hayne2017 polynomial (heat_capacity_coefficients) or the Woods-Robinson 2019 table of DSNE, polynomial above 300 K",
+     "enum": [
+      "hayne2017",
+      "woods_robinson2019"
+     ],
+     "title": "Heat Capacity Model",
+     "type": "string"
     }
    },
    "title": "RegolithProperties",
@@ -416,7 +426,7 @@
     },
     "constant_albedo_alternative": {
      "default": true,
-     "description": "Also compute the result with a constant albedo. The incidence-dependent law was fitted on level equatorial ground; at grazing polar incidence the two differ by tens of kelvin, and validation has not settled which applies (VALIDATION.md, TH-V2).",
+     "description": "Also compute the result with a constant albedo. The incidence-dependent law was fitted on level equatorial ground; at grazing polar incidence the two differ by tens of kelvin. The first polar comparison with Diviner favours the constant albedo, on thin evidence (VALIDATION.md, TH-V3 and TH-V3b).",
      "title": "Constant Albedo Alternative",
      "type": "boolean"
     }

@@ -23,11 +23,19 @@ Range of validity (stated by the source):
 * the heat-capacity polynomial is described as valid from below 90 K to above 400 K
   and becomes negative below 1.3 K. Temperatures under :data:`CP_VALID_MIN_K` are
   flagged by the model; the solver itself only requires ``T > CP_POSITIVE_MIN_K``.
+
+Alternative heat capacity (``heat_capacity_model="woods_robinson2019"``): the
+Woods-Robinson et al. (2019) estimate as tabulated by DSNE (SLS-SPEC-159 Rev I, Table
+3.4.6.2.2-1, 10-300 K, stated valid 10-400 K), interpolated linearly in temperature,
+linear to zero below 10 K, and the Hayne polynomial above 300 K (0.3 % below the table
+there). It differs from the polynomial below about 100 K, where the polynomial falls
+towards zero; above 100 K the two agree within 2 %.
 """
 
 from __future__ import annotations
 
 import math
+from typing import Literal
 
 import numpy as np
 from numba import njit
@@ -40,6 +48,72 @@ CP_VALID_MIN_K = 90.0
 #: The solver refuses temperatures below this (c_p is positive above 1.3 K).
 CP_POSITIVE_MIN_K = 5.0
 _REFERENCE_T_K = 350.0
+#: Lowest temperature of the Woods-Robinson 2019 estimate as stated by DSNE.
+WOODS_ROBINSON_MIN_K = 10.0
+
+#: DSNE (SLS-SPEC-159 Rev I) Table 3.4.6.2.2-1: Woods-Robinson et al. (2019) c_p.
+WOODS_ROBINSON_T_K = np.array(
+    [
+        0.0,
+        10,
+        20,
+        30,
+        40,
+        50,
+        60,
+        70,
+        80,
+        91,
+        100,
+        120,
+        140,
+        160,
+        181,
+        200,
+        220,
+        240,
+        260,
+        280,
+        300,
+    ],
+    dtype=np.float64,
+)
+WOODS_ROBINSON_CP = 1000.0 * np.array(
+    [
+        0.0,
+        0.009,
+        0.027,
+        0.053,
+        0.089,
+        0.122,
+        0.158,
+        0.191,
+        0.227,
+        0.258,
+        0.287,
+        0.347,
+        0.404,
+        0.458,
+        0.513,
+        0.564,
+        0.609,
+        0.653,
+        0.698,
+        0.733,
+        0.773,
+    ],
+    dtype=np.float64,
+)
+# enthalpy at each table temperature (trapezoids: exact for the linear interpolant)
+_WR_E = np.concatenate(
+    (
+        [0.0],
+        np.cumsum(
+            np.diff(WOODS_ROBINSON_T_K) * 0.5 * (WOODS_ROBINSON_CP[1:] + WOODS_ROBINSON_CP[:-1])
+        ),
+    )
+)
+_WR_TOP = 300.0
 
 
 class RegolithProperties(BaseModel):
@@ -62,6 +136,11 @@ class RegolithProperties(BaseModel):
     albedo_a: float = Field(0.06, ge=0.0)
     albedo_b: float = Field(0.25, ge=0.0)
     heat_flow_w_m2: float = Field(0.018, ge=0.0, description="Q, interior heat flow")
+    heat_capacity_model: Literal["hayne2017", "woods_robinson2019"] = Field(
+        "hayne2017",
+        description="c_p law: Hayne2017 polynomial (heat_capacity_coefficients) or the "
+        "Woods-Robinson 2019 table of DSNE, polynomial above 300 K",
+    )
 
     @model_validator(mode="after")
     def _check(self) -> RegolithProperties:
@@ -82,13 +161,14 @@ class RegolithProperties(BaseModel):
                 *self.heat_capacity_coefficients,
                 self.emissivity,
                 self.heat_flow_w_m2,
+                1.0 if self.heat_capacity_model == "woods_robinson2019" else 0.0,
             ],
             dtype=np.float64,
         )
 
 
 # indices into RegolithProperties.as_array()
-P_KS, P_KD, P_RHOS, P_RHOD, P_H, P_CHI, P_C0, P_C1, P_C2, P_C3, P_C4, P_EMIS, P_Q = range(13)
+P_KS, P_KD, P_RHOS, P_RHOD, P_H, P_CHI, P_C0, P_C1, P_C2, P_C3, P_C4, P_EMIS, P_Q, P_CPM = range(14)
 
 
 @njit(cache=True)
@@ -126,20 +206,47 @@ def kirchhoff(temperature, k_contact, chi):  # type: ignore[no-untyped-def]
 
 
 @njit(cache=True)
+def _polynomial_cp(t, p):  # type: ignore[no-untyped-def]
+    return p[P_C0] + t * (p[P_C1] + t * (p[P_C2] + t * (p[P_C3] + t * p[P_C4])))
+
+
+@njit(cache=True)
+def _polynomial_e(t, p):  # type: ignore[no-untyped-def]
+    return t * (
+        p[P_C0]
+        + t * (p[P_C1] / 2.0 + t * (p[P_C2] / 3.0 + t * (p[P_C3] / 4.0 + t * p[P_C4] / 5.0)))
+    )
+
+
+@njit(cache=True)
+def _table_index(t):  # type: ignore[no-untyped-def]
+    i = np.searchsorted(WOODS_ROBINSON_T_K, t) - 1
+    return min(max(i, 0), WOODS_ROBINSON_T_K.size - 2)
+
+
+@njit(cache=True)
 def heat_capacity(temperature, p):  # type: ignore[no-untyped-def]
     """Specific heat capacity c_p (J kg-1 K-1)."""
     t = temperature
-    return p[P_C0] + t * (p[P_C1] + t * (p[P_C2] + t * (p[P_C3] + t * p[P_C4])))
+    if p[P_CPM] < 0.5 or t >= _WR_TOP:
+        return _polynomial_cp(t, p)
+    i = _table_index(t)
+    t0 = WOODS_ROBINSON_T_K[i]
+    slope = (WOODS_ROBINSON_CP[i + 1] - WOODS_ROBINSON_CP[i]) / (WOODS_ROBINSON_T_K[i + 1] - t0)
+    return WOODS_ROBINSON_CP[i] + slope * (t - t0)
 
 
 @njit(cache=True)
 def enthalpy(temperature, p):  # type: ignore[no-untyped-def]
     """Specific enthalpy (J kg-1): integral of c_p from 0 to T."""
     t = temperature
-    return t * (
-        p[P_C0]
-        + t * (p[P_C1] / 2.0 + t * (p[P_C2] / 3.0 + t * (p[P_C3] / 4.0 + t * p[P_C4] / 5.0)))
-    )
+    if p[P_CPM] < 0.5:
+        return _polynomial_e(t, p)
+    if t >= _WR_TOP:
+        return _WR_E[-1] + _polynomial_e(t, p) - _polynomial_e(_WR_TOP, p)
+    i = _table_index(t)
+    t0 = WOODS_ROBINSON_T_K[i]
+    return _WR_E[i] + 0.5 * (t - t0) * (WOODS_ROBINSON_CP[i] + heat_capacity(t, p))
 
 
 @njit(cache=True)

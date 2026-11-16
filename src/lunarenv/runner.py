@@ -20,6 +20,7 @@ import numpy as np
 import xarray as xr
 
 from lunarenv import __version__
+from lunarenv.core.constants import STEFAN_BOLTZMANN_W_M2_K4
 from lunarenv.core.model import ModelDescription, ParameterInfo, register, registered_models
 from lunarenv.core.provenance import arrays_checksum, compute_run_id, environment
 from lunarenv.data.dem import Bounds, load_dem
@@ -50,6 +51,9 @@ from lunarenv.validation.core import get_validation_status
 PROJ = SouthPolarStereographic()
 QUANTILES = (0.05, 0.5, 0.95)
 _SPINUP_DAYS = 365
+#: Warn when the neglected terrain flux bound exceeds this share of the emission at the
+#: surface minimum (scientific review 2026-11-13, finding F06).
+_NEGLECTED_FLUX_WARNING_RATIO = 0.05
 
 
 # ------------------------------------------------------------------ model descriptions
@@ -494,6 +498,17 @@ def run_scenario(
         stats = summarize(thermal_nominal)
         slope, facing = slope_and_facing(nominal["normal"])
         bound = neglected_terrain_flux_bound(nominal["ground"].elevation_rad[0], properties)
+        # compare the neglected flux with what the surface radiates at its coldest: the
+        # night-time balance, not the mean absorbed flux, is what the minimum depends on
+        emission_at_min = properties.emissivity * STEFAN_BOLTZMANN_W_M2_K4 * stats.surface_min_k**4
+        bound_ratio = bound.flux_w_m2 / emission_at_min
+        if bound_ratio > _NEGLECTED_FLUX_WARNING_RATIO:
+            warnings.append(
+                f"thermal: the neglected terrain flux may reach {bound.flux_w_m2:.3g} W m-2, "
+                f"{100.0 * bound_ratio:.0f} % of the {emission_at_min:.3g} W m-2 the surface emits "
+                f"at its minimum of {stats.surface_min_k:.1f} K; the minimum is a lower bound and "
+                "may be too cold by several kelvin"
+            )
         coords["depth"] = (
             "depth",
             thermal_nominal.depth_m,
@@ -543,6 +558,8 @@ def run_scenario(
             "spinup_residual_k": thermal_nominal.spinup.residual_k,
             "neglected_terrain_flux_upper_bound_w_m2": bound.flux_w_m2,
             "shadow_temperature_floor_from_that_bound_k": bound.shadow_temperature_floor_k,
+            "emission_at_surface_min_w_m2": emission_at_min,
+            "neglected_flux_bound_over_emission_at_min": bound_ratio,
         }
         if scenario.thermal.constant_albedo_alternative:
             flat = properties.model_copy(update={"albedo_a": 0.0, "albedo_b": 0.0})
@@ -564,7 +581,9 @@ def run_scenario(
                 "surface_mean_k": alt.surface_mean_k,
                 "difference_surface_mean_k": alt.surface_mean_k - stats.surface_mean_k,
                 "difference_surface_max_k": alt.surface_max_k - stats.surface_max_k,
-                "status": "validation has not settled which albedo applies at grazing incidence (TH-V2, TH-V2b)",
+                "status": "not settled: the first polar comparison (TH-V3, TH-V3b, 8 sunlit summer "
+                "bins at one site) favours the constant albedo; equatorial and Apollo cases do "
+                "not discriminate or are not like-for-like",
             }
         timing["thermal_s"] = time.perf_counter() - tick
 

@@ -308,12 +308,8 @@ def _th_v2b(_: DataStore) -> Outcome:
     return Outcome(checks, summary + " [constant albedo]", notes)
 
 
-def _th_x1(_: DataStore) -> Outcome:
-    text = (
-        resources.files("lunarenv.validation")
-        .joinpath("reference/heat1d_reference.json")
-        .read_text()
-    )
+def _heat1d_checks(file: str) -> tuple[list[Check], list[float], bool, dict]:  # type: ignore[type-arg]
+    text = resources.files("lunarenv.validation").joinpath(f"reference/{file}").read_text()
     reference = json.loads(text)
     planet = reference["planet"]
     properties = RegolithProperties(scale_height_m=planet["H"])
@@ -357,6 +353,17 @@ def _th_x1(_: DataStore) -> Outcome:
                 unit="K",
             )
         )
+    return checks, deep_difference, surface_ok, reference
+
+
+def _heat1d_status(checks: list[Check], surface_ok: bool) -> Status | None:
+    if surface_ok and not all(bool(c.passed) for c in checks):
+        return Status.PARTIAL
+    return None
+
+
+def _th_x1(_: DataStore) -> Outcome:
+    checks, deep_difference, surface_ok, reference = _heat1d_checks("heat1d_reference.json")
     one_year = next(
         c for c in reference["cases"] if c["equilibration_years"] == 1 and c["latitude_deg"] == 20.0
     )
@@ -374,15 +381,60 @@ def _th_x1(_: DataStore) -> Outcome:
         "(a hypothesis consistent with the evidence, not demonstrated).",
         f"With its default one-year equilibration heat1d's deep temperature at 20 N is "
         f"{one_year['bottom_mean_k']:.1f} K, 9 K above its own equilibrated value.",
+        "Superseded by TH-X1b: the heat1d README says the PyPI release used here is obsolete.",
     )
-    status = None
-    if surface_ok and not all(bool(c.passed) for c in checks):
-        status = Status.PARTIAL
     return Outcome(
         checks,
         f"surface within 1 K at three latitudes; at depth {np.mean(deep_difference):+.1f} K",
         notes,
-        status,
+        _heat1d_status(checks, surface_ok),
+    )
+
+
+def _th_x1b(_: DataStore) -> Outcome:
+    checks, deep_difference, surface_ok, reference = _heat1d_checks("heat1d_reference_current.json")
+    auto = {c["latitude_deg"]: c for c in reference["cases"] if c["equilibration_years"] == 0}
+    notes = (
+        f"Reference: heat1d {reference['version']} from GitHub (commit {reference['commit']}), "
+        "the current code of Hayne2017, run on 2026-11-15 with its lunar defaults, default grid "
+        f"and solver, equilibration 20 years; stored in reference/heat1d_reference_current.json, "
+        "produced by benchmarks/make_heat1d_reference.py in an isolated environment.",
+        "Pre-registered in docs/review/preregistration-th-x1b-2026-11-15.md (finding F11 of the "
+        "2026-11-13 scientific review) before the reference was generated. That file left the "
+        "equilibration choice ambiguous (this version has both an automatic and a fixed "
+        "setting); 20 years was chosen before the run, as TH-X1, and the automatic setting is "
+        "stored for information: at 20 N its deep mean is "
+        f"{auto[20.0]['bottom_mean_k']:.2f} K against {next(c for c in reference['cases'] if c['equilibration_years'] == 20 and c['latitude_deg'] == 20.0)['bottom_mean_k']:.2f} K.",
+        "lunarenv is run with heat1d's parameters (scale height, Sun distance and declination "
+        "at output time, day length), as in TH-X1; same checks and 1 K tolerance.",
+        "Disclosure: the first run (2026-11-15) failed with surface means 7-12 K above "
+        "lunarenv. Investigation showed heat1d 0.4.1 writes its output at non-uniform "
+        "local-time steps (0.012 to 0.024 h, denser by day), and the reference script took a "
+        "plain mean of the samples, biased warm. The reference means are now time-weighted "
+        "(the plain sample means are kept in the file). This corrects how the reference is "
+        "measured; no tolerance or check was changed.",
+        "Result as pre-registered: FAIL. Surface maxima agree within 0.6 K and the deep means "
+        "within 1 K (the 2.3 K depth gap of TH-X1 came from the obsolete release), but "
+        "lunarenv's night minima are 1.5-1.6 K and its means 1.1-1.6 K warmer than heat1d's "
+        "default run.",
+        "Investigation (post hoc, after the result; not part of the pre-registered checks), "
+        "equator, 20 years: heat1d's solver settings move the minimum by at most 0.3 K "
+        "(explicit, Crank-Nicolson, implicit, fixed step), but its grid moves it by about "
+        "2 K. Its default grid (m=10 layers per skin depth, n=4, i.e. thickness growth 1.25; "
+        "about 20 layers) is not converged: with m=n=10, 20, 40 (33, 64, 125 layers) heat1d "
+        "gives minimum 93.36, 93.25, 93.19 K, mean 211.53, 211.45, 211.42 K and maximum "
+        "388.51, 388.50, 388.49 K, against lunarenv's 93.14, 211.75 and 388.05 K. Against "
+        "the converged heat1d the differences are within 0.5 K. The failure is read as "
+        "discretisation error of heat1d's default grid, not as a difference in physics; a "
+        "pre-registered comparison against a converged heat1d grid at all three latitudes "
+        "would be needed to replace this case.",
+    )
+    return Outcome(
+        checks,
+        f"surface max |diff| {max(abs(c.measured - c.reference) for c in checks if 'surface' in c.quantity):.2f} K "  # type: ignore[operator]
+        f"at three latitudes; at depth {np.mean(deep_difference):+.1f} K",
+        notes,
+        _heat1d_status(checks, surface_ok),
     )
 
 
@@ -640,6 +692,15 @@ CASES: tuple[Case, ...] = (
         "surface mean, max, min and deep mean at 0, 20, 26 deg latitude",
         "1 K (convergence level stated in Hayne2017)",
         run=_th_x1,
+    ),
+    Case(
+        "TH-X1b",
+        "Code-to-code comparison with the current reference implementation",
+        "cross-check",
+        "heat1d 0.4.1 (GitHub 5b73a6c)",
+        "surface mean, max, min and deep mean at 0, 20, 26 deg latitude",
+        "1 K (as TH-X1; pre-registered 2026-11-15)",
+        run=_th_x1b,
     ),
     Case(
         "TH-V3",

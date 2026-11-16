@@ -193,3 +193,14 @@ def test_validity_warnings():
     assert any("spin-up" in w for w in run_thermal(EQUATOR, STEP, PER, PROPS, quick).warnings)
     with pytest.raises(ValueError):
         run_thermal(EQUATOR, STEP, 1, PROPS)
+
+
+def test_woods_robinson_heat_capacity_reaches_the_solver():
+    # cold ground, where the two c_p laws differ; also guards against a stale numba cache
+    # (compiled solver kernels do not recompile when properties.py changes)
+    dim = 0.02 * EQUATOR
+    hayne = run_thermal(dim, STEP, PER, PROPS)
+    wr_props = PROPS.model_copy(update={"heat_capacity_model": "woods_robinson2019"})
+    wr = run_thermal(dim, STEP, PER, wr_props)
+    assert hayne.surface_temperature_k.min() < 90.0
+    assert abs(wr.surface_temperature_k.min() - hayne.surface_temperature_k.min()) > 0.01

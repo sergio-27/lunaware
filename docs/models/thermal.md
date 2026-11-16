@@ -23,7 +23,9 @@ One-dimensional heat conduction, `rho(z) c_p(T) dT/dt = d/dz (K(T, rho) dT/dz)`,
   scale `H = 0.06 m`;
 - conductivity `K = K_c(rho) [1 + chi (T/350)^3]`, the second term being radiative
   transfer between grains;
-- heat capacity as a quartic polynomial in temperature;
+- heat capacity as a quartic polynomial in temperature (alternative:
+  `heat_capacity_model: woods_robinson2019`, the WoodsRobinson2019 estimate as tabulated
+  by DSNE);
 - surface: absorbed sunlight plus conduction from below balances thermal emission,
   `Q_abs + K dT/dz = eps sigma T_s^4`;
 - base: interior heat flow `Q = 0.018 W m-2`.
@@ -41,7 +43,7 @@ the Sun not covered by the Earth.
 | Choice | Alternatives | Why |
 |---|---|---|
 | Conservative finite volumes, enthalpy as the stored variable | Node-centred finite differences on temperature (Hayne2017, heat1d) | With `c_p(T)`, advancing enthalpy is what makes stored energy change by exactly the boundary fluxes. *Measured*: relative energy residual 4e-15 over the test year. |
-| Fluxes as differences of the Kirchhoff variable `psi(T)` | Average the conductivities of neighbouring cells | `K` is separable, `K_c(z) k(T)`, so `-K_c d(psi)/dz` is the flux exactly. Steady conduction is reproduced to round-off on any grid, however large the temperature contrast. The reference code heat1d, which averages conductivities, is 2-3 K warmer at depth on its only stable grid (see below). |
+| Fluxes as differences of the Kirchhoff variable `psi(T)` | Average the conductivities of neighbouring cells | `K` is separable, `K_c(z) k(T)`, so `-K_c d(psi)/dz` is the flux exactly. Steady conduction is reproduced to round-off on any grid, however large the temperature contrast. The obsolete heat1d 0.3.2, which averages conductivities, is 2-3 K warmer at depth on its only stable grid; the current 0.4.1 agrees within 1 K (see below). |
 | BDF2 in time, two steps per hourly forcing sample | Forward Euler; backward Euler; Crank-Nicolson | *Measured* at the test point against a 64-fold finer step: BDF2 0.019 K in 0.56 s; forward Euler 0.016 K in 1.5 s (27 sub-steps forced by stability); backward Euler 0.20 K; Crank-Nicolson 0.010 K but it overshoots the radiative-equilibrium bound by up to 15 K after an abrupt change, which no physical solution can do. BDF2 is second order and L-stable. |
 | Newton iteration with the exact tridiagonal Jacobian | Lagged coefficients | Converges in two or three iterations with the T^4 and T^3 nonlinearities fully implicit. |
 | Spin-up by imposing the exact mean profile | Integrate for decades | See next section. |
@@ -65,10 +67,10 @@ each cycle every cell is shifted to satisfy it. *Measured*: convergence to 1e-3 
 | Assumption | Effect |
 |---|---|
 | Regolith properties from Diviner fits at latitudes within 70 degrees | Polar use is an extrapolation; flagged in every result. |
-| Heat-capacity fit stated valid from below 90 K | The test point reaches 43 K. Flagged. A low-temperature property model (WoodsRobinson2019) is the natural extension. |
+| Heat-capacity fit stated valid from below 90 K | The test point reaches 43 K. Flagged. The WoodsRobinson2019 c_p adopted by DSNE (SLS-SPEC-159 Rev I, Table 3.4.6.2.2-1, 10-300 K, stated valid 10-400 K) is available as an option; it is 16 % lower at 43 K but changes the reference scenario by -0.13 K at the minimum, -0.03 K in the mean and at most -0.25 K at depth (nominal run, 2026-11-15). The default stays the Hayne2017 polynomial so that the code comparisons (TH-X1, TH-X1b) remain like-for-like. Low-temperature *conductivity* (DSNE: the Hayne relations "will likely over predict" it below 100 K) is not modelled and matters more at depth (review finding F09). |
 | Albedo law fitted to level equatorial ground, applied at grazing polar incidence | **Largest model-form uncertainty.** At 88 degrees incidence the law gives an albedo of 0.79. With a constant albedo of 0.12 instead, the test point is 26 K warmer on average and 50 K warmer at its maximum. |
 | Slope from the 5 m DEM | **Largest input uncertainty.** With the Sun never more than 1.8 degrees high, a tilt of 1 degree changes the absorbed flux severalfold. Slope over a 20 m baseline instead of 5 m raises the maximum by 7 K. |
-| No light scattered or heat radiated by surrounding terrain | Upper bound from the horizon profile at the test point: 0.02 W m-2 against a mean absorbed flux of 2.5 W m-2, i.e. below 1 %. Inside craters it would dominate; the bound is reported with each result. In shadow the computed temperatures are lower bounds. |
+| No light scattered or heat radiated by surrounding terrain | Upper bound from the horizon profile at the test point: 0.02 W m-2. That is below 1 % of the mean absorbed flux (2.5 W m-2) but about 11 % of the 0.18 W m-2 the surface emits at its 43 K minimum, which is what sets the minimum: the yearly mean and maximum are barely affected, the minimum may be several kelvin too cold. Each run reports the bound relative to the emission at its minimum and warns above 5 %. Inside craters terrain radiation would dominate. In shadow the computed temperatures are lower bounds. |
 | One-dimensional, no rocks, no lateral conduction | Valid at scales above the skin depth (centimetres to decimetres). |
 | Incidence angle of the disc centre for partial discs | Second-order effect during sunrise and sunset. |
 | Lunar eclipses as overlap of two uniform discs, no atmosphere | Contact times within a minute or two of almanac values. Checked against the eclipse of 2026 March 3. |
@@ -158,15 +160,20 @@ linear in steps and cells, about 90 ns per cell and step. The 128-member ensembl
 
 ## Findings to resolve in Phase 4
 
-1. **Reference code** (validation case TH-X1). With heat1d's own parameters (H = 0.07 m,
-   its Sun distance and declination) the two codes agree at the surface within 0.75 K
-   at latitudes 0, 20 and 26 (mean, maximum and minimum). At 0.68 m, heat1d's deepest
-   node, lunarenv is 1.9 to 2.9 K colder than equilibrated heat1d. lunarenv's deep
-   value does not move by more than 0.013 K between grids with first cells from 3.6 mm
-   to 0.25 mm, including heat1d's own grid. heat1d returns NaN on every grid finer than
-   its default, so its value cannot be refined. The difference is attributed to
-   heat1d's averaging of conductivities across the steep near-surface gradient; this is
-   a hypothesis consistent with the evidence, not a demonstration.
+1. **Reference code** (validation cases TH-X1, TH-X1b). Against heat1d 0.4.1, the
+   current GitHub code (TH-X1b, pre-registered), with heat1d's own parameters, the
+   surface maxima agree within 0.6 K and the means at heat1d's deepest node within 1 K,
+   but lunarenv's night minima are 1.5-1.6 K and its means 1.1-1.6 K warmer than
+   heat1d's default run, so the case fails its 1 K tolerance. A post-hoc check
+   (`benchmarks/heat1d_grid_check.py`, equator) shows that heat1d's default grid (about
+   20 layers, thickness growth 1.25) is not converged: refining it to 33, 64 and 125
+   layers moves heat1d's minimum to 93.36, 93.25 and 93.19 K and its mean to 211.5 K,
+   within 0.5 K of lunarenv (93.14 K, 211.75 K); heat1d's solver choice moves it by at
+   most 0.3 K. The failure is therefore read as discretisation error in the reference,
+   to be confirmed by a pre-registered comparison against a converged heat1d grid at all
+   three latitudes. The 2-3 K deep gap against the obsolete PyPI release 0.3.2 (TH-X1),
+   previously attributed to heat1d's averaging of conductivities, does not appear with
+   0.4.1 and is attributed to that release.
 2. **Apollo temperatures.** With the published parameter set the model gives a mean
    surface temperature of 205.6 K at 20 N and 203.0 K at 26 N, and 247.0 / 241.7 K at
    depth. The Apollo values quoted by Hayne2017 are 216 +/- 5 and 211 +/- 5 K at the
@@ -195,3 +202,11 @@ linear in steps and cells, about 90 ns per cell and step. The 128-member ensembl
    both laws; over all summer bins, sunlit or not, both laws are too cold (-39 / -13 K),
    as expected without terrain radiation. Pixel sampling (20 m vs 10 m) changes the
    centre cell by under 0.1 K; the model's summer-to-summer spread is about 1 K.
+   Ground-level horizons computed on the site DEM block-averaged to 10 and 20 m instead
+   of 5 m (surface normal kept at 5 m; `benchmarks/th_v3_horizon_sensitivity.py`,
+   informational, after the result) raise the mean summer visible fraction of the block
+   from 0.40 to 0.41 and 0.43 and change the block bias on the same 8 bins by at most
+   0.5 K (published law -23.8 / -23.6 / -23.5 K; constant +5.7 / +6.0 / +6.2 K) and
+   per-cell biases by at most 1.6 K. With 20 m horizons 10 bins qualify as sunlit and
+   the biases become -24.2 / +4.5 K. The TH-V3 / TH-V3b outcome does not depend on the
+   horizon resolution in this range (review concern on 0 m horizons, cf. ILL-V5).

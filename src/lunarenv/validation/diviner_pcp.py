@@ -30,6 +30,7 @@ from lunarenv.illumination.eclipse import earth_occultation_factor
 from lunarenv.illumination.horizon import compute_horizons
 from lunarenv.illumination.products import illumination_series
 from lunarenv.illumination.settings import IlluminationSettings, load_site_stack
+from lunarenv.illumination.terrain import TerrainLevel, TerrainStack, coarsen
 from lunarenv.thermal.model import ThermalSettings, run_thermal
 from lunarenv.thermal.properties import RegolithProperties
 from lunarenv.thermal.surface import absorbed_solar_flux, surface_normal
@@ -66,7 +67,21 @@ def cell_pixels(
 _W: dict = {}  # type: ignore[type-arg]
 
 
-def _init_worker(data_root: str) -> None:
+def _horizon_stack(
+    stack: TerrainStack, factor: int, settings: IlluminationSettings
+) -> TerrainStack:
+    """The stack with its near (5 m) level block-averaged by ``factor``, for horizons only."""
+    if factor == 1:
+        return stack
+    near = stack.levels[0]
+    dem = coarsen(near.dem, factor)
+    level = TerrainLevel(
+        dem, near.start_m, near.end_m, settings.step_fraction * dem.grid.pixel_size_m
+    )
+    return TerrainStack((level, *stack.levels[1:]))
+
+
+def _init_worker(data_root: str, horizon_coarsening: int = 1) -> None:
     os.environ.setdefault("NUMBA_NUM_THREADS", "1")
     store = DataStore(data_root)
     settings = IlluminationSettings()
@@ -85,10 +100,12 @@ def _init_worker(data_root: str) -> None:
     # label each southern summer (consecutive run of samples with subsolar latitude < 0)
     starts = np.flatnonzero(summer & ~np.concatenate([[False], summer[:-1]]))
     season = np.cumsum(np.isin(np.arange(summer.size), starts)) - 1
+    stack = load_site_stack(store, settings)
     _W.update(
         store=store,
         settings=settings,
-        stack=load_site_stack(store, settings),
+        stack=stack,
+        horizon_stack=_horizon_stack(stack, horizon_coarsening, settings),
         et=et,
         sun=sun,
         earth=earth,
@@ -108,7 +125,7 @@ def _pixel(xy: tuple[float, float]) -> dict[str, np.ndarray]:
     x, y = xy
     s: IlluminationSettings = w["settings"]
     horizons = compute_horizons(
-        w["stack"], np.array([x]), np.array([y]), n_azimuth=s.n_azimuth, diagnostics=False
+        w["horizon_stack"], np.array([x]), np.array([y]), n_azimuth=s.n_azimuth, diagnostics=False
     )
     series = illumination_series(
         horizons,
@@ -150,8 +167,17 @@ class CellSums:
     sums: dict[str, np.ndarray]
 
 
-def forward(store: DataStore, cells: list[tuple[float, float]], spacing_m: float) -> list[CellSums]:
-    """Sum the per-pixel bin statistics over the pixels of each cell."""
+def forward(
+    store: DataStore,
+    cells: list[tuple[float, float]],
+    spacing_m: float,
+    horizon_coarsening: int = 1,
+) -> list[CellSums]:
+    """Sum the per-pixel bin statistics over the pixels of each cell.
+
+    ``horizon_coarsening`` > 1 computes the horizons on the site DEM block-averaged by that
+    factor (the surface normal stays on the 5 m DEM): a sensitivity test, not TH-V3.
+    """
     tasks: list[tuple[int, tuple[float, float]]] = []
     for c, (cx, cy) in enumerate(cells):
         xs, ys = cell_pixels(cx, cy, spacing_m)
@@ -163,7 +189,7 @@ def forward(store: DataStore, cells: list[tuple[float, float]], spacing_m: float
         workers,
         mp_context=get_context("spawn"),
         initializer=_init_worker,
-        initargs=(str(store.root),),
+        initargs=(str(store.root), horizon_coarsening),
     ) as pool:
         for (c, _), result in zip(
             tasks, pool.map(_pixel, [t[1] for t in tasks], chunksize=8), strict=True

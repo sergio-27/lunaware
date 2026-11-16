@@ -54,19 +54,22 @@ No number enters `VALIDATION.md` from a [U] reference. A case whose source stays
 | Key | Reference | Status |
 |---|---|---|
 | Hayne2017 | Hayne, P.O., et al. (2017). Global regolith thermophysical properties of the Moon from the Diviner Lunar Radiometer Experiment. *J. Geophys. Res. Planets* 122, 2371–2400. doi:10.1002/2017JE005387; arXiv:1711.00977 (Appendix A, Tables A1–A2 read in full). | A |
-| heat1d | Hayne, P.O. *heat1d: thermal model for planetary science applications*. https://github.com/phayne/heat1d ; PyPI `heat1d` 0.3.2, installed and run on 2026-11-12 (TH-X1). Only its outputs are stored; no heat1d code is included in lunarenv. | A |
+| heat1d | Hayne, P.O. *heat1d: thermal model for planetary science applications*. https://github.com/phayne/heat1d ; PyPI `heat1d` 0.3.2, installed and run on 2026-11-12 (TH-X1). GitHub version 0.4.1, commit `5b73a6c1ba5047f59f6210185b37539e46e68136`, run on 2026-11-15 (TH-X1b). Only its outputs are stored; no heat1d code is included in lunarenv. | A |
 | Vasavada2012 | Vasavada, A.R., et al. (2012). Lunar equatorial surface temperatures and regolith properties from the Diviner Lunar Radiometer Experiment. *J. Geophys. Res.* 117, E00H18. doi:10.1029/2011JE003987. Values used so far are those quoted in Hayne2017 Table A2. | S |
 | Williams2017 | Williams, J.-P., et al. (2017). The global surface temperatures of the Moon as measured by the Diviner Lunar Radiometer Experiment. *Icarus* 283, 300–325. doi:10.1016/j.icarus.2016.08.012 | U |
 | Williams2019 | Williams, J.-P., et al. (2019). Seasonal polar temperatures on the Moon. *J. Geophys. Res. Planets* 124, 2505–2521. doi:10.1029/2019JE006028 | S |
 | Paige2010 | Paige, D.A., et al. (2010). Diviner Lunar Radiometer observations of cold traps in the Moon's south polar region. *Science* 330, 479–482. doi:10.1126/science.1187726 | U |
-| WoodsRobinson2019 | Woods-Robinson, R., Siegler, M.A., Paige, D.A. (2019). A model for the thermophysical properties of lunar regolith at low temperatures. *J. Geophys. Res. Planets* 124, 1989–2011. (alternative c_p / K for T < 90 K) | U |
+| WoodsRobinson2019 | Woods-Robinson, R., Siegler, M.A., Paige, D.A. (2019). A model for the thermophysical properties of lunar regolith at low temperatures. *J. Geophys. Res. Planets* 124, 1989–2011. (alternative c_p / K for T < 90 K). Its c_p is used through the DSNE table (DSNE-I); section 2.2 read 2026-11-15 from https://luna1.diviner.ucla.edu/~dap/pubs/096.pdf | A |
+| DSNE-I | NASA SLS-SPEC-159 Rev I (27 Oct 2021), *Cross-Program Design Specification for Natural Environments (DSNE)*, §3.4.6.2.2, Table 3.4.6.2.2-1 (Woods-Robinson 2019 c_p, 10-300 K). NTRS 20210024522, PDF SHA-256 60f46c95ce4981ee48d58e516fe5c1150d184d3d88d3396ca87f94f094b031d4, read 2026-11-15. Rev J (M2M-30159, Dec 2025), cited by the review, was not found in NTRS; whether its table differs is not known. | A |
 | Keihm1973 | Keihm, S.J., et al. (1973a,b). Apollo 15 and 17 heat-flow probe surface and subsurface temperatures. As quoted in Hayne2017 Table A2. | S |
 | Langseth1976 | Langseth, M.G., Keihm, S.J., Peters, K. (1976). Revised lunar heat-flow values. *Proc. Lunar Sci. Conf. 7th*, 3143–3171. As quoted in Hayne2017. | S |
 | Keihm1984 | Keihm, S.J. (1984). Interpretation of the lunar microwave brightness temperature spectrum: Feasibility of orbital heat flow mapping. *Icarus* 60, 568–589. (albedo vs incidence law) | S |
 | KoppLean2011 | Kopp, G., Lean, J.L. (2011). A new, lower value of total solar irradiance. *Geophys. Res. Lett.* 38, L01706. doi:10.1029/2010GL045777 | U |
 | Whipple1950, FountainWest1970, MitchelldePater1994, Ledlow1992, Hemingway1981, Carrier1973 | Sources of the conductivity, density and heat-capacity laws, as cited in Hayne2017 Appendix A. | S |
 | AharonsonSchorghofer2006 | Aharonson, O., Schörghofer, N. (2006). Subsurface ice on Mars with rough topography. *J. Geophys. Res.* 111, E11007. (slope geometry formulas) | U |
-| Schorghofer-PCC | Schörghofer, N. *Planetary-Code-Collection* (thermal and horizon codes), https://github.com/nschorgh/Planetary-Code-Collection | U |
+| Schorghofer-PCC | Schörghofer, N. *Planetary-Code-Collection* (thermal and horizon codes, including Topo3D for terrain-scattered and emitted radiation), https://github.com/nschorgh/Planetary-Code-Collection ; no licence declared (GitHub API, 2026-11-15). Prior art, not used. | A |
+| fluxpy | Potter, S. *fluxpy: fast thermal modeling and radiosity in Python*, https://github.com/sampotter/fluxpy ; no licence declared (GitHub API, 2026-11-15). Prior art, not used. | A |
+| King2020 | King, O., Warren, T., Bowles, N., Sefton-Nash, E., Fisackerly, R., Trautner, R. (2020). The Oxford 3D thermophysical model with application to PROSPECT/Luna 27 study landing sites. *Planet. Space Sci.* 182, 104790. doi:10.1016/j.pss.2019.104790. Prior art (terrain shadowing and scattering), not used. | S |
 | CarslawJaeger1959 | Carslaw, H.S., Jaeger, J.C. (1959). *Conduction of Heat in Solids*, 2nd ed. Oxford. (analytic solutions) | U |
 
 ## 5. Numerical methods and verification practice

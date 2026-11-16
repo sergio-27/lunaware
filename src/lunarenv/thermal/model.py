@@ -41,6 +41,7 @@ from lunarenv.thermal.grid import DepthGrid, geometric_grid
 from lunarenv.thermal.properties import (
     CP_POSITIVE_MIN_K,
     CP_VALID_MIN_K,
+    WOODS_ROBINSON_MIN_K,
     RegolithProperties,
     conductivity,
     contact_conductivity,
@@ -223,9 +224,12 @@ def run_thermal(
             f"(residual {start.residual_k:.3g} K)"
         )
     coldest = float(min(result.surface_temperature_k.min(), result.temperature_k.min()))
-    if coldest < CP_VALID_MIN_K:
+    cp_valid_min = (
+        CP_VALID_MIN_K if properties.heat_capacity_model == "hayne2017" else WOODS_ROBINSON_MIN_K
+    )
+    if coldest < cp_valid_min:
         warnings.append(
-            f"temperatures reach {coldest:.1f} K, below the {CP_VALID_MIN_K:.0f} K down to which "
+            f"temperatures reach {coldest:.1f} K, below the {cp_valid_min:.0f} K down to which "
             "the heat-capacity fit is stated to be valid"
         )
     if latitude_rad is not None and abs(latitude_rad) > np.radians(70.0):

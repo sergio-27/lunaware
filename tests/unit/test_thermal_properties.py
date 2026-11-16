@@ -110,3 +110,20 @@ def test_grids():
     for bad in ((0.0, 1.2, 1.0), (0.01, 0.9, 1.0), (2.0, 1.2, 1.0)):
         with pytest.raises(ValueError):
             geometric_grid(*bad)
+
+
+def test_woods_robinson_heat_capacity_table_and_enthalpy():
+    wr = RegolithProperties(heat_capacity_model="woods_robinson2019").as_array()
+    # DSNE (SLS-SPEC-159 Rev I) Table 3.4.6.2.2-1 rows, and the midpoint of 40-50 K
+    assert heat_capacity(40.0, wr) == pytest.approx(89.0)
+    assert heat_capacity(91.0, wr) == pytest.approx(258.0)
+    assert heat_capacity(45.0, wr) == pytest.approx(0.5 * (89.0 + 122.0))
+    # polynomial above 300 K, and the default law is unchanged
+    assert heat_capacity(350.0, wr) == pytest.approx(heat_capacity(350.0, P), rel=1e-13)
+    assert heat_capacity(43.0, P) == pytest.approx(117.8, abs=0.1)
+    # enthalpy is the integral of c_p (continuous across 300 K) and inverts exactly
+    for t in (15.0, 43.0, 95.0, 299.5, 300.5, 380.0):
+        h = 1e-3
+        derivative = (enthalpy(t + h, wr) - enthalpy(t - h, wr)) / (2 * h)
+        assert derivative == pytest.approx(heat_capacity(t, wr), rel=1e-6)
+        assert temperature_from_enthalpy(enthalpy(t, wr), 0.7 * t, wr) == pytest.approx(t)

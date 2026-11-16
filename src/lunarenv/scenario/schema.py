@@ -136,8 +136,9 @@ class ThermalBlock(_Strict):
         True,
         description=(
             "Also compute the result with a constant albedo. The incidence-dependent law was fitted on "
-            "level equatorial ground; at grazing polar incidence the two differ by tens of kelvin, and "
-            "validation has not settled which applies (VALIDATION.md, TH-V2)."
+            "level equatorial ground; at grazing polar incidence the two differ by tens of kelvin. "
+            "The first polar comparison with Diviner favours the constant albedo, on thin evidence "
+            "(VALIDATION.md, TH-V3 and TH-V3b)."
         ),
     )
 

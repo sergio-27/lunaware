@@ -14,6 +14,32 @@ deterministic code.
 **Status: MVP, pre-alpha (0.1.0.dev0).** One test site (Shackleton crater rim) and two
 models. Read [Known limitations](#known-limitations) before using a number.
 
+## Related work and what is new here
+
+Most ingredients exist already; lunarenv is an integration with an auditable validation
+ledger, not new science (finding F10 of the [scientific review](docs/review/)).
+
+- **Illumination.** The method is that of Barker et al. 2021 (nested 5 / 80 / 240 m
+  LOLA terrain, limb-darkened disc, 100 terrain error clones), whose clones are open
+  (PGDA 78). PGDA 69 distributes open long-term average maps of Sun and Earth
+  visibility; Gläser et al. 2018 give results for named polar sites.
+- **Thermal.** [heat1d](https://github.com/phayne/heat1d) (Hayne, MIT licence) is the
+  open implementation of the Hayne et al. 2017 regolith model that lunarenv's thermal
+  model follows. Terrain-scattered sunlight and terrain infrared, which lunarenv does
+  not model yet, are in open codes: Topo3D in Schörghofer's
+  [Planetary-Code-Collection](https://github.com/nschorgh/Planetary-Code-Collection),
+  [fluxpy](https://github.com/sampotter/fluxpy) (Potter), and the Oxford 3D
+  thermophysical model (King et al. 2020). The review also reports several open 2026
+  repositories that combine LOLA terrain and SPICE geometry, some with Hayne-type
+  thermal models (not examined here).
+
+What lunarenv adds, as far as the review found: point time series at a chosen height
+with terrain-clone percentiles from open code; joint propagation of terrain clones and
+thermophysical parameters into point temperatures; a validation ledger with sources,
+tolerances (pre-registered since the review) and recorded FAIL and pending cases,
+including a comparison with Diviner polar temperatures; run hashing and data provenance;
+and a Python, command-line and MCP interface.
+
 ## Install
 
 Requires Python 3.12 and [uv](https://docs.astral.sh/uv/). Developed on macOS, Apple
@@ -130,8 +156,8 @@ For agents: `lunarenv-mcp`, see [docs/mcp.md](docs/mcp.md).
 ## Validation
 
 [VALIDATION.md](VALIDATION.md) lists every case with its source, metric, tolerance and
-result. Summary (20 cases): 14 pass, 3 fail, 1 partial, 2 pending. Five cases (TH-V1b,
-ILL-V2b, ILL-V5, TH-V3, TH-V3b) follow an independent scientific review and were
+result. Summary (21 cases): 14 pass, 4 fail, 1 partial, 2 pending. Six cases (TH-V1b,
+ILL-V2b, ILL-V5, TH-V3, TH-V3b, TH-X1b) follow an independent scientific review and were
 pre-registered in [docs/review/](docs/review/) before they were run.
 
 | Compared with | Result |
@@ -143,7 +169,7 @@ pre-registered in [docs/review/](docs/review/) before they were run.
 | Gläser et al. 2018, named best-lit points over 20 years | 2 m: pass at all three points (within 2.1 pp; longest shadow 116 / 66 / 65 h against 112 / 66 / 65 h). Ground level: **fail** (37-44 % against 76-81 %), and strongly dependent on terrain resolution |
 | Diviner equatorial temperatures quoted by Hayne et al. 2017 | pass: 385.2 / 100.3 / 93.7 K against 385 / 101 / 95 K. A constant albedo passes too (TH-V1b), so this case does not test the albedo law |
 | Apollo 15 and 17 mean temperatures quoted by Hayne et al. 2017 | **fail** with the published parameters (8-10 K low); pass with a constant albedo |
-| heat1d, the reference code of Hayne et al. 2017 | **partial**: surface within 0.75 K; 2-3 K colder at depth |
+| heat1d 0.4.1, the current reference code of Hayne et al. 2017 (TH-X1b) | **fail**: night minimum 1.5-1.6 K and mean 1.1-1.6 K warmer than heat1d's default grid (tolerance 1 K); maximum within 0.6 K, depth within 1 K. Post hoc, heat1d's default grid is not converged: on finer grids it agrees with lunarenv within 0.5 K. The obsolete 0.3.2 (TH-X1) gave partial, 2-3 K colder at depth |
 | Diviner polar summer temperatures, 720 m block on the Shackleton rim (TH-V3, TH-V3b) | published albedo law: **fail**, 24 K too cold over the sunlit summer bins; constant albedo: pass, +5.7 K (tolerance 10 K). Only 8 bins qualify; single 240 m cells differ by up to 70 K, and both laws are 43-67 K below the hottest Diviner bin |
 | Mazarico 2011 site table, Gläser 2014 | pending: references not obtained |
 
@@ -177,7 +203,10 @@ Thermal
 
 - **The polar thermal results are outside the validated range**, and say so in every
   run. The regolith properties were fitted to data within 70 degrees of the equator;
-  the heat-capacity fit is stated valid from about 90 K, and polar ground gets colder.
+  the heat-capacity fit is stated valid from about 90 K, and polar ground gets colder
+  (the low-temperature Woods-Robinson 2019 heat capacity used by NASA's DSNE is an
+  option and moves the results by less than 0.3 K; low-temperature conductivity, which
+  matters more at depth, is not modelled).
 - **The albedo law at grazing incidence: the first polar comparison favours the constant
   albedo.** The published incidence-dependent albedo and a constant albedo differ by
   26 K in the yearly mean at the test point. Against Diviner summer data on a 720 m
@@ -191,7 +220,9 @@ Thermal
   terrain model is used unless the scenario gives one.
 - No sunlight scattered or heat radiated by surrounding terrain. Temperatures in shadow
   are lower bounds; an upper bound of the neglected flux is reported (0.02 W m-2 at the
-  test point, where it is negligible; inside craters it would dominate).
+  test point). It is negligible for the mean and maximum there, but about 11 % of what
+  the surface emits at its minimum, so minima may be several kelvin too cold; runs warn
+  when the bound exceeds 5 % of that emission. Inside craters it would dominate.
 - One-dimensional; no rocks; no volatiles.
 - No thermal comparison with polar measurements exists yet.
 
