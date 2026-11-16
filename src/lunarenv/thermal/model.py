@@ -192,6 +192,7 @@ def run_thermal(
     *,
     latitude_rad: float | None = None,
     shadow: np.ndarray | None = None,
+    diffuse_included: bool = False,
 ) -> ThermalResult:
     """Thermal history over a period preceded by its spin-up cycle.
 
@@ -238,10 +239,16 @@ def run_thermal(
             "their use at this latitude is an extrapolation"
         )
     if shadow is not None and bool(np.any(shadow)):
+        share = f"{100.0 * float(np.mean(shadow)):.1f} % of the period has no direct sunlight; "
         warnings.append(
-            f"{100.0 * float(np.mean(shadow)):.1f} % of the period has no direct sunlight; "
-            "terrain-scattered and terrain-emitted radiation are neglected, so temperatures "
-            "in shadow are lower bounds"
+            share
+            + (
+                "single-bounce terrain radiation and Earthshine are included, multiple "
+                "scattering and sub-DEM roughness are not"
+                if diffuse_included
+                else "terrain-scattered and terrain-emitted radiation are neglected, so "
+                "temperatures in shadow are lower bounds"
+            )
         )
     return ThermalResult(
         time_s=np.arange(period_flux.size, dtype=np.float64) * step_s,

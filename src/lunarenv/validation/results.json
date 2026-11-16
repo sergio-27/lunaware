@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "lunarenv_version": "0.1.0.dev0",
- "generated_utc": "2026-11-16T10:39:59Z",
+ "generated_utc": "2026-11-16T12:18:39Z",
  "results": [
   {
    "id": "ILL-A1",
@@ -2241,6 +2241,282 @@
    },
    "seconds": 0.0007414169958792627,
    "run_utc": "2026-11-16T10:39:59Z"
+  },
+  {
+   "id": "TH-A3",
+   "title": "Shadowed floor of a spherical bowl crater, single bounce",
+   "kind": "analytic",
+   "source": "Ingersoll1992 (sphere view factor, single-scattering term)",
+   "metric": "scattered sunlight and terrain infrared at three shadowed floor points",
+   "tolerance": "5 % (pre-registered 2026-11-16)",
+   "status": "PASS",
+   "summary": "scattered 3.366, 3.359, 3.366 W m-2 against 3.372 (largest error 0.4 %); default layout within 3.0 %",
+   "checks": [
+    {
+     "quantity": "scattered sunlight, bowl centre",
+     "reference": 3.372202185084787,
+     "measured": 3.365756538112921,
+     "tolerance": 0.16861010925423936,
+     "unit": "W m-2",
+     "informational": false
+    },
+    {
+     "quantity": "terrain infrared, bowl centre",
+     "reference": 24.729482690621772,
+     "measured": 24.68221461282808,
+     "tolerance": 1.2364741345310888,
+     "unit": "W m-2",
+     "informational": false
+    },
+    {
+     "quantity": "scattered sunlight, floor, -150 m across the Sun",
+     "reference": 3.372202185084787,
+     "measured": 3.3589683889665842,
+     "tolerance": 0.16861010925423936,
+     "unit": "W m-2",
+     "informational": false
+    },
+    {
+     "quantity": "terrain infrared, floor, -150 m across the Sun",
+     "reference": 24.729482690621772,
+     "measured": 24.632434852421635,
+     "tolerance": 1.2364741345310888,
+     "unit": "W m-2",
+     "informational": false
+    },
+    {
+     "quantity": "scattered sunlight, floor, +150 m across the Sun",
+     "reference": 3.372202185084787,
+     "measured": 3.366413611712084,
+     "tolerance": 0.16861010925423936,
+     "unit": "W m-2",
+     "informational": false
+    },
+    {
+     "quantity": "terrain infrared, floor, +150 m across the Sun",
+     "reference": 24.729482690621772,
+     "measured": 24.687033152555312,
+     "tolerance": 1.2364741345310888,
+     "unit": "W m-2",
+     "informational": false
+    },
+    {
+     "quantity": "scattered sunlight, default patch layout, offset +0 m",
+     "reference": 3.372202185084787,
+     "measured": 3.3188973880256847,
+     "tolerance": null,
+     "unit": "W m-2",
+     "informational": true
+    },
+    {
+     "quantity": "scattered sunlight, default patch layout, offset -150 m",
+     "reference": 3.372202185084787,
+     "measured": 3.2709477408253838,
+     "tolerance": null,
+     "unit": "W m-2",
+     "informational": true
+    },
+    {
+     "quantity": "scattered sunlight, default patch layout, offset +150 m",
+     "reference": 3.372202185084787,
+     "measured": 3.3071439607271107,
+     "tolerance": null,
+     "unit": "W m-2",
+     "informational": true
+    },
+    {
+     "quantity": "scattered sunlight, fine, one point per patch, offset +0 m",
+     "reference": 3.372202185084787,
+     "measured": 3.377542874693001,
+     "tolerance": null,
+     "unit": "W m-2",
+     "informational": true
+    },
+    {
+     "quantity": "scattered sunlight, fine, one point per patch, offset -150 m",
+     "reference": 3.372202185084787,
+     "measured": 3.334654587392137,
+     "tolerance": null,
+     "unit": "W m-2",
+     "informational": true
+    },
+    {
+     "quantity": "scattered sunlight, fine, one point per patch, offset +150 m",
+     "reference": 3.372202185084787,
+     "measured": 3.408154230588268,
+     "tolerance": null,
+     "unit": "W m-2",
+     "informational": true
+    }
+   ],
+   "notes": [
+    "Pre-registered in docs/review/preregistration-th-a3-2026-11-16.md (change 3 of the 2026-11-13 scientific review), amended before recording: patches are represented by 3 points stratified by solid angle, not by the one sample of largest solid angle.",
+    "Spherical bowl of rim radius 500 m and depth 200 m (sphere radius 725 m) in level ground, synthetic DEM of 2.5 m pixels; Sun fixed at 10 deg elevation, constant albedo 0.12, patches in instantaneous radiative equilibrium.",
+    "Reference: inside a sphere the view factor between elements is dA / (4 pi R^2), so a shadowed point receives A F sin(e) r^2 / (4 R^2) of scattered sunlight and (1 - A) F sin(e) r^2 / (4 R^2) of infrared, single bounce (Ingersoll1992).",
+    "Fine layout (checks): 180 sectors, 10 m bands, 720 rays, 9148 patches. Default scenario layout (informational): 36 sectors, bands growing by sqrt(2) from 25 m, largest error 3.0 %.",
+    "The ratio of infrared to scattered light is (1 - A) / A by construction; the two checks per receiver test the bookkeeping, not independent physics."
+   ],
+   "data": {},
+   "seconds": 166.8255872920272,
+   "run_utc": "2026-11-16T12:05:02Z"
+  },
+  {
+   "id": "TH-C1",
+   "title": "Terrain irradiance at the rim minimum against the earlier bound",
+   "kind": "cross-check",
+   "source": "neglected-flux bound of the same run; review threshold 0.05 W m-2",
+   "metric": "single-bounce terrain irradiance at the time of the minimum, per albedo case",
+   "tolerance": "at most the bound and at most 0.05 W m-2 (pre-registered 2026-11-16)",
+   "status": "PASS",
+   "summary": "terrain irradiance at the minimum 8.54e-05 W m-2 at most (bound 0.0217, threshold 0.05); Earthshine absorbed 0.0060 W m-2",
+   "checks": [
+    {
+     "quantity": "terrain irradiance at the minimum, cold law (B\u00fcrger 2024): within the earlier bound",
+     "reference": 0.0,
+     "measured": 8.233531024582708e-05,
+     "tolerance": 0.021742154687347293,
+     "unit": "W m-2",
+     "informational": false
+    },
+    {
+     "quantity": "terrain irradiance at the minimum, cold law (B\u00fcrger 2024): below the review threshold",
+     "reference": 0.0,
+     "measured": 8.233531024582708e-05,
+     "tolerance": 0.05,
+     "unit": "W m-2",
+     "informational": false
+    },
+    {
+     "quantity": "terrain irradiance at the minimum, scenario law (Hayne 2017): within the earlier bound",
+     "reference": 0.0,
+     "measured": 8.41900845633447e-05,
+     "tolerance": 0.021742154687347293,
+     "unit": "W m-2",
+     "informational": false
+    },
+    {
+     "quantity": "terrain irradiance at the minimum, scenario law (Hayne 2017): below the review threshold",
+     "reference": 0.0,
+     "measured": 8.41900845633447e-05,
+     "tolerance": 0.05,
+     "unit": "W m-2",
+     "informational": false
+    },
+    {
+     "quantity": "terrain irradiance at the minimum, hot law (Foote 2020): within the earlier bound",
+     "reference": 0.0,
+     "measured": 8.540665437024897e-05,
+     "tolerance": 0.021742154687347293,
+     "unit": "W m-2",
+     "informational": false
+    },
+    {
+     "quantity": "terrain irradiance at the minimum, hot law (Foote 2020): below the review threshold",
+     "reference": 0.0,
+     "measured": 8.540665437024897e-05,
+     "tolerance": 0.05,
+     "unit": "W m-2",
+     "informational": false
+    },
+    {
+     "quantity": "Earthshine absorbed at the minimum, cold law (B\u00fcrger 2024)",
+     "reference": null,
+     "measured": 0.005378743827110283,
+     "tolerance": null,
+     "unit": "W m-2",
+     "informational": true
+    },
+    {
+     "quantity": "change of the minimum from terrain radiation, cold law (B\u00fcrger 2024)",
+     "reference": null,
+     "measured": 0.008982434275765172,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "change of the minimum from Earthshine, cold law (B\u00fcrger 2024)",
+     "reference": null,
+     "measured": 0.23361947510820613,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Earthshine absorbed at the minimum, scenario law (Hayne 2017)",
+     "reference": null,
+     "measured": 0.0059991631884303235,
+     "tolerance": null,
+     "unit": "W m-2",
+     "informational": true
+    },
+    {
+     "quantity": "change of the minimum from terrain radiation, scenario law (Hayne 2017)",
+     "reference": null,
+     "measured": 0.007834298994019662,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "change of the minimum from Earthshine, scenario law (Hayne 2017)",
+     "reference": null,
+     "measured": 0.23309222846425826,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Earthshine absorbed at the minimum, hot law (Foote 2020)",
+     "reference": null,
+     "measured": 0.009381335063991659,
+     "tolerance": null,
+     "unit": "W m-2",
+     "informational": true
+    },
+    {
+     "quantity": "change of the minimum from terrain radiation, hot law (Foote 2020)",
+     "reference": null,
+     "measured": 0.004994814374065015,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "change of the minimum from Earthshine, hot law (Foote 2020)",
+     "reference": null,
+     "measured": 0.25200586811658354,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "terrain irradiance at the minimum, scenario law, twice the sectors and bands",
+     "reference": 8.045163652727831e-05,
+     "measured": 4.5278583839011664e-05,
+     "tolerance": null,
+     "unit": "W m-2",
+     "informational": true
+    }
+   ],
+   "notes": [
+    "Pre-registered in docs/review/preregistration-th-a3-2026-11-16.md (change 3 of the 2026-11-13 scientific review, criteria (b) and its falsification threshold).",
+    "Run of scenarios/shackleton_rim_2026.yaml with the uncertainty ensemble, the slope grid and the constant-albedo alternative switched off (none of them changes the nominal surface element). Ground receiver at the site with the DEM normal.",
+    "The earlier bound (0.0217 W m-2) assumed level ground and full sunlight on all terrain above the horizon; the receiver here has the DEM slope, whose plane hides almost all terrain (terrain view weight 1.01e-05).",
+    "Scenario law: minimum 43.6 K at 2026-08-10T11:00:00Z; absorbed diffuse flux there 0.0061 W m-2 (3.1 % of the emission).",
+    "Convergence check on the ground receiver alone (no asset surfaces), default and doubled patch layout."
+   ],
+   "data": {
+    "pgda78.site04.surf": "38ff70dbdf2f066c2cfa94a646c3a59d653ce7f6b4528b15fc1b43ee397ce758",
+    "pgda90.ldem_80s_80mpp": "82030dcbdd7c4bb0c7d858e9b4b293b9f2cda5a543ba31ec0f42784bd6beee5a",
+    "naif.lsk": "678e32bdb5a744117a467cd9601cd6b373f0e9bc9bbde1371d5eee39600a039b",
+    "naif.pck.text": "3dff7b1dbeceaa01f25467767d3fa25816051c85d162d1edf04acb310ee28bb1",
+    "naif.spk.de440s": "c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2",
+    "naif.pck.moon_pa_de440": "60cd55aa401ea2ea97360636f567554bfe4e37bb829f901b4460a455dfaf783f",
+    "naif.fk.moon_de440": "a47c71e9c9f33796bdafb2c9d69a7ee447b6016ecad80f71cd6f3e479f9cf768"
+   },
+   "seconds": 400.40700929198647,
+   "run_utc": "2026-11-16T12:18:39Z"
   }
  ],
  "not_rerun": {
@@ -2261,6 +2537,10 @@
   "TH-V2b": "not selected",
   "TH-X1": "not selected",
   "TH-X1b": "not selected",
-  "TH-X1c": "not selected"
+  "TH-X1c": "not selected",
+  "TH-V3": "not selected",
+  "TH-V3b": "not selected",
+  "TH-V3c": "not selected",
+  "TH-A3": "not selected"
  }
 }

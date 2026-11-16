@@ -84,6 +84,15 @@ def _run(args: argparse.Namespace) -> int:
                 f"         slope grid {slopes[0]:g}-{slopes[-1]:g} deg, all aspects and laws: "
                 f"surface maximum {lo:.1f} to {hi:.1f} K"
             )
+        diffuse = thermal.get("diffuse")
+        if diffuse:
+            nominal_case = diffuse["cases"]["nominal"]
+            print(
+                f"         diffuse at the minimum: terrain {nominal_case['terrain_irradiance_at_minimum_w_m2']:.2g} "
+                f"W m-2, Earthshine absorbed {nominal_case['earthshine_absorbed_at_minimum_w_m2']:.2g} W m-2; "
+                f"minimum raised {nominal_case['terrain_effect_k']['surface_min']:+.2f} K (terrain), "
+                f"{nominal_case['earthshine_effect_k']['surface_min']:+.2f} K (Earthshine)"
+            )
     surfaces = meta["summary"].get("oriented_surfaces")
     if surfaces:
         for name, s in surfaces["surfaces"].items():
@@ -93,6 +102,12 @@ def _run(args: argparse.Namespace) -> int:
                 f"{s['max_direct_irradiance_w_m2']:.0f} W m-2, lit {100 * s['fraction_of_time_with_direct_sun']:.0f} %; "
                 f"view factor sky {s['sky_view_factor']:.3f}, ground {s['ground_view_factor']:.3f}"
             )
+            if "mean_terrain_scattered_w_m2" in s:
+                print(
+                    f"         diffuse mean: terrain {s['mean_terrain_scattered_w_m2']:.2g} W m-2 scattered, "
+                    f"{s['mean_terrain_infrared_w_m2']:.2g} W m-2 infrared; Earthshine "
+                    f"{s['mean_earthshine_reflected_w_m2'] + s['mean_earthshine_infrared_w_m2']:.2g} W m-2"
+                )
     for warning in meta["validity"]["warnings"]:
         print(f"WARNING {warning}")
     print(f"wall time {meta['timing_s']['total_s']:.1f} s")

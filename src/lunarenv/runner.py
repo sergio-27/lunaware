@@ -35,10 +35,11 @@ from lunarenv.illumination.settings import IlluminationSettings
 from lunarenv.illumination.terrain import TerrainStack, build_stack
 from lunarenv.scenario.schema import Scenario, load_scenario
 from lunarenv.sites import TERRAIN_SETS
+from lunarenv.thermal import terrain_radiation as tr
 from lunarenv.thermal.albedo_laws import ENVELOPE
 from lunarenv.thermal.model import NUMERICAL_ERROR_ESTIMATE as THERMAL_ERROR
 from lunarenv.thermal.model import run_thermal, summarize
-from lunarenv.thermal.properties import RegolithProperties
+from lunarenv.thermal.properties import RegolithProperties, albedo
 from lunarenv.thermal.surface import (
     absorbed_solar_flux,
     direct_irradiance,
@@ -58,6 +59,13 @@ _SPINUP_DAYS = 365
 #: Warn when the neglected terrain flux bound exceeds this share of the emission at the
 #: surface minimum (scientific review 2026-11-13, finding F06).
 _NEGLECTED_FLUX_WARNING_RATIO = 0.05
+#: Diffuse irradiance components, in the order stored in the results.
+DIFFUSE_COMPONENTS = (
+    "terrain_scattered",
+    "terrain_infrared",
+    "earthshine_reflected",
+    "earthshine_infrared",
+)
 
 
 # ------------------------------------------------------------------ model descriptions
@@ -128,7 +136,7 @@ class IlluminationModel:
 
 class ThermalModel:
     name = "thermal"
-    version = "0.2"  # 0.2: albedo envelope, slope grid, asset surfaces, Woods-Robinson c_p option
+    version = "0.3"  # 0.3: single-bounce terrain radiation and Earthshine; 0.2: albedo envelope, slope grid, asset surfaces
     requires: tuple[str, ...] = ("illumination",)
 
     def describe(self) -> ModelDescription:
@@ -140,17 +148,29 @@ class ThermalModel:
             summary=(
                 "One-dimensional heat conduction in regolith with depth-dependent density and "
                 "temperature-dependent conductivity and heat capacity (Hayne2017); radiating surface "
-                "driven by absorbed direct sunlight on the local slope; interior heat flow at the base."
+                "driven by absorbed direct sunlight on the local slope, single-bounce terrain-scattered "
+                "sunlight and terrain infrared, and Earthshine; interior heat flow at the base."
             ),
             requires=self.requires,
-            outputs=("absorbed_solar_flux", "surface_temperature", "temperature"),
+            outputs=(
+                "absorbed_solar_flux",
+                "absorbed_diffuse_flux",
+                "diffuse_irradiance",
+                "surface_temperature",
+                "temperature",
+            ),
             assumptions=(
                 "Heat flows vertically only; properties depend on depth and temperature.",
                 "The surface element has the slope of the DEM at the site unless given explicitly.",
             ),
             simplifications=(
-                "No sunlight scattered or heat radiated by surrounding terrain: temperatures in shadow "
-                "are lower bounds; an upper bound of the neglected flux is reported with each run.",
+                "Terrain radiation is single bounce: terrain is lit by the Sun only, scatters "
+                "Lambertian with its albedo law and emits with its own 1-D temperature, grouped in "
+                "patches; multiple scattering and sub-DEM roughness are not included.",
+                "Earthshine from the HLS-UG-001 peak values scaled by the illuminated fraction of "
+                "the Earth and the Earth-Moon distance.",
+                "Ensemble members and the constant-albedo alternative reuse the nominal terrain's "
+                "diffuse irradiance.",
                 "No rocks, no lateral conduction, no volatiles.",
                 "Incidence angle of the disc centre for partially visible discs.",
             ),
@@ -189,8 +209,17 @@ class ThermalModel:
                 "TH-V2b",
                 "TH-X1",
                 "TH-V3",
+                "TH-A3",
+                "TH-C1",
             ),
-            references=("Hayne2017", "Vasavada2012", "Keihm1984", "heat1d"),
+            references=(
+                "Hayne2017",
+                "Vasavada2012",
+                "Keihm1984",
+                "heat1d",
+                "HLS-UG-001",
+                "Ingersoll1992",
+            ),
             documentation="docs/models/thermal.md",
         )
 
@@ -252,6 +281,22 @@ def _surface_stats(result: Any) -> dict[str, float]:
         "surface_mean_k": float(surface.mean()),
         "mean_at_1m_k": float(result.at_depth(min(1.0, float(result.depth_m[-1]))).mean()),
     }
+
+
+def _diffuse_absorbed(
+    parts: dict[str, np.ndarray],
+    earth_incidence_rad: np.ndarray | None,
+    properties: RegolithProperties,
+) -> np.ndarray:
+    """Absorbed diffuse flux: terrain light with the hemispherical albedo, Earthshine with
+    the albedo at its incidence, infrared with the emissivity."""
+    eps = properties.emissivity
+    out = (1.0 - tr.diffuse_albedo(properties)) * parts["terrain_scattered"] + eps * (
+        parts["terrain_infrared"] + parts["earthshine_infrared"]
+    )
+    if earth_incidence_rad is not None:
+        out = out + (1.0 - albedo(earth_incidence_rad, properties)) * parts["earthshine_reflected"]
+    return np.asarray(out)
 
 
 def _utc(moment: np.datetime64) -> str:
@@ -510,9 +555,108 @@ def run_scenario(
     if thermal_on:
         tick = time.perf_counter()
         properties = scenario.thermal.properties
-        flux = absorbed_solar_flux(
+        laws = _envelope_properties(properties)
+        grid = scenario.thermal.slope_grid
+        orientations = (
+            [
+                (s, 360.0 * k / grid.aspects)
+                for s in grid.slopes_deg
+                for k in range(1 if s == 0.0 else grid.aspects)
+            ]
+            if grid is not None
+            else []
+        )
+        ground_normals = [nominal["normal"]] + [
+            normal_from_slope(np.radians(a), np.radians(b)) for a, b in orientations
+        ]
+        asset_normals = [
+            plane_normal(np.radians(o.tilt_deg), np.radians(o.facing_azimuth_deg))
+            for o in scenario.thermal.oriented_surfaces
+        ]
+        diffuse_cases = ALBEDO_CASES if scenario.thermal.albedo_envelope else ("nominal",)
+        n_total = eph.et.size
+        radiation: tr.SiteRadiation | None = None
+        asset_view = "ground"
+        tick_diffuse = time.perf_counter()
+        if scenario.thermal.terrain_radiation:
+            heights = {"ground": 0.0}
+            if asset_normals and scenario.site.height_above_surface_m > 0.0:
+                heights["asset"] = scenario.site.height_above_surface_m
+                asset_view = "asset"
+            settings_ill = scenario.illumination.settings
+            radiation = tr.site_radiation(
+                stack,
+                *xy,
+                heights,
+                eph.et,
+                eph.sun,
+                eph.r_sun,
+                eclipse_factor=nominal["eclipse"],
+                refinement=scenario.thermal.terrain_patch_refinement,
+                n_strips=settings_ill.n_strips,
+                limb_u=settings_ill.limb_darkening,
+                mode=settings_ill.disc_mode_code,
+            )
+            ground_mask = radiation.relevant([("ground", n) for n in ground_normals])
+            asset_mask = radiation.relevant([(asset_view, n) for n in asset_normals])
+            for case in diffuse_cases:
+                radiation.compute(
+                    case,
+                    laws[case],
+                    ground_mask | asset_mask if case == "nominal" else ground_mask,
+                    step_s=step_s,
+                    spinup_samples=spin,
+                    settings=scenario.thermal.settings,
+                )
+        earth_ground = (
+            tr.earthshine(
+                nominal["ground"], eph.et, eph.earth, eph.sun, eph.r_earth, projection=PROJ
+            )
+            if scenario.thermal.earthshine
+            else None
+        )
+        earth_asset = (
+            tr.earthshine(structure, eph.et, eph.earth, eph.sun, eph.r_earth, projection=PROJ)
+            if scenario.thermal.earthshine and asset_normals
+            else None
+        )
+        timing["diffuse_s"] = time.perf_counter() - tick_diffuse
+
+        def diffuse_parts(
+            case: str, normal: np.ndarray, view: str = "ground"
+        ) -> tuple[dict[str, np.ndarray], np.ndarray | None]:
+            """Diffuse irradiance components on a receiver and the Earth incidence angle."""
+            zeros = np.zeros(n_total)
+            parts = dict.fromkeys(DIFFUSE_COMPONENTS, zeros)
+            if radiation is not None:
+                parts["terrain_scattered"], parts["terrain_infrared"] = radiation.irradiance(
+                    view, case, normal
+                )
+            earth = earth_ground if view == "ground" else earth_asset
+            incidence = None
+            if earth is not None:
+                parts["earthshine_reflected"], parts["earthshine_infrared"], incidence = earth.on(
+                    normal
+                )
+            return parts, incidence
+
+        def diffuse_flux(
+            case: str, normal: np.ndarray, props: RegolithProperties, *, earth: bool = True
+        ) -> np.ndarray:
+            parts, incidence = diffuse_parts(case, normal)
+            if not earth:
+                parts = {
+                    **parts,
+                    "earthshine_reflected": np.zeros(n_total),
+                    "earthshine_infrared": np.zeros(n_total),
+                }
+            return _diffuse_absorbed(parts, incidence, props)
+
+        diffuse_on = radiation is not None or earth_ground is not None
+        direct = absorbed_solar_flux(
             nominal["sun_ground"], nominal["normal"], properties, eclipse_factor=nominal["eclipse"]
         )
+        flux = direct + diffuse_flux("nominal", nominal["normal"], properties)
         in_shadow = nominal["sun_ground"].visible_fraction[spin:] <= 0.0
         thermal_nominal = run_thermal(
             flux,
@@ -522,6 +666,7 @@ def run_scenario(
             scenario.thermal.settings,
             latitude_rad=latitude,
             shadow=in_shadow,
+            diffuse_included=radiation is not None,
         )
         warnings.extend(f"thermal: {w}" for w in thermal_nominal.warnings)
         stats = summarize(thermal_nominal)
@@ -531,7 +676,7 @@ def run_scenario(
         # night-time balance, not the mean absorbed flux, is what the minimum depends on
         emission_at_min = properties.emissivity * STEFAN_BOLTZMANN_W_M2_K4 * stats.surface_min_k**4
         bound_ratio = bound.flux_w_m2 / emission_at_min
-        if bound_ratio > _NEGLECTED_FLUX_WARNING_RATIO:
+        if radiation is None and bound_ratio > _NEGLECTED_FLUX_WARNING_RATIO:
             warnings.append(
                 f"thermal: the neglected terrain flux may reach {bound.flux_w_m2:.3g} W m-2, "
                 f"{100.0 * bound_ratio:.0f} % of the {emission_at_min:.3g} W m-2 the surface emits "
@@ -548,11 +693,30 @@ def run_scenario(
             },
         )
         variables["absorbed_solar_flux"] = _variable(
-            thermal_nominal.absorbed_flux_w_m2,
+            direct[spin:],
             ("time",),
             "W m-2",
             "direct solar flux absorbed by the surface element",
         )
+        if diffuse_on:
+            nominal_parts, _ = diffuse_parts("nominal", nominal["normal"])
+            coords["component"] = (
+                "component",
+                np.array(DIFFUSE_COMPONENTS),
+                {"units": "1", "long_name": "diffuse irradiance component"},
+            )
+            variables["diffuse_irradiance"] = _variable(
+                np.array([nominal_parts[c][spin:] for c in DIFFUSE_COMPONENTS]),
+                ("component", "time"),
+                "W m-2",
+                "irradiance on the surface element from terrain (single bounce) and Earthshine",
+            )
+            variables["absorbed_diffuse_flux"] = _variable(
+                (flux - direct)[spin:],
+                ("time",),
+                "W m-2",
+                "terrain and Earthshine flux absorbed by the surface element",
+            )
         variables["surface_temperature"] = _variable(
             thermal_nominal.surface_temperature_k,
             ("time",),
@@ -583,6 +747,7 @@ def run_scenario(
                 )
             },
             "mean_absorbed_flux_w_m2": float(thermal_nominal.absorbed_flux_w_m2.mean()),
+            "mean_absorbed_direct_flux_w_m2": float(direct[spin:].mean()),
             "spinup_cycles": thermal_nominal.spinup.cycles,
             "spinup_residual_k": thermal_nominal.spinup.residual_k,
             "neglected_terrain_flux_upper_bound_w_m2": bound.flux_w_m2,
@@ -594,7 +759,7 @@ def run_scenario(
             flat = properties.model_copy(update={"albedo_a": 0.0, "albedo_b": 0.0})
             flux_flat = absorbed_solar_flux(
                 nominal["sun_ground"], nominal["normal"], flat, eclipse_factor=nominal["eclipse"]
-            )
+            ) + diffuse_flux("nominal", nominal["normal"], flat)
             alternative = run_thermal(flux_flat, step_s, spin, flat, scenario.thermal.settings)
             variables["surface_temperature_constant_albedo"] = _variable(
                 alternative.surface_temperature_k,
@@ -624,7 +789,7 @@ def run_scenario(
                     nominal["normal"],
                     case_properties,
                     eclipse_factor=nominal["eclipse"],
-                )
+                ) + diffuse_flux(case, nominal["normal"], case_properties)
                 envelope_results[case] = run_thermal(
                     case_flux, step_s, spin, case_properties, scenario.thermal.settings
                 )
@@ -659,14 +824,101 @@ def run_scenario(
                 "validation": "TH-V3c: Diviner summer temperatures on a 720 m block at the site "
                 "against both bounds (VALIDATION.md)",
             }
-        grid = scenario.thermal.slope_grid
+        if diffuse_on:
+            full = {"nominal": thermal_nominal}
+            if scenario.thermal.albedo_envelope:
+                full.update({c: envelope_results[c] for c in ("cold", "hot")})
+            effects: dict[str, Any] = {}
+            for case, result in full.items():
+                case_props = laws[case]
+                direct_case = absorbed_solar_flux(
+                    nominal["sun_ground"],
+                    nominal["normal"],
+                    case_props,
+                    eclipse_factor=nominal["eclipse"],
+                )
+                bare = run_thermal(direct_case, step_s, spin, case_props, scenario.thermal.settings)
+                terrain_only = run_thermal(
+                    direct_case + diffuse_flux(case, nominal["normal"], case_props, earth=False),
+                    step_s,
+                    spin,
+                    case_props,
+                    scenario.thermal.settings,
+                )
+                at_min = int(np.argmin(result.surface_temperature_k))
+                parts, incidence = diffuse_parts(case, nominal["normal"])
+                earth_parts = {
+                    **dict.fromkeys(("terrain_scattered", "terrain_infrared"), np.zeros(n_total)),
+                    "earthshine_reflected": parts["earthshine_reflected"],
+                    "earthshine_infrared": parts["earthshine_infrared"],
+                }
+                earth_absorbed = _diffuse_absorbed(earth_parts, incidence, case_props)
+                bare_s, terrain_s, full_s = (
+                    _surface_stats(r) for r in (bare, terrain_only, result)
+                )
+                effects[case] = {
+                    "time_of_minimum_utc": _utc(period_times[at_min]),
+                    "surface_min_k": full_s["surface_min_k"],
+                    "terrain_scattered_at_minimum_w_m2": float(
+                        parts["terrain_scattered"][spin + at_min]
+                    ),
+                    "terrain_infrared_at_minimum_w_m2": float(
+                        parts["terrain_infrared"][spin + at_min]
+                    ),
+                    "terrain_irradiance_at_minimum_w_m2": float(
+                        parts["terrain_scattered"][spin + at_min]
+                        + parts["terrain_infrared"][spin + at_min]
+                    ),
+                    "earthshine_absorbed_at_minimum_w_m2": float(earth_absorbed[spin + at_min]),
+                    "mean_absorbed_diffuse_w_m2": float(
+                        diffuse_flux(case, nominal["normal"], case_props)[spin:].mean()
+                    ),
+                    "terrain_effect_k": {
+                        "surface_min": terrain_s["surface_min_k"] - bare_s["surface_min_k"],
+                        "surface_mean": terrain_s["surface_mean_k"] - bare_s["surface_mean_k"],
+                    },
+                    "earthshine_effect_k": {
+                        "surface_min": full_s["surface_min_k"] - terrain_s["surface_min_k"],
+                        "surface_mean": full_s["surface_mean_k"] - terrain_s["surface_mean_k"],
+                    },
+                    "left_out_patches_upper_bound_w_m2": (
+                        radiation.left_out_bound_w_m2("ground", case, nominal["normal"])
+                        if radiation is not None
+                        else None
+                    ),
+                }
+            diffuse_min = float(
+                (flux - direct)[spin + int(np.argmin(thermal_nominal.surface_temperature_k))]
+            )
+            summary["thermal"]["diffuse"] = {
+                "method": "single-bounce terrain radiation (Lambertian patches, each with its own "
+                "horizon, sunlight and 1-D temperature) and Earthshine (HLS-UG-001 section 11.1); "
+                "multiple scattering and sub-DEM roughness not included (docs/models/thermal.md)",
+                "terrain_radiation": radiation is not None,
+                "earthshine": earth_ground is not None,
+                "patches": radiation.patches.size if radiation is not None else 0,
+                "patch_points": radiation.patches.n_points if radiation is not None else 0,
+                "patches_computed": {
+                    c: int(m.sum()) for c, m in (radiation.computed.items() if radiation else [])
+                },
+                "patch_refinement": scenario.thermal.terrain_patch_refinement,
+                "terrain_view_weight": float(radiation.weights("ground", nominal["normal"]).sum())
+                if radiation is not None
+                else None,
+                "absorbed_diffuse_at_minimum_w_m2": diffuse_min,
+                "absorbed_diffuse_at_minimum_over_emission": diffuse_min / emission_at_min,
+                "cases": effects,
+                "validation": "TH-A3 (analytic bowl crater) and TH-C1 (flux at this minimum "
+                "against the bound), VALIDATION.md",
+            }
+            if diffuse_min / emission_at_min > _NEGLECTED_FLUX_WARNING_RATIO:
+                warnings.append(
+                    f"thermal: terrain radiation and Earthshine supply {diffuse_min:.3g} W m-2 at the "
+                    f"surface minimum, {100.0 * diffuse_min / emission_at_min:.0f} % of what the surface "
+                    "emits there; they are single-bounce estimates (multiple scattering and roughness "
+                    "not included), so the minimum carries their uncertainty"
+                )
         if grid is not None:
-            orientations = [
-                (s, 360.0 * k / grid.aspects)
-                for s in grid.slopes_deg
-                for k in range(1 if s == 0.0 else grid.aspects)
-            ]
-            laws = _envelope_properties(properties)
             cases = ALBEDO_CASES if scenario.thermal.albedo_envelope else ("nominal",)
             table = np.empty((len(orientations), len(cases), 3))
             rows = []
@@ -679,7 +931,7 @@ def run_scenario(
                 for j, case in enumerate(cases):
                     case_flux = absorbed_solar_flux(
                         nominal["sun_ground"], normal, laws[case], eclipse_factor=nominal["eclipse"]
-                    )
+                    ) + diffuse_flux(case, normal, laws[case])
                     surface = run_thermal(
                         case_flux, step_s, spin, laws[case], scenario.thermal.settings
                     ).surface_temperature_k
@@ -737,6 +989,7 @@ def run_scenario(
     if scenario.thermal.oriented_surfaces:
         surfaces_out: dict[str, Any] = {}
         irradiance_rows = []
+        diffuse_rows: list[list[np.ndarray]] = []
         horizon = nominal["structure"].elevation_rad[0]
         for item in scenario.thermal.oriented_surfaces:
             normal = plane_normal(np.radians(item.tilt_deg), np.radians(item.facing_azimuth_deg))
@@ -746,6 +999,20 @@ def run_scenario(
             irradiance_rows.append(irradiance)
             factors = view_factors(horizon, structure.azimuth_rad, normal)
             dark = longest_run(irradiance <= 0.0, step_s)
+            diffuse_entry: dict[str, Any] = {}
+            if thermal_on and diffuse_on:
+                parts, _ = diffuse_parts("nominal", normal, asset_view)
+                diffuse_rows.append([parts[c][spin:] for c in DIFFUSE_COMPONENTS])
+                diffuse_entry = {
+                    f"mean_{c}_w_m2": float(parts[c][spin:].mean()) for c in DIFFUSE_COMPONENTS
+                } | {f"max_{c}_w_m2": float(parts[c][spin:].max()) for c in DIFFUSE_COMPONENTS}
+                if radiation is not None:
+                    diffuse_entry["terrain_view_weight"] = float(
+                        radiation.weights(asset_view, normal).sum()
+                    )
+                    diffuse_entry["left_out_patches_upper_bound_w_m2"] = (
+                        radiation.left_out_bound_w_m2(asset_view, "nominal", normal)
+                    )
             surfaces_out[item.name] = {
                 "tilt_deg": item.tilt_deg,
                 "facing_grid_azimuth_deg": item.facing_azimuth_deg,
@@ -755,6 +1022,7 @@ def run_scenario(
                 "longest_without_direct_sun_hours": dark.duration_s / 3600.0,
                 "sky_view_factor": factors.sky,
                 "ground_view_factor": factors.ground,
+                **diffuse_entry,
             }
         coords["surface"] = (
             "surface",
@@ -767,8 +1035,28 @@ def run_scenario(
             "W m-2",
             "direct solar irradiance on the asset surface (no terrain-scattered light)",
         )
+        if diffuse_rows:
+            if "component" not in coords:
+                coords["component"] = (
+                    "component",
+                    np.array(DIFFUSE_COMPONENTS),
+                    {"units": "1", "long_name": "diffuse irradiance component"},
+                )
+            variables["oriented_diffuse_irradiance"] = _variable(
+                np.array(diffuse_rows),
+                ("surface", "component", "time"),
+                "W m-2",
+                "irradiance on the asset surface from terrain (single bounce, scenario albedo "
+                "law) and Earthshine",
+            )
         summary["oriented_surfaces"] = {
-            "note": "Direct sunlight only, at the observer height of the site; terrain-scattered "
+            "note": "At the observer height of the site. Direct sunlight, and (when computed) "
+            "single-bounce terrain-scattered sunlight, terrain infrared and Earthshine with the "
+            "scenario albedo law for the terrain; the asset does not shadow the ground. "
+            "Temperatures of asset surfaces belong in the asset's thermal model "
+            "(HLS-UG-001 section 9)."
+            if diffuse_rows
+            else "Direct sunlight only, at the observer height of the site; terrain-scattered "
             "sunlight, terrain infrared and Earthshine are not included (the ground view factor "
             "scales them). Temperatures of asset surfaces belong in the asset's thermal model "
             "(HLS-UG-001 section 9).",
@@ -828,7 +1116,7 @@ def run_scenario(
                 terrain_member["normal"],
                 member_properties,
                 eclipse_factor=terrain_member["eclipse"],
-            )
+            ) + diffuse_flux("nominal", nominal["normal"], member_properties)
             result = run_thermal(
                 member_flux, step_s, spin, member_properties, scenario.thermal.settings
             )
@@ -848,7 +1136,7 @@ def run_scenario(
                     terrain_member["normal"],
                     law_properties,
                     eclipse_factor=terrain_member["eclipse"],
-                )
+                ) + diffuse_flux(case, nominal["normal"], law_properties)
                 law_result = run_thermal(
                     law_flux, step_s, spin, law_properties, scenario.thermal.settings
                 )

@@ -9,12 +9,16 @@ import numpy as np
 
 from lunarenv.core.constants import STEFAN_BOLTZMANN_W_M2_K4 as SIGMA
 from lunarenv.data.store import DataStore
+from lunarenv.geometry.ephemeris import DE440
+from lunarenv.sites import TERRAIN_SETS
 from lunarenv.thermal.grid import geometric_grid, uniform_grid
 from lunarenv.thermal.model import SYNODIC_MONTH_S, ThermalResult, ThermalSettings, run_thermal
 from lunarenv.thermal.properties import RegolithProperties, kirchhoff
 from lunarenv.thermal.solver import SchemeName, solve_conduction
 from lunarenv.thermal.surface import analytic_absorbed_flux
 from lunarenv.validation.core import Case, Check, Outcome, Status
+
+_REFERENCE_REQUIRES = (*TERRAIN_SETS["site04"].required_ids, *DE440.kernel_ids)
 
 _PER_CYCLE = 720
 
@@ -768,6 +772,200 @@ def _th_v3c(store: DataStore) -> Outcome:
     return Outcome(checks, summary, notes)
 
 
+# ------------------------------------------------------------- terrain radiation (change 3)
+_TH_A3_TOLERANCE = 0.05  # relative, pre-registered 2026-11-16
+_TH_A3_FINE = {
+    "n_sectors": 180,
+    "band_edges_m": (*(10.0 * k for k in range(120)), float("inf")),
+    "n_rays": 720,
+    "patch_azimuths": 360,
+}
+_TH_C1_THRESHOLD_W_M2 = 0.05  # the review's falsification threshold
+
+
+def _th_a3(_: DataStore) -> Outcome:
+    from lunarenv.thermal import terrain_radiation as tr
+    from lunarenv.validation import bowl
+
+    fine = bowl.run_bowl(**_TH_A3_FINE)  # type: ignore[arg-type]
+    if not all(fine.in_shadow):
+        raise RuntimeError("a TH-A3 receiver is sunlit; the analytic reference does not apply")
+    sectors, edges = tr.patch_layout()
+    default = bowl.run_bowl(n_sectors=sectors, band_edges_m=edges, n_rays=360, patch_azimuths=360)
+    single = bowl.run_bowl(**_TH_A3_FINE, points_per_patch=1)  # type: ignore[arg-type]
+    checks: list[Check] = []
+    for i, offset in enumerate(fine.offsets_m):
+        where = "bowl centre" if offset == 0.0 else f"floor, {offset:+.0f} m across the Sun"
+        checks += [
+            Check(
+                quantity=f"scattered sunlight, {where}",
+                reference=fine.reference_visible_w_m2,
+                measured=fine.visible_w_m2[i],
+                tolerance=_TH_A3_TOLERANCE * fine.reference_visible_w_m2,
+                unit="W m-2",
+            ),
+            Check(
+                quantity=f"terrain infrared, {where}",
+                reference=fine.reference_infrared_w_m2,
+                measured=fine.infrared_w_m2[i],
+                tolerance=_TH_A3_TOLERANCE * fine.reference_infrared_w_m2,
+                unit="W m-2",
+            ),
+        ]
+    for label, result in (("default patch layout", default), ("fine, one point per patch", single)):
+        for i, offset in enumerate(result.offsets_m):
+            checks.append(
+                Check(
+                    quantity=f"scattered sunlight, {label}, offset {offset:+.0f} m",
+                    reference=result.reference_visible_w_m2,
+                    measured=result.visible_w_m2[i],
+                    unit="W m-2",
+                    informational=True,
+                )
+            )
+    worst = max(abs(v / fine.reference_visible_w_m2 - 1.0) for v in (*fine.visible_w_m2,))
+    worst_default = max(abs(v / default.reference_visible_w_m2 - 1.0) for v in default.visible_w_m2)
+    notes = (
+        "Pre-registered in docs/review/preregistration-th-a3-2026-11-16.md (change 3 of the "
+        "2026-11-13 scientific review), amended before recording: patches are represented by "
+        "3 points stratified by solid angle, not by the one sample of largest solid angle.",
+        f"Spherical bowl of rim radius {bowl.RIM_RADIUS_M:g} m and depth {bowl.DEPTH_M:g} m "
+        f"(sphere radius {bowl.sphere_radius_m():g} m) in level ground, synthetic DEM of "
+        f"{bowl.PIXEL_M:g} m pixels; Sun fixed at {bowl.SUN_ELEVATION_DEG:g} deg elevation, "
+        f"constant albedo {bowl.ALBEDO:g}, patches in instantaneous radiative equilibrium.",
+        "Reference: inside a sphere the view factor between elements is dA / (4 pi R^2), so "
+        "a shadowed point receives A F sin(e) r^2 / (4 R^2) of scattered sunlight and "
+        "(1 - A) F sin(e) r^2 / (4 R^2) of infrared, single bounce (Ingersoll1992).",
+        f"Fine layout (checks): 180 sectors, 10 m bands, 720 rays, {fine.n_patches} patches. "
+        f"Default scenario layout (informational): {sectors} sectors, bands growing by sqrt(2) "
+        f"from 25 m, largest error {100 * worst_default:.1f} %.",
+        "The ratio of infrared to scattered light is (1 - A) / A by construction; the two "
+        "checks per receiver test the bookkeeping, not independent physics.",
+    )
+    summary = (
+        f"scattered {', '.join(f'{v:.3f}' for v in fine.visible_w_m2)} W m-2 against "
+        f"{fine.reference_visible_w_m2:.3f} (largest error {100 * worst:.1f} %); default "
+        f"layout within {100 * worst_default:.1f} %"
+    )
+    return Outcome(checks, summary, notes)
+
+
+def _reference_scenario(**thermal: object) -> dict:  # type: ignore[type-arg]
+    from pathlib import Path
+
+    import yaml
+
+    path = Path(__file__).resolve().parents[3] / "scenarios" / "shackleton_rim_2026.yaml"
+    if not path.is_file():
+        raise FileNotFoundError(f"TH-C1 needs the reference scenario at {path} (source checkout)")
+    scenario: dict = yaml.safe_load(path.read_text())  # type: ignore[type-arg]
+    scenario["uncertainty"] = {"members": 0, "terrain_clones": 0, "seed": 1}
+    scenario["thermal"].update(
+        {"slope_grid": None, "constant_albedo_alternative": False, **thermal}
+    )
+    return scenario
+
+
+def _th_c1(store: DataStore) -> Outcome:
+    from lunarenv.runner import run_scenario
+
+    run = run_scenario(_reference_scenario(), store=store)
+    thermal = run.metadata["summary"]["thermal"]
+    diffuse = thermal["diffuse"]
+    bound = float(thermal["neglected_terrain_flux_upper_bound_w_m2"])
+    checks: list[Check] = []
+    labels = {
+        "cold": "cold law (Bürger 2024)",
+        "nominal": "scenario law (Hayne 2017)",
+        "hot": "hot law (Foote 2020)",
+    }
+    for case, label in labels.items():
+        flux = float(diffuse["cases"][case]["terrain_irradiance_at_minimum_w_m2"])
+        checks += [
+            Check(
+                quantity=f"terrain irradiance at the minimum, {label}: within the earlier bound",
+                reference=0.0,
+                measured=flux,
+                tolerance=bound,
+                unit="W m-2",
+            ),
+            Check(
+                quantity=f"terrain irradiance at the minimum, {label}: below the review threshold",
+                reference=0.0,
+                measured=flux,
+                tolerance=_TH_C1_THRESHOLD_W_M2,
+                unit="W m-2",
+            ),
+        ]
+    for case, label in labels.items():
+        entry = diffuse["cases"][case]
+        checks += [
+            Check(
+                quantity=f"Earthshine absorbed at the minimum, {label}",
+                measured=float(entry["earthshine_absorbed_at_minimum_w_m2"]),
+                unit="W m-2",
+                informational=True,
+            ),
+            Check(
+                quantity=f"change of the minimum from terrain radiation, {label}",
+                measured=float(entry["terrain_effect_k"]["surface_min"]),
+                unit="K",
+                informational=True,
+            ),
+            Check(
+                quantity=f"change of the minimum from Earthshine, {label}",
+                measured=float(entry["earthshine_effect_k"]["surface_min"]),
+                unit="K",
+                informational=True,
+            ),
+        ]
+    # patch convergence on the ground receiver alone (asset surfaces off, so that the
+    # doubled layout stays affordable)
+    ground = {}
+    for refinement in (1, 2):
+        r = run_scenario(
+            _reference_scenario(oriented_surfaces=[], terrain_patch_refinement=refinement),
+            store=store,
+        )
+        ground[refinement] = float(
+            r.metadata["summary"]["thermal"]["diffuse"]["cases"]["nominal"][
+                "terrain_irradiance_at_minimum_w_m2"
+            ]
+        )
+    checks.append(
+        Check(
+            quantity="terrain irradiance at the minimum, scenario law, twice the sectors and bands",
+            reference=ground[1],
+            measured=ground[2],
+            unit="W m-2",
+            informational=True,
+        )
+    )
+    nominal = diffuse["cases"]["nominal"]
+    notes = (
+        "Pre-registered in docs/review/preregistration-th-a3-2026-11-16.md (change 3 of the "
+        "2026-11-13 scientific review, criteria (b) and its falsification threshold).",
+        "Run of scenarios/shackleton_rim_2026.yaml with the uncertainty ensemble, the slope "
+        "grid and the constant-albedo alternative switched off (none of them changes the "
+        "nominal surface element). Ground receiver at the site with the DEM normal.",
+        f"The earlier bound ({bound:.4f} W m-2) assumed level ground and full sunlight on all "
+        "terrain above the horizon; the receiver here has the DEM slope, whose plane hides "
+        f"almost all terrain (terrain view weight {diffuse['terrain_view_weight']:.2e}).",
+        f"Scenario law: minimum {nominal['surface_min_k']:.1f} K at {nominal['time_of_minimum_utc']}; "
+        f"absorbed diffuse flux there {diffuse['absorbed_diffuse_at_minimum_w_m2']:.4f} W m-2 "
+        f"({100 * diffuse['absorbed_diffuse_at_minimum_over_emission']:.1f} % of the emission).",
+        "Convergence check on the ground receiver alone (no asset surfaces), default and "
+        "doubled patch layout.",
+    )
+    fluxes = [float(diffuse["cases"][c]["terrain_irradiance_at_minimum_w_m2"]) for c in labels]
+    summary = (
+        f"terrain irradiance at the minimum {max(fluxes):.2e} W m-2 at most (bound {bound:.4f}, "
+        f"threshold {_TH_C1_THRESHOLD_W_M2}); Earthshine absorbed "
+        f"{nominal['earthshine_absorbed_at_minimum_w_m2']:.4f} W m-2"
+    )
+    return Outcome(checks, summary, notes)
+
+
 CASES: tuple[Case, ...] = (
     Case(
         "TH-A1",
@@ -891,5 +1089,26 @@ CASES: tuple[Case, ...] = (
         requires=("pgda78.site04.surf", "pgda90.ldem_80s_80mpp"),
         slow=True,
         run=_th_v3c,
+    ),
+    Case(
+        "TH-A3",
+        "Shadowed floor of a spherical bowl crater, single bounce",
+        "analytic",
+        "Ingersoll1992 (sphere view factor, single-scattering term)",
+        "scattered sunlight and terrain infrared at three shadowed floor points",
+        "5 % (pre-registered 2026-11-16)",
+        slow=True,
+        run=_th_a3,
+    ),
+    Case(
+        "TH-C1",
+        "Terrain irradiance at the rim minimum against the earlier bound",
+        "cross-check",
+        "neglected-flux bound of the same run; review threshold 0.05 W m-2",
+        "single-bounce terrain irradiance at the time of the minimum, per albedo case",
+        "at most the bound and at most 0.05 W m-2 (pre-registered 2026-11-16)",
+        requires=(*_REFERENCE_REQUIRES,),
+        slow=True,
+        run=_th_c1,
     ),
 )

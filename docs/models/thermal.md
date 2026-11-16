@@ -40,6 +40,13 @@ limb darkening), `theta` the incidence angle on the local slope taken from the D
 `A(theta)` the incidence-dependent albedo of Hayne2017, and `f_eclipse` the fraction of
 the Sun not covered by the Earth.
 
+Diffuse input (review change 3, on by default: `terrain_radiation`, `earthshine`):
+`Q_diffuse = (1 - A_d) E_ts + eps E_ti + (1 - A(theta_E)) E_er + eps E_ei`, with `E_ts` and
+`E_ti` the sunlight scattered and the infrared emitted by surrounding terrain (single
+bounce), `E_er` and `E_ei` the reflected and infrared Earthshine, `A_d` the albedo law
+averaged over isotropic illumination and `theta_E` the incidence angle of the Earth. See
+"Terrain radiation and Earthshine" below.
+
 ## Numerical method and why
 
 | Choice | Alternatives | Why |
@@ -72,7 +79,7 @@ each cycle every cell is shifted to satisfy it. *Measured*: convergence to 1e-3 
 | Heat-capacity fit stated valid from below 90 K | The test point reaches 43 K. Flagged. The WoodsRobinson2019 c_p adopted by DSNE (SLS-SPEC-159 Rev I, Table 3.4.6.2.2-1, 10-300 K, stated valid 10-400 K) is available as an option; it is 16 % lower at 43 K but changes the reference scenario by -0.13 K at the minimum, -0.03 K in the mean and at most -0.25 K at depth (nominal run, 2026-11-15). The default stays the Hayne2017 polynomial so that the code comparisons (TH-X1, TH-X1b) remain like-for-like. Low-temperature *conductivity* (DSNE: the Hayne relations "will likely over predict" it below 100 K) is not modelled and matters more at depth (review finding F09). |
 | Albedo law fitted to level equatorial ground, applied at grazing polar incidence | **Largest model-form uncertainty.** At 88 degrees incidence the law gives an albedo of 0.79. With a constant albedo of 0.12 instead, the test point is 26 K warmer on average and 50 K warmer at its maximum. |
 | Slope from the 5 m DEM | **Largest input uncertainty.** With the Sun never more than 1.8 degrees high, a tilt of 1 degree changes the absorbed flux severalfold. Slope over a 20 m baseline instead of 5 m raises the maximum by 7 K. |
-| No light scattered or heat radiated by surrounding terrain | Upper bound from the horizon profile at the test point: 0.02 W m-2. That is below 1 % of the mean absorbed flux (2.5 W m-2) but about 11 % of the 0.18 W m-2 the surface emits at its 43 K minimum, which is what sets the minimum: the yearly mean and maximum are barely affected, the minimum may be several kelvin too cold. Each run reports the bound relative to the emission at its minimum and warns above 5 %. Inside craters terrain radiation would dominate. In shadow the computed temperatures are lower bounds. |
+| Terrain radiation single bounce; Earthshine from guidebook peak values | Before change 3 the neglected terrain flux was bounded at 0.02 W m-2 at the test point (11 % of the emission at the minimum). With single-bounce terrain radiation the ground at the test point receives 8e-5 W m-2 at its minimum (its 0.4 deg slope hides almost all terrain), and Earthshine 0.006 W m-2 absorbed: +0.01 K and +0.23 K on the minimum (TH-C1). Multiple scattering is not included: inside craters results are lower bounds. Runs warn when the diffuse input at the minimum exceeds 5 % of the emission. |
 | One-dimensional, no rocks, no lateral conduction | Valid at scales above the skin depth (centimetres to decimetres). |
 | Incidence angle of the disc centre for partial discs | Second-order effect during sunrise and sunset. |
 | Lunar eclipses as overlap of two uniform discs, no atmosphere | Contact times within a minute or two of almanac values. Checked against the eclipse of 2026 March 3. |
@@ -171,8 +178,58 @@ it, and the sky and ground view factors from the horizon profile (`sky + ground 
 for a level plane `1 - mean(sin^2 e_h)`). Their temperature is not computed: it depends
 on the asset and belongs in its thermal model (HLS-UG-001 section 9). At the test point
 a vertical wall receives up to 1400 W m-2, level ground 45 W m-2. Terrain-scattered
-sunlight and terrain infrared on these surfaces are not computed yet (review change 3);
-the ground view factor scales them.
+sunlight, terrain infrared and Earthshine on these surfaces are computed with the
+scenario's albedo law for the terrain (`oriented_diffuse_irradiance`; see below).
+
+## Terrain radiation and Earthshine (review change 3)
+
+Method (`lunarenv.thermal.terrain_radiation`; pre-registered in
+docs/review/preregistration-th-a3-2026-11-16.md, with its amendment):
+
+1. **Visible terrain.** Rays from the receiver (360 by default) over the terrain stack,
+   with the horizon tracer's geometry and sample plan. A sample is visible when it rises
+   above every closer sample on its ray; it fills the elevation interval from that
+   previous maximum to its own elevation.
+2. **Patches.** Visible samples are grouped in 36 azimuth sectors and distance bands
+   growing by sqrt(2) from 25 m (`terrain_patch_refinement` multiplies both). Each patch
+   is represented by 3 points, stratified by solid angle along distance; each point gets
+   its own horizon, DEM normal, direct sunlight (same disc model, Earth-eclipse factor of
+   the site) and 1-D temperature under the same albedo law and properties. The patch
+   exitance is the mean over its points: scattered `A(theta) E cos(theta)` and emitted
+   `eps sigma T^4`, both Lambertian.
+3. **Receiver.** Each sample sends its patch's exitance times its cosine-weighted solid
+   angle over pi, integrated exactly in elevation and clipped at the receiver plane, so
+   any orientation works, including vertical walls. The weights of all terrain plus the
+   sky add up to 1 (checked against the horizon view factors to 1e-3).
+4. **Cost control.** Patches that cannot send more than 1e-4 W m-2 to any receiver of the
+   run are not computed; the bound of what they could send is reported. Cold and hot
+   albedo cases are computed for the ground receivers only (site normal, slope grid);
+   asset surfaces get the scenario law.
+5. **Earthshine** (HLS-UG-001 section 11.1): normal irradiance
+   `(0.100 gamma + 0.056) (384400 km / d)^2` W m-2 (reflected, infrared), `gamma` the
+   illuminated fraction of the Earth's disc from the Sun-Earth-site phase angle, times the
+   visible fraction of the Earth's disc above the terrain horizon and the cosine of
+   incidence. That the guidebook's peak values refer to the mean distance is an assumption.
+
+Not included: multiple scattering between terrain elements, roughness below the DEM
+resolution, non-Lambertian scattering and emission, shadowing of the ground by the asset,
+and sunlight variation within a patch beyond its 3 points. Ensemble members and the
+constant-albedo alternative reuse the nominal terrain's diffuse irradiance (absorbed with
+their own albedo and emissivity). In the receiver's spin-up year, the terrain's own
+temperatures come from a periodic spin-up of each patch point, then a run over both years.
+
+Verification: TH-A3 (analytic spherical bowl, single bounce, Ingersoll1992) and TH-C1
+(terrain irradiance at the rim minimum against the earlier bound), VALIDATION.md.
+
+Results (2026-11-16): TH-A3 PASS, within 0.4 % at the pre-registered fine layout and
+3.0 % at the default layout. TH-C1 PASS: at the rim minimum the ground receives at most
+8.5e-5 W m-2 from terrain (bound 0.0217 W m-2, threshold 0.05 W m-2); Earthshine 0.006
+W m-2 absorbed, raising the minimum by 0.23 K. Doubling sectors and bands changes the
+terrain value from 8.0e-5 to 4.5e-5 W m-2 (ground receiver alone): at a point whose plane
+hides almost all terrain, the few patches that graze it are not converged in relative
+terms; the absolute change, 3.5e-5 W m-2, is far below anything that moves the
+temperature. For receivers that see much terrain (walls, crater floors) the bowl case is
+the relevant check.
 
 ## Numerical error at the default settings
 
@@ -188,6 +245,11 @@ One point, nine simulated years (eight spin-up cycles and the period) at hourly 
 43 cells: 0.3 CPU-seconds with one step per sample, 0.6 with the default two. Cost is
 linear in steps and cells, about 90 ns per cell and step. The 128-member ensemble took
 42 CPU-seconds.
+
+Terrain radiation adds 1-2 CPU-seconds per patch point (spin-up, then two years). At the
+test point the ground receivers (site slope and slope grid) needed 131 patches (393
+points) per albedo case and the six asset surfaces 317 patches (934 points) under the
+scenario law: about 530 s of the 932 s wall-clock reference run on 7 worker processes.
 
 ## Verification
 

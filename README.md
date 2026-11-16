@@ -25,8 +25,8 @@ ledger, not new science (finding F10 of the [scientific review](docs/review/)).
   visibility; Gläser et al. 2018 give results for named polar sites.
 - **Thermal.** [heat1d](https://github.com/phayne/heat1d) (Hayne, MIT licence) is the
   open implementation of the Hayne et al. 2017 regolith model that lunarenv's thermal
-  model follows. Terrain-scattered sunlight and terrain infrared, which lunarenv does
-  not model yet, are in open codes: Topo3D in Schörghofer's
+  model follows. Terrain-scattered sunlight and terrain infrared, which lunarenv models
+  with a single bounce, are in open codes with multiple scattering: Topo3D in Schörghofer's
   [Planetary-Code-Collection](https://github.com/nschorgh/Planetary-Code-Collection),
   [fluxpy](https://github.com/sampotter/fluxpy) (Potter), and the Oxford 3D
   thermophysical model (King et al. 2020). The review also reports several open 2026
@@ -107,25 +107,28 @@ uv run lunarenv run scenarios/shackleton_rim_2026.yaml
 uv run lunarenv report <run_id>
 ```
 
-Output of the run (16 clones in the cache, 203 s on an M1 Pro):
+Output of the run (16 clones in the cache, 932 s on an M1 Pro, of which about 530 s
+for the terrain patches seen by the asset walls; another job shared the machine):
 
 ```text
-run 9c7c607e7f6e01e4  ->  runs/9c7c607e7f6e01e4
+run 0f77a7a04f9447cd  ->  runs/0f77a7a04f9447cd
 illumination: mean visible solar disc 85.51 %, longest shadow 63 h, longest illumination 2803 h
               terrain ensemble 5/50/95 %: 85.35 / 85.54 / 85.69 %
-thermal bounds (albedo envelope x ensemble 5-95 %): surface minimum 41.1-60.2 K, maximum 102.9-200.1 K, mean 60.9-108.5 K
+thermal bounds (albedo envelope x ensemble 5-95 %): surface minimum 41.3-60.4 K, maximum 102.9-200.1 K, mean 61.0-108.6 K
          nominal terrain: cold law max 106.7 K, scenario law 119.2 K, hot law 163.0 K
-thermal, scenario law: surface 43.3 to 119.2 K (mean 70.3 K) on a 0.39 deg slope
+thermal, scenario law: surface 43.6 to 119.2 K (mean 70.4 K) on a 0.39 deg slope
          surface maximum, ensemble 5/50/95 %: 105.6 / 118.4 / 146.8 K
-         with constant albedo: mean 96.6 K (+26.3 K); not settled by validation
-         slope grid 0-10 deg, all aspects and laws: surface maximum 101.9 to 252.8 K
+         with constant albedo: mean 96.7 K (+26.3 K); not settled by validation
+         slope grid 0-10 deg, all aspects and laws: surface maximum 101.9 to 252.9 K
+         diffuse at the minimum: terrain 8.4e-05 W m-2, Earthshine absorbed 0.006 W m-2; minimum raised +0.01 K (terrain), +0.23 K (Earthshine)
 surface roof (tilt 0, facing 0): direct sun mean 12 W m-2, max 45 W m-2, lit 50 %; view factor sky 1.000, ground 0.000
+         diffuse mean: terrain 0.00049 W m-2 scattered, 0.00037 W m-2 infrared; Earthshine 0.0034 W m-2
 surface wall-0 (tilt 90, facing 0): direct sun mean 373 W m-2, max 1401 W m-2, lit 46 %; view factor sky 0.517, ground 0.483
+         diffuse mean: terrain 5.5 W m-2 scattered, 2.3 W m-2 infrared; Earthshine 0.053 W m-2
 ...
-WARNING thermal: temperatures reach 43.3 K, below the 90 K down to which the heat-capacity fit is stated to be valid
+WARNING thermal: temperatures reach 43.6 K, below the 90 K down to which the heat-capacity fit is stated to be valid
 WARNING thermal: regolith properties were derived from data within 70 degrees of the equator; their use at this latitude is an extrapolation
-WARNING thermal: 17.7 % of the period has no direct sunlight; terrain-scattered and terrain-emitted radiation are neglected, so temperatures in shadow are lower bounds
-WARNING thermal: the neglected terrain flux may reach 0.0217 W m-2, 11 % of the 0.19 W m-2 the surface emits at its minimum of 43.3 K; the minimum is a lower bound and may be too cold by several kelvin
+WARNING thermal: 17.7 % of the period has no direct sunlight; single-bounce terrain radiation and Earthshine are included, multiple scattering and sub-DEM roughness are not
 ```
 
 The run directory holds `results.nc` (NetCDF-4, CF attributes, units on every
@@ -171,8 +174,8 @@ For agents: `lunarenv-mcp`, see [docs/mcp.md](docs/mcp.md).
 ## Validation
 
 [VALIDATION.md](VALIDATION.md) lists every case with its source, metric, tolerance and
-result. Summary (23 cases): 16 pass, 4 fail, 1 partial, 2 pending. Eight cases (TH-V1b,
-ILL-V2b, ILL-V5, TH-V3, TH-V3b, TH-V3c, TH-X1b, TH-X1c) follow an independent scientific review and were
+result. Summary (25 cases): 18 pass, 4 fail, 1 partial, 2 pending. Ten cases (TH-V1b,
+ILL-V2b, ILL-V5, TH-V3, TH-V3b, TH-V3c, TH-X1b, TH-X1c, TH-A3, TH-C1) follow an independent scientific review and were
 pre-registered in [docs/review/](docs/review/) before they were run.
 
 | Compared with | Result |
@@ -187,6 +190,8 @@ pre-registered in [docs/review/](docs/review/) before they were run.
 | heat1d 0.4.1, the current reference code of Hayne et al. 2017 | converged grid (TH-X1c): **pass**, surface within 0.8 K and depth within 0.8 K at 0, 20 and 26 deg. Default grid (TH-X1b): **fail**, night minimum and mean 1.1-1.6 K warmer, because that grid is not converged. The obsolete 0.3.2 (TH-X1): partial, 2-3 K colder at depth |
 | Diviner polar summer temperatures, 720 m block on the Shackleton rim (TH-V3, TH-V3b) | published albedo law: **fail**, 24 K too cold over the sunlit summer bins; constant albedo: pass, +5.7 K (tolerance 10 K). Only 8 bins qualify; single 240 m cells differ by up to 70 K, and both laws are 43-67 K below the hottest Diviner bin |
 | Diviner, same block, against the albedo envelope (TH-V3c) | **pass**, at the hot edge: cold law (Bürger 2024) -34.2 K, hot law (Foote 2020) -0.4 K over the sunlit bins. Diviner lies between the two laws in only 3 of 8 sunlit bins and 5 of 64 summer bins; elsewhere it is warmer than the hot law |
+| Spherical bowl crater, single-bounce terrain radiation (TH-A3, Ingersoll et al. 1992) | **pass**: scattered sunlight and terrain infrared within 0.4 % at three shadowed floor points (tolerance 5 %); default patch layout within 3 % |
+| Terrain irradiance at the rim minimum against the earlier 0.0217 W m-2 bound and the review's 0.05 W m-2 threshold (TH-C1) | **pass**: 8.5e-5 W m-2 at most over the three albedo laws; Earthshine 0.006 W m-2 absorbed, +0.23 K on the minimum. With twice the patches the terrain value is 4.5e-5 W m-2: not converged in relative terms, negligible in absolute ones |
 | Mazarico 2011 site table, Gläser 2014 | pending: references not obtained |
 
 ## Known limitations
@@ -232,7 +237,8 @@ Thermal
   Hayne law is 24 K too cold, the hot bound 0.4 K too cold and a constant albedo 0.12
   (outside the envelope) 6 K too warm; Diviner sits at the hot edge of the envelope,
   above it in most individual bins. The evidence is thin (8 sunlit bins, one site),
-  single 240 m cells disagree by up to 70 K, and terrain radiation is missing.
+  single 240 m cells disagree by up to 70 K, and the TH-V3 forward model has no terrain
+  radiation (the scenario runs do; see below).
 - **Slope dominates and is poorly known.** With the Sun never more than 1.8 degrees
   high, a tilt of one degree changes the absorbed flux severalfold. The slope of a 5 m
   terrain model is used unless the scenario gives one; a slope grid (`slope_grid`)
@@ -240,15 +246,20 @@ Thermal
   point, 0-10 degrees: maximum 102 to 253 K).
 - **Ground temperature is not the temperature of a structure.** For asset surfaces
   (`oriented_surfaces`, any tilt up to vertical) the engine gives the direct solar
-  irradiance and the sky and ground view factors, the inputs of the asset's own thermal
-  model (HLS-UG-001 section 9). At the test point a vertical wall receives up to
-  1400 W m-2 of direct sunlight, level ground 45 W m-2. Terrain-scattered light and
-  terrain infrared on these surfaces are not computed yet.
-- No sunlight scattered or heat radiated by surrounding terrain. Temperatures in shadow
-  are lower bounds; an upper bound of the neglected flux is reported (0.02 W m-2 at the
-  test point). It is negligible for the mean and maximum there, but about 11 % of what
-  the surface emits at its minimum, so minima may be several kelvin too cold; runs warn
-  when the bound exceeds 5 % of that emission. Inside craters it would dominate.
+  irradiance, the sky and ground view factors and the diffuse irradiance (terrain
+  scattered, terrain infrared, Earthshine), the inputs of the asset's own thermal model
+  (HLS-UG-001 section 9). At the test point a vertical wall receives up to 1400 W m-2 of
+  direct sunlight and on average about 6 W m-2 scattered and 2 W m-2 infrared from the
+  terrain; level ground 45 W m-2 direct. The terrain under the asset is the scenario
+  albedo law, and the asset does not shadow it.
+- **Terrain radiation is single bounce.** Terrain lit by the Sun scatters (Lambertian,
+  its albedo law) and emits (its own 1-D temperature), grouped into patches; light
+  bouncing more than once, roughness below the 5 m terrain model and non-Lambertian
+  scattering are not modelled. The method reproduces the analytic bowl crater within
+  0.4 % (3 % at the default patch layout, TH-A3). On the rim test point the ground's own
+  slope hides almost all terrain: terrain raises the minimum by 0.01 K and Earthshine by
+  0.23 K (TH-C1). Inside craters, where multiple scattering matters, results are lower
+  bounds. Earthshine uses the peak values of HLS-UG-001 section 11.1.
 - One-dimensional; no rocks; no volatiles.
 
 Software
@@ -273,7 +284,8 @@ workloads loaded the machine and are upper bounds.
 | Horizon of one observer, 1440 directions | 0.10-0.13 CPU-s |
 | One year of hourly illumination at a point | 8 ms |
 | One year of hourly temperature at a point, with spin-up | 0.6 CPU-s |
-| Reference scenario: one year, 16 terrain clones, 64 parameter samples | 109 s wall-clock |
+| Reference scenario: one year, 16 terrain clones, 64 parameter samples, six asset surfaces | 932 s wall-clock (about 530 s for terrain patches) |
+| Terrain radiation at a ground point, one year hourly | 1-2 CPU-s per patch point (two-year run, 3 points per patch); at the test point the ground and its slope grid used 131 patches, the asset walls 317 |
 | Map, per pixel, 1440 directions | about 0.1 CPU-s |
 
 Details: [docs/models/illumination.md](docs/models/illumination.md),

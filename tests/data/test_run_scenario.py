@@ -77,6 +77,9 @@ def test_every_variable_has_units_and_the_expected_shape(first):
         "surface_temperature_envelope_quantiles",
         "slope_grid_surface_temperature",
         "oriented_direct_irradiance",
+        "absorbed_diffuse_flux",
+        "diffuse_irradiance",
+        "oriented_diffuse_irradiance",
     }
     assert expected <= set(dataset.data_vars)
     assert dataset["temperature"].dims == ("time", "depth")
@@ -209,3 +212,25 @@ def test_oriented_surfaces_irradiance_and_view_factors(first):
     # with the Sun within 2 degrees of the horizon, a wall facing it gets far more than the roof
     assert float(irradiance.sel(surface="roof").max()) < 60.0
     assert np.all(irradiance.values >= 0.0)
+
+
+def test_terrain_radiation_and_earthshine(first):
+    diffuse = first.metadata["summary"]["thermal"]["diffuse"]
+    assert diffuse["terrain_radiation"] and diffuse["earthshine"]
+    assert set(diffuse["cases"]) == {"cold", "nominal", "hot"}
+    for entry in diffuse["cases"].values():
+        # extra energy never cools the surface
+        assert entry["terrain_effect_k"]["surface_mean"] >= -1e-6
+        assert entry["earthshine_effect_k"]["surface_mean"] >= -1e-6
+    parts = first.dataset["diffuse_irradiance"]
+    assert np.all(parts.values >= 0.0)
+    # Earthshine never exceeds its full-Earth peak at the nearest distance
+    assert float(parts.sel(component="earthshine_reflected").max()) < 0.100 * 1.15
+    surfaces = first.metadata["summary"]["oriented_surfaces"]["surfaces"]
+    roof, wall = surfaces["roof"], surfaces["wall-north"]
+    # a wall sees about half terrain, the roof almost none
+    assert wall["terrain_view_weight"] == pytest.approx(wall["ground_view_factor"], abs=0.02)
+    assert roof["terrain_view_weight"] < 0.05
+    assert wall["mean_terrain_infrared_w_m2"] > roof["mean_terrain_infrared_w_m2"]
+    total = first.dataset["absorbed_diffuse_flux"].values
+    assert np.all(total >= 0.0)

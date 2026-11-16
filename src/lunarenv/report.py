@@ -485,6 +485,10 @@ def _badge(status: str) -> str:
     return f'<span class="badge" style="--state:var(--{role})"><i aria-hidden="true">{glyph}</i>{html.escape(status)}</span>'
 
 
+def _maybe(value: float | None) -> str:
+    return "not computed" if value is None else f"{value:.2g}"
+
+
 def _table(headers: list[tuple[str, bool]], rows: list[list[str]]) -> str:
     head = "".join(
         f'<th scope="col"{" class=num" if numeric else ""}>{html.escape(h)}</th>'
@@ -601,8 +605,9 @@ def render_html(dataset: xr.Dataset, metadata: dict[str, Any]) -> str:
         parts.append(
             "<p>Lower end: 5 % quantile of the coldest albedo law; upper end: 95 % quantile of the "
             "hottest (Bürger 2024 and Foote 2020, highland laws). Validation case TH-V3c tests "
-            "whether Diviner polar temperatures at the site fall inside. Terrain-scattered and "
-            "terrain-emitted radiation are not included, so minima in shadow are low.</p>"
+            "whether Diviner polar temperatures at the site fall inside. Terrain radiation (single "
+            "bounce) and Earthshine are included when the run says so; multiple scattering is "
+            "not.</p>"
         )
         parts.append(
             _table(
@@ -622,6 +627,17 @@ def render_html(dataset: xr.Dataset, metadata: dict[str, Any]) -> str:
             f"albedo laws, the surface maximum ranges from {lo:.1f} to {hi:.1f} K (nominal terrain). "
             f"{e(grid['note'])}</p>"
         )
+    diffuse = metadata["summary"].get("thermal", {}).get("diffuse")
+    if diffuse:
+        case = diffuse["cases"]["nominal"]
+        parts.append(
+            "<p><strong>Terrain radiation and Earthshine.</strong> At the surface minimum "
+            f"({case['surface_min_k']:.1f} K, {e(case['time_of_minimum_utc'])}) the terrain sends "
+            f"{case['terrain_irradiance_at_minimum_w_m2']:.2g} W m⁻² and Earthshine supplies "
+            f"{case['earthshine_absorbed_at_minimum_w_m2']:.2g} W m⁻² absorbed; they raise the "
+            f"minimum by {case['terrain_effect_k']['surface_min']:+.2f} K and "
+            f"{case['earthshine_effect_k']['surface_min']:+.2f} K. {e(diffuse['method'])}.</p>"
+        )
     surfaces = metadata["summary"].get("oriented_surfaces")
     if surfaces:
         parts.append("<h3>Asset surfaces</h3>")
@@ -638,6 +654,9 @@ def render_html(dataset: xr.Dataset, metadata: dict[str, Any]) -> str:
                     ("Longest dark (h)", True),
                     ("Sky view", True),
                     ("Ground view", True),
+                    ("Mean terrain scattered (W m⁻²)", True),
+                    ("Mean terrain IR (W m⁻²)", True),
+                    ("Mean Earthshine (W m⁻²)", True),
                 ],
                 [
                     [
@@ -650,6 +669,14 @@ def render_html(dataset: xr.Dataset, metadata: dict[str, Any]) -> str:
                         f"{s['longest_without_direct_sun_hours']:.0f}",
                         f"{s['sky_view_factor']:.3f}",
                         f"{s['ground_view_factor']:.3f}",
+                        _maybe(s.get("mean_terrain_scattered_w_m2")),
+                        _maybe(s.get("mean_terrain_infrared_w_m2")),
+                        _maybe(
+                            None
+                            if "mean_earthshine_reflected_w_m2" not in s
+                            else s["mean_earthshine_reflected_w_m2"]
+                            + s["mean_earthshine_infrared_w_m2"]
+                        ),
                     ]
                     for name, s in surfaces["surfaces"].items()
                 ],

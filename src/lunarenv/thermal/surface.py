@@ -9,12 +9,13 @@ albedo of Hayne2017 and ``f_eclipse`` the Earth-occultation factor.
 
 What is left out, and what it does (PLAN.md, decision 1 of section 11):
 
-* **Sunlight scattered by surrounding terrain and thermal emission from it.** Zero
-  effect on a surface in full sunlight compared with the direct beam; the only energy
-  source of a surface in shadow, where the model is therefore too cold.
-  :func:`neglected_terrain_flux_bound` gives an upper bound from the horizon profile:
-  terrain cannot send more than it receives, so the flux from terrain is at most the
-  solar irradiance times the fraction of the receiver's view occupied by terrain.
+* **Sunlight scattered by surrounding terrain and thermal emission from it**, and
+  Earthshine: not here. They are computed, single bounce, by
+  :mod:`lunarenv.thermal.terrain_radiation` and added by the runner.
+  :func:`neglected_terrain_flux_bound` keeps the earlier upper bound from the horizon
+  profile (terrain cannot send more than it receives, so the flux from terrain is at most
+  the solar irradiance times the fraction of the receiver's view occupied by terrain),
+  reported for comparison (validation case TH-C1).
 * **Partial discs**: the incidence angle is that of the disc centre.
 * **Sub-pixel roughness**: the normal is that of the DEM at its sampling baseline. The
   albedo law is an empirical fit that already absorbs roughness effects on level

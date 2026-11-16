@@ -196,7 +196,30 @@ class ThermalBlock(_Strict):
     oriented_surfaces: list[OrientedSurface] = Field(
         default_factory=list,
         max_length=32,
-        description="Asset surfaces: direct solar irradiance and sky / terrain view factors.",
+        description=(
+            "Asset surfaces: direct solar irradiance, sky / terrain view factors and, with "
+            "terrain_radiation and earthshine, the diffuse irradiance on each."
+        ),
+    )
+    terrain_radiation: bool = Field(
+        True,
+        description=(
+            "Add sunlight scattered by the surrounding terrain and its thermal emission, single "
+            "bounce (review change 3; validated on the analytic bowl crater, TH-A3)."
+        ),
+    )
+    earthshine: bool = Field(
+        True,
+        description="Add Earthshine, reflected and infrared (NASA HLS-UG-001 section 11.1).",
+    )
+    terrain_patch_refinement: int = Field(
+        1,
+        ge=1,
+        le=4,
+        description=(
+            "Multiplies the number of azimuth sectors and distance bands of the terrain "
+            "patches (1: 36 sectors, bands growing by sqrt(2) from 25 m)."
+        ),
     )
 
 
