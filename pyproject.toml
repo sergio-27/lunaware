@@ -62,6 +62,8 @@ markers = [
 [tool.ruff]
 line-length = 100
 src = ["src", "tests"]
+# review records are kept verbatim, including the reviewer's code
+extend-exclude = ["docs/review"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "NPY", "RUF"]
