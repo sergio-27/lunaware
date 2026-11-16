@@ -78,9 +78,19 @@ Full study: [../convergence/illumination.md](../convergence/illumination.md).
   On the rim crest at 2 m it is about +/-1 percentage point on the yearly mean and the
   nominal DEM sits at the optimistic end of the ensemble. At 10 m it falls to 0.01
   points, below the numerical estimate.
-- **Not represented**: errors of the regional DEM beyond the site tile; relief below the
-  DEM resolution. At observer heights where the skyline is distant, the reported
-  uncertainty is therefore a lower bound on the true one.
+- **Regional terrain error** (review finding F14; ILL-C1, pre-registered 2026-11-16) is
+  not available as clones, only as the PGDA 90 per-pixel rms height error map of the
+  80 m regional DEM (Barker2023 section 3; median 0.29 m, largest 9.0 m). Runs bound it:
+  the regional DEM is raised and lowered everywhere by `k` errors (`regional_error_k`,
+  default 2), which bounds the horizon, and with it the visible fraction and the shadow
+  and illumination periods, for any regional error within `k` errors whatever its
+  correlation. It is a bound, not a confidence interval. At the reference point and the
+  five Gläser 2018 points (2026) the k = 2 bound moves the yearly mean by at most
+  0.013 pp and the horizon by at most 0.003 degrees, and changes no longest shadow; the
+  site clones' 5-95 % range is at least 30 times wider. Regional error is negligible at
+  these points.
+- **Not represented**: relief below the DEM resolution; errors of terrain beyond the
+  80 S product.
 - Results carry both numbers; neither is folded into the other.
 
 ## Performance

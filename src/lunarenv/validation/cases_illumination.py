@@ -15,15 +15,18 @@ from lunarenv.geometry.ephemeris import DE440, spice_session
 from lunarenv.geometry.projection import SouthPolarStereographic, elevation_azimuth
 from lunarenv.geometry.visibility import horizon_dip
 from lunarenv.illumination.disc import CHORD, PROFILE, disc_fractions
+from lunarenv.illumination.ensemble import regional_error_stacks
 from lunarenv.illumination.horizon import compute_horizons
 from lunarenv.illumination.products import illumination_statistics
 from lunarenv.illumination.settings import IlluminationSettings, load_site_stack
 from lunarenv.illumination.terrain import TerrainLevel, TerrainStack, build_stack, coarsen
+from lunarenv.sites import TERRAIN_SETS
 from lunarenv.validation.analytic import analytic_dem, reference_horizon
 from lunarenv.validation.core import Case, Check, Outcome, Status
 
 PROJ = SouthPolarStereographic()
 _REGIONAL = "pgda90.ldem_80s_80mpp"
+_REGIONAL_ERR = "pgda90.ldem_80s_80mpp_err"
 _MONTHS = {
     m: i + 1 for i, m in enumerate("Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split())
 }
@@ -678,6 +681,194 @@ def _ill_v5(store: DataStore) -> Outcome:
     return Outcome(checks, "; ".join(parts) + " (average / visibility)", notes)
 
 
+# ------------------------------------------- sensitivity: regional DEM error (F14)
+#: Observers of ILL-C1: label, site DEM, height (m), map x, y (m). The reference
+#: scenario's point at 2 m and 0 m, then the Glaser2018 points of ILL-V5.
+def _ill_c1_points() -> list[tuple[str, str, float, float, float]]:
+    points = [
+        ("test point 2 m", "pgda78.site04.surf", 2.0, -2822.5, -9062.5),
+        ("test point 0 m", "pgda78.site04.surf", 0.0, -2822.5, -9062.5),
+    ]
+    for label, near_id, height, lat, lon, *_ in GLASER2018:
+        x, y = PROJ.forward(np.radians(lon), np.radians(lat))
+        points.append((label, near_id, height, float(x), float(y)))
+    return points
+
+
+def _ill_c1(store: DataStore) -> Outcome:
+    settings = IlluminationSettings()
+    utc = np.arange(
+        np.datetime64("2026-01-01T00:00"), np.datetime64("2027-01-01T00:00"), np.timedelta64(1, "h")
+    )
+    with spice_session(store, DE440) as ephemeris:
+        et = ephemeris.utc_to_et(utc)
+        sun = ephemeris.position_from_center("SUN", et)
+        radius = ephemeris.body_radius_m("SUN")
+    regional = load_dem(store, _REGIONAL)
+    error = load_dem(store, _REGIONAL_ERR)
+    points = _ill_c1_points()
+    # per point: variant -> (mean visible %, longest shadow h, horizon elevation rad)
+    results: dict[str, dict[str, tuple[float, float, np.ndarray]]] = {p[0]: {} for p in points}
+    clones: dict[str, list[tuple[float, float]]] = {p[0]: [] for p in points}
+
+    def evaluate(
+        stack: TerrainStack, members: list[tuple[str, str, float, float, float]]
+    ) -> dict[str, tuple[float, float, np.ndarray]]:
+        out: dict[str, tuple[float, float, np.ndarray]] = {}
+        for height in sorted({m[2] for m in members}):
+            group = [m for m in members if m[2] == height]
+            horizons = compute_horizons(
+                stack,
+                np.array([m[3] for m in group]),
+                np.array([m[4] for m in group]),
+                height_above_surface_m=height,
+                n_azimuth=settings.n_azimuth,
+                diagnostics=False,
+            )
+            stats = illumination_statistics(
+                horizons,
+                et,
+                sun,
+                radius,
+                n_strips=settings.n_strips,
+                limb_u=settings.limb_darkening,
+                mode=settings.disc_mode_code,
+            )
+            for i, m in enumerate(group):
+                out[m[0]] = (
+                    100.0 * float(stats.mean_visible_fraction[i]),
+                    float(stats.longest_shadow_s[i]) / 3600.0,
+                    np.asarray(horizons.elevation_rad[i], dtype=np.float64),
+                )
+        return out
+
+    n_clones: dict[str, int] = {}
+    for near_id in dict.fromkeys(p[1] for p in points):
+        members = [p for p in points if p[1] == near_id]
+        near = load_dem(store, near_id)
+        nominal = build_stack(
+            near,
+            regional,
+            near_radius_m=settings.near_radius_m,
+            mid_radius_m=settings.mid_radius_m,
+            step_fraction=settings.step_fraction,
+            far_coarsening=settings.far_coarsening,
+        )
+        variants = {"nominal": nominal}
+        for k in (1.0, 2.0):
+            low, high = regional_error_stacks(near, regional, error, k, settings)
+            variants[f"lowered {k:g}"], variants[f"raised {k:g}"] = low, high
+        for name, stack in variants.items():
+            for label, value in evaluate(stack, members).items():
+                results[label][name] = value
+        group = next(t.clone_group for t in TERRAIN_SETS.values() if t.near_id == near_id)
+        clone_ids = [e.id for e in store.catalog.group(group) if store.is_available(e.id)]
+        n_clones[near_id] = len(clone_ids)
+        for clone_id in clone_ids:
+            for label, value in evaluate(
+                nominal.with_near(load_dem(store, clone_id)), members
+            ).items():
+                clones[label].append(value[:2])
+
+    checks: list[Check] = []
+    widest = (0.0, "")
+    dominated = []
+    for label, *_ in points:
+        r = results[label]
+        nom, low2, high2, low1, high1 = (
+            r[v] for v in ("nominal", "lowered 2", "raised 2", "lowered 1", "raised 1")
+        )
+        clone = np.array(clones[label]) if clones[label] else np.empty((0, 2))
+        width2 = low2[0] - high2[0]
+        clone_width = (
+            float(np.quantile(clone[:, 0], 0.95) - np.quantile(clone[:, 0], 0.05))
+            if clone.size
+            else float("nan")
+        )
+        if width2 > widest[0]:
+            widest = (width2, label)
+        if clone.size and width2 > clone_width:
+            dominated.append(label)
+        checks += [
+            Check(
+                quantity=f"{label}: mean visible disc, k = 2 raised / lowered regional terrain",
+                reference=high2[0],
+                measured=low2[0],
+                unit="%",
+                informational=True,
+            ),
+            Check(
+                quantity=f"{label}: change of the mean visible disc from the nominal, k = 2 raised / lowered",
+                reference=high2[0] - nom[0],
+                measured=low2[0] - nom[0],
+                unit="pp",
+                informational=True,
+            ),
+            Check(
+                quantity=f"{label}: width of the k = 2 bound / of the clone 5-95 % range, mean visible disc",
+                reference=width2,
+                measured=clone_width,
+                unit="pp",
+                informational=True,
+            ),
+            Check(
+                quantity=f"{label}: width of the k = 1 bound, mean visible disc",
+                measured=low1[0] - high1[0],
+                unit="pp",
+                informational=True,
+            ),
+            Check(
+                quantity=f"{label}: longest shadow, k = 2 lowered / raised (nominal {nom[1]:.0f} h)",
+                reference=low2[1],
+                measured=high2[1],
+                unit="h",
+                informational=True,
+            ),
+            Check(
+                quantity=f"{label}: longest shadow, clone 5 / 95 %",
+                reference=float(np.quantile(clone[:, 1], 0.05)) if clone.size else None,
+                measured=float(np.quantile(clone[:, 1], 0.95)) if clone.size else None,
+                unit="h",
+                informational=True,
+            ),
+            Check(
+                quantity=f"{label}: largest horizon change over azimuth, k = 2 raised / lowered",
+                reference=float(np.degrees(np.max(high2[2] - nom[2]))),
+                measured=float(np.degrees(np.max(nom[2] - low2[2]))),
+                unit="deg",
+                informational=True,
+            ),
+        ]
+    shadow_step = max(
+        max(
+            abs(results[p[0]]["raised 2"][1] - results[p[0]]["nominal"][1]),
+            abs(results[p[0]]["lowered 2"][1] - results[p[0]]["nominal"][1]),
+        )
+        for p in points
+    )
+    summary = (
+        f"k = 2 bound on the mean visible disc at most {widest[0]:.2f} pp wide ({widest[1]}); "
+        f"longest shadow changes by at most {shadow_step:.0f} h; bound wider than the clone "
+        f"5-95 % range at {len(dominated)} of {len(points)} points"
+    )
+    notes = (
+        "Pre-registered in docs/review/preregistration-f14-2026-11-16.md (finding F14 of the "
+        "2026-11-13 scientific review) before it was implemented or run.",
+        "Error map: PGDA 90 LDEM_80S_80MPP_ADJ_ERR, rms height error of the 80 m regional DEM per "
+        "pixel (Barker2023 section 3). Only a per-pixel rms is published, so the regional DEM is "
+        "raised and lowered everywhere by k errors: a bound for any regional error within k "
+        "errors, whatever its correlation, not a confidence interval.",
+        "Observers: the reference scenario's point (2 m and 0 m) and the five Glaser2018 points of "
+        "ILL-V5, 2026 hourly, default settings, nominal site DEMs. Clone ranges: "
+        + ", ".join(f"{n} clones of {i}" for i, n in n_clones.items())
+        + " (near field only).",
+        "Points where the bound is wider than the clone range: "
+        + (", ".join(dominated) or "none")
+        + ".",
+    )
+    return Outcome(checks, summary, notes, Status.INFO)
+
+
 _PAYWALL = "The paper is behind a paywall and was not accessed; only its abstract was read."
 
 CASES: tuple[Case, ...] = (
@@ -793,6 +984,24 @@ CASES: tuple[Case, ...] = (
         ),
         slow=True,
         run=_ill_v5,
+    ),
+    Case(
+        "ILL-C1",
+        "Effect of the regional DEM error on illumination (bound)",
+        "cross-check",
+        "PGDA 90 rms height error map (Barker2023); terrain error clones for comparison",
+        "mean visible disc and longest shadow with the regional DEM raised and lowered by 1 and 2 "
+        "errors, against the clone 5-95 % range",
+        "none: sensitivity (pre-registered 2026-11-16)",
+        requires=(
+            "pgda78.site01.surf",
+            "pgda78.site04.surf",
+            _REGIONAL,
+            _REGIONAL_ERR,
+            *DE440.kernel_ids,
+        ),
+        slow=True,
+        run=_ill_c1,
     ),
 )
 

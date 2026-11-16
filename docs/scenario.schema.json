@@ -662,6 +662,14 @@
      "title": "Terrain Clones",
      "type": "integer"
     },
+    "regional_error_k": {
+     "default": 2.0,
+     "description": "Bound the illumination with the regional DEM raised and lowered by k times its rms height error (PGDA 90 error map, if cached); 0 disables.",
+     "maximum": 5.0,
+     "minimum": 0.0,
+     "title": "Regional Error K",
+     "type": "number"
+    },
     "seed": {
      "default": 20261112,
      "minimum": 0,

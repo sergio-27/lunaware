@@ -58,6 +58,13 @@ terrain). Every file is checked against a pinned SHA-256.
 uv run lunarenv data fetch kernels site04 regional
 ```
 
+Optional, for the regional terrain error bound: its error map (255 MB). Without it runs
+warn and report no bound.
+
+```bash
+uv run lunarenv data fetch regional-error
+```
+
 Optional, for terrain uncertainty: the 100 error clones of the site terrain, 41 MB each.
 The source server delivers about 100 kB/s per connection, so allow one to two hours.
 
@@ -107,14 +114,16 @@ uv run lunarenv run scenarios/shackleton_rim_2026.yaml
 uv run lunarenv report <run_id>
 ```
 
-Output of the run (16 clones in the cache, 563 s on an M1 Pro; an earlier run of the same
-scenario with another job sharing the machine took 932 s, about 530 s of it for the terrain
-patches seen by the asset walls):
+Output of the run (16 clones in the cache and the regional error map; 941 s on an M1 Pro
+with the test suite sharing the machine. Before the regional bound was added the same
+scenario took 563 s on an otherwise idle machine, about 530 s of it for the terrain
+patches seen by the asset walls when the machine was shared):
 
 ```text
-run 9ea1ea9db8b28cc2  ->  runs/9ea1ea9db8b28cc2
+run 8bdc60ddb18e5bd9  ->  runs/8bdc60ddb18e5bd9
 illumination: mean visible solar disc 85.51 %, longest shadow 63 h, longest illumination 2803 h
               terrain ensemble 5/50/95 %: 85.35 / 85.54 / 85.69 %
+              regional DEM error bound (+/-2 rms): 85.50 - 85.52 %, longest shadow 63 - 63 h
 thermal bounds (albedo envelope x ensemble 5-95 %): surface minimum 41.3-60.4 K, maximum 102.9-200.1 K, mean 61.0-108.6 K
          nominal terrain: cold law max 106.7 K, scenario law 119.2 K, hot law 163.0 K
 thermal, scenario law: surface 43.6 to 119.2 K (mean 70.4 K) on a 0.39 deg slope
@@ -177,9 +186,9 @@ For agents: `lunarenv-mcp`, see [docs/mcp.md](docs/mcp.md).
 ## Validation
 
 [VALIDATION.md](VALIDATION.md) lists every case with its source, metric, tolerance and
-result. Summary (29 cases): 19 pass, 6 fail, 1 partial, 1 informational, 2 pending. Fourteen
+result. Summary (30 cases): 19 pass, 6 fail, 1 partial, 2 informational, 2 pending. Fifteen
 cases (TH-V1b, ILL-V2b, ILL-V5, TH-V3, TH-V3b, TH-V3c, TH-X1b, TH-X1c, TH-A3, TH-C1,
-TH-V2c, TH-A2b, TH-C2, TH-V3d) follow an independent scientific review and were
+TH-V2c, TH-A2b, TH-C2, TH-V3d, ILL-C1) follow an independent scientific review and were
 pre-registered in [docs/review/](docs/review/) before they were run.
 
 | Compared with | Result |
@@ -189,6 +198,7 @@ pre-registered in [docs/review/](docs/review/) before they were run.
 | Barker et al. 2021, Table 2: illumination of seven regions at 1 m and 5 m, 1st percentile over 100 terrain clones | pass: within 2.2 percentage points at 1 m and 0.3 at 5 m (tolerance 3); region areas within 2.6 % |
 | PGDA 18.6-year illumination map (method of Mazarico et al. 2011) | pass: bias -1.6 pp, RMS 4.1 pp, r = 0.96; about 6 pp darker on well-lit cells, mostly a metric mismatch: with the map's own metric (any part of the disc visible) bias +0.5 pp and -1.8 pp on well-lit cells |
 | Gläser et al. 2018, named best-lit points over 20 years | 2 m: pass at all three points (within 2.1 pp; longest shadow 116 / 66 / 65 h against 112 / 66 / 65 h). Ground level: **fail** (37-44 % against 76-81 %), and strongly dependent on terrain resolution |
+| Regional terrain error, PGDA 90 rms height error map, regional DEM raised and lowered by 2 errors (ILL-C1) | sensitivity: at most 0.013 pp on the yearly mean visible disc and 0.003 degrees on the horizon at seven points; no longest shadow changes. The site-terrain clones spread at least 30 times wider |
 | Diviner equatorial temperatures quoted by Hayne et al. 2017 | pass: 385.2 / 100.3 / 93.7 K against 385 / 101 / 95 K. A constant albedo passes too (TH-V1b), so this case does not test the albedo law |
 | Apollo 15 and 17 mean temperatures quoted by Hayne et al. 2017 | **fail** with the published parameters (8-10 K low); pass with a constant albedo |
 | Apollo 17 like for like (TH-V2c): Keihm & Langseth 1973, brightness temperature (e_m = 1), site albedo 0.08, measured heat flow | **fail**: surface 207.0 K against 216 +/- 5 K (-9.0 K); 252.7 K at 1.30 m against 256 K (pass). With a constant albedo 0.08: 214.4 / 260.6 K, within 5 K |
@@ -219,9 +229,10 @@ Illumination
   below the published ones and move by up to 30 pp when the site DEM is coarsened from
   5 m to 20 m, while 2 m values agree within 2.1 pp. Do not use 0 m illumination for
   design.
-- Terrain uncertainty comes from the published error clones of the site tile only.
-  Errors of the regional terrain are not sampled, so for observers whose skyline is
-  distant the reported spread is a lower bound.
+- Terrain uncertainty comes from the published error clones of the site tile. The
+  regional terrain has no clones; runs bound its effect with the published error map
+  instead (regional DEM raised and lowered by twice its rms error). At the test point and
+  the Gläser 2018 points this bound is at most 0.013 percentage points wide (ILL-C1).
 - "Lit" means any visible fraction of the solar disc; longest-period statistics are
   sensitive to that definition and are resolved to one time step.
 - Numerical error of the yearly mean illumination: up to +0.12 percentage points,

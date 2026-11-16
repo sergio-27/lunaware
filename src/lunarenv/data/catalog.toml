@@ -177,6 +177,16 @@ citation = "Barker2023"
 description = "South pole LDEM poleward of 80S at 80 m/pix; mid- and far-field terrain."
 
 [[file]]
+id = "pgda90.ldem_80s_80mpp_err"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/LDEM_80S_80MPP_ADJ_ERR.TIF"
+kind = "geotiff"
+groups = ["regional-error"]
+product = "PGDA-90 A New View of the Lunar South Pole from LOLA"
+version = "ADJ (2023-07); data DOI 10.60903/gsfcpgda-lola-spole"
+citation = "Barker2023"
+description = "RMS height error (m) of the 80 m regional LDEM; bounds the horizon from regional terrain error."
+
+[[file]]
 id = "pgda90.ldem_80s_40mpp"
 url = "https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/LDEM_80S_40MPP_ADJ.TIF"
 kind = "geotiff"

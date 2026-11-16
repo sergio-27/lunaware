@@ -91,3 +91,39 @@ def test_empty_ensemble_and_wrong_grid_are_rejected():
     other = analytic_dem(ridge(20.0), center=(0.0, 0.0), half_width_m=400.0, pixel_m=5.0)
     with pytest.raises(ValueError, match="same grid"):
         terrain_ensemble(stack, [("x", other)], 0.0, 0.0, et, body, SUN_RADIUS_M)
+
+
+def test_regional_error_stacks_bound_the_horizon():
+    from lunarenv.illumination.ensemble import regional_error_stacks, shifted
+    from lunarenv.illumination.horizon import compute_horizons
+    from lunarenv.illumination.terrain import build_stack
+
+    def hills(x, y):
+        return 300.0 * np.exp(-((x - 6_000.0) ** 2 + (y - 2_000.0) ** 2) / (2.0 * 1_500.0**2))
+
+    def zero(x, y):
+        return np.zeros(np.shape(x))
+
+    near = analytic_dem(zero, center=(0.0, 0.0), half_width_m=600.0, pixel_m=5.0)
+    regional = analytic_dem(hills, center=(0.0, 0.0), half_width_m=24_000.0, pixel_m=80.0)
+    rng = np.random.default_rng(1)
+    error = Dem(rng.uniform(0.0, 20.0, regional.heights_m.shape).astype(np.float32), regional.grid)
+    radii = {"near_radius_m": 500.0, "mid_radius_m": 10_000.0}
+    settings = IlluminationSettings(n_azimuth=64, **radii)
+    nominal = build_stack(near, regional, **radii)
+    lowered, raised = regional_error_stacks(near, regional, error, 2.0, settings)
+    # any realization within +/- 2 errors, here a random one, lies between the bounds
+    noise = rng.uniform(-2.0, 2.0, regional.heights_m.shape) * error.heights_m
+    random = build_stack(near, shifted(regional, noise, 1.0), **radii)
+
+    def horizon(stack):
+        return compute_horizons(stack, 0.0, 0.0, n_azimuth=64, diagnostics=False).elevation_rad[0]
+
+    low, mid, high, rnd = (horizon(s) for s in (lowered, nominal, raised, random))
+    assert np.all(low <= mid) and np.all(mid <= high)
+    assert np.all(low <= rnd) and np.all(rnd <= high)
+    assert np.any(high > low)
+    with pytest.raises(ValueError, match="grid"):
+        regional_error_stacks(near, regional, near, 2.0, settings)
+    with pytest.raises(ValueError, match="positive"):
+        regional_error_stacks(near, regional, error, 0.0, settings)

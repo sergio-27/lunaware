@@ -28,8 +28,14 @@ from lunarenv.data.store import DataNotAvailableError, DataStore
 from lunarenv.geometry.ephemeris import DE440, spice_session
 from lunarenv.geometry.projection import SouthPolarStereographic
 from lunarenv.illumination.eclipse import earth_occultation_factor
+from lunarenv.illumination.ensemble import regional_error_stacks
 from lunarenv.illumination.horizon import compute_horizons, sun_relevant_incomplete
-from lunarenv.illumination.products import illumination_series, illumination_statistics, longest_run
+from lunarenv.illumination.products import (
+    IlluminationSeries,
+    illumination_series,
+    illumination_statistics,
+    longest_run,
+)
 from lunarenv.illumination.settings import NUMERICAL_ERROR_ESTIMATE as ILLUMINATION_ERROR
 from lunarenv.illumination.settings import IlluminationSettings
 from lunarenv.illumination.terrain import TerrainStack, build_stack
@@ -119,7 +125,9 @@ class IlluminationModel:
             numerical_error=dict(ILLUMINATION_ERROR),
             uncertainty_sources=(
                 "Near-field terrain height: PGDA error clones of the site DEM (Barker2021).",
-                "Not sampled: regional DEM errors; relief below the DEM resolution.",
+                "Regional terrain height: bound from the PGDA 90 rms error map, regional DEM "
+                "raised and lowered by k errors (Barker2023; F14).",
+                "Not sampled: relief below the DEM resolution.",
             ),
             validation_cases=(
                 "ILL-A1",
@@ -130,6 +138,7 @@ class IlluminationModel:
                 "ILL-V2",
                 "ILL-V3",
                 "ILL-V4",
+                "ILL-C1",
             ),
             references=("Mazarico2011", "Barker2021", "Barker2023", "Park2021"),
             documentation="docs/models/illumination.md",
@@ -311,6 +320,33 @@ def _utc(moment: np.datetime64) -> str:
     return str(np.datetime_as_string(moment, unit="s")) + "Z"
 
 
+def _sun_series(
+    stack: TerrainStack,
+    xy: tuple[float, float],
+    scenario: Scenario,
+    eph: _Ephemeris,
+    spin: int,
+) -> IlluminationSeries:
+    """Sun visibility at the observer height over the scenario period on one terrain."""
+    settings = scenario.illumination.settings
+    horizons = compute_horizons(
+        stack,
+        *xy,
+        height_above_surface_m=scenario.site.height_above_surface_m,
+        n_azimuth=settings.n_azimuth,
+    )
+    period = slice(spin, None)
+    return illumination_series(
+        horizons,
+        eph.et[period],
+        eph.sun[period],
+        eph.r_sun,
+        n_strips=settings.n_strips,
+        limb_u=settings.limb_darkening,
+        mode=settings.disc_mode_code,
+    )
+
+
 def _terrain_products(
     stack: TerrainStack,
     xy: tuple[float, float],
@@ -389,7 +425,13 @@ def run_scenario(
         e.id for e in store.catalog.group(terrain.clone_group) if store.is_available(e.id)
     ]
     clone_ids = cached_clones[: scenario.uncertainty.terrain_clones]
-    used_ids = (*required, *clone_ids)
+    error_k = scenario.uncertainty.regional_error_k
+    error_ids = (
+        (terrain.regional_error_id,)
+        if error_k > 0.0 and store.is_available(terrain.regional_error_id)
+        else ()
+    )
+    used_ids = (*required, *clone_ids, *error_ids)
     checksums = {i: store.record(i).sha256 for i in used_ids}
     models = registered_models()
     versions = {name: model.version for name, model in models.items()}
@@ -399,9 +441,10 @@ def run_scenario(
 
     # ----------------------------------------------------------------- site and time
     near = load_dem(store, terrain.near_id)
+    regional = load_dem(store, terrain.regional_id)
     stack = build_stack(
         near,
-        load_dem(store, terrain.regional_id),
+        regional,
         near_radius_m=scenario.illumination.settings.near_radius_m,
         mid_radius_m=scenario.illumination.settings.mid_radius_m,
         step_fraction=scenario.illumination.settings.step_fraction,
@@ -1149,8 +1192,37 @@ def run_scenario(
                 "nominal": shadow.duration_s / 3600.0,
                 "quantiles": np.quantile(shadows, QUANTILES).tolist(),
             },
-            "source": "PGDA terrain error clones of the site DEM; regional terrain not varied",
+            "source": "PGDA terrain error clones of the site DEM; regional terrain not varied "
+            "by the clones (see regional_error_bound)",
         }
+    if error_ids:
+        lowered, raised = regional_error_stacks(
+            near,
+            regional,
+            load_dem(store, terrain.regional_error_id),
+            error_k,
+            scenario.illumination.settings,
+        )
+        regional_bound: dict[str, Any] = {
+            "k": error_k,
+            "source": "PGDA 90 rms height error map of the regional DEM (Barker2023); "
+            f"regional terrain raised and lowered everywhere by {error_k:g} times its error. "
+            "A bound for any regional error within that amount, not a confidence interval; "
+            "the thermal model is not rerun on these terrains.",
+        }
+        for label, bound_stack in (("lowered", lowered), ("raised", raised)):
+            series = _sun_series(bound_stack, xy, scenario, eph, spin)
+            regional_bound[label] = {
+                "mean_visible_fraction": series.mean_visible_fraction,
+                "longest_shadow_hours": series.longest_shadow().duration_s / 3600.0,
+                "longest_illumination_hours": series.longest_illumination().duration_s / 3600.0,
+            }
+        uncertainty["regional_error_bound"] = regional_bound
+    elif error_k > 0.0:
+        warnings.append(
+            f"uncertainty: regional DEM error map {terrain.regional_error_id} is not in the data "
+            "cache; regional terrain error is not bounded (fetch group regional-error)"
+        )
     n_members = scenario.uncertainty.members if thermal_on else 0
     if n_members:
         property_sets, _ = sample_properties(

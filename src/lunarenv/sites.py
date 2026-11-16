@@ -14,6 +14,7 @@ class TerrainSet:
     near_id: str
     regional_id: str
     clone_group: str
+    regional_error_id: str = "pgda90.ldem_80s_80mpp_err"
 
     @property
     def required_ids(self) -> tuple[str, ...]:

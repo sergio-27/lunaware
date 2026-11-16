@@ -25,7 +25,7 @@ No number enters `VALIDATION.md` from a [U] reference. A case whose source stays
 | Key | Reference | Status |
 |---|---|---|
 | Barker2021 | Barker, M.K., et al. (2021). Improved LOLA elevation maps for south pole landing sites: Error estimates and their impact on illumination conditions. *Planet. Space Sci.* 203, 105119. doi:10.1016/j.pss.2020.105119 (NTRS manuscript read in full). | A |
-| Barker2023 | Barker, M.K., et al. (2023). A new view of the lunar south pole from the Lunar Orbiter Laser Altimeter (LOLA). *Planet. Sci. J.* 4, 183. doi:10.3847/PSJ/acf3e1 | S |
+| Barker2023 | Barker, M.K., et al. (2023). A new view of the lunar south pole from the Lunar Orbiter Laser Altimeter (LOLA). *Planet. Sci. J.* 4, 183. doi:10.3847/PSJ/acf3e1. Section 3 (uncertainty maps: rms height error per pixel from effective resolution, spline fits to clone ensembles) read 2026-11-16 from the open-access PDF. | A |
 | Smith2010 | Smith, D.E., et al. (2010). The Lunar Orbiter Laser Altimeter investigation on the Lunar Reconnaissance Orbiter mission. *Space Sci. Rev.* 150, 209–241. | U |
 | Smith2017 | Smith, D.E., et al. (2017). Summary of the results from the Lunar Orbiter Laser Altimeter after seven years in lunar orbit. *Icarus* 283, 70–91. | U |
 | Zuber2012 | Zuber, M.T., et al. (2012). Constraints on the volatile distribution within Shackleton crater at the lunar south pole. *Nature* 486, 378–381. doi:10.1038/nature11216 (NTRS manuscript; Table 1 used for the georeferencing check in docs/data.md). | A |

@@ -242,6 +242,13 @@ class UncertaintyBlock(_Strict):
         le=100,
         description="Terrain error clones to use, taken in catalog order from the cache.",
     )
+    regional_error_k: float = Field(
+        2.0,
+        ge=0.0,
+        le=5.0,
+        description="Bound the illumination with the regional DEM raised and lowered by k "
+        "times its rms height error (PGDA 90 error map, if cached); 0 disables.",
+    )
     seed: int = Field(20261112, ge=0)
 
 

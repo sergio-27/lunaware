@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "lunarenv_version": "0.1.0.dev0",
- "generated_utc": "2026-11-16T17:10:23Z",
+ "generated_utc": "2026-11-16T21:32:48Z",
  "results": [
   {
    "id": "ILL-A1",
@@ -1159,6 +1159,429 @@
    },
    "seconds": 73.52614966599504,
    "run_utc": "2026-11-13T19:25:15Z"
+  },
+  {
+   "id": "ILL-C1",
+   "title": "Effect of the regional DEM error on illumination (bound)",
+   "kind": "cross-check",
+   "source": "PGDA 90 rms height error map (Barker2023); terrain error clones for comparison",
+   "metric": "mean visible disc and longest shadow with the regional DEM raised and lowered by 1 and 2 errors, against the clone 5-95 % range",
+   "tolerance": "none: sensitivity (pre-registered 2026-11-16)",
+   "status": "INFO",
+   "summary": "k = 2 bound on the mean visible disc at most 0.01 pp wide (test point 2 m); longest shadow changes by at most 0 h; bound wider than the clone 5-95 % range at 0 of 7 points",
+   "checks": [
+    {
+     "quantity": "test point 2 m: mean visible disc, k = 2 raised / lowered regional terrain",
+     "reference": 85.50280748908683,
+     "measured": 85.51610624126211,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "test point 2 m: change of the mean visible disc from the nominal, k = 2 raised / lowered",
+     "reference": -0.006662850268767784,
+     "measured": 0.006635901906506092,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "test point 2 m: width of the k = 2 bound / of the clone 5-95 % range, mean visible disc",
+     "reference": 0.013298752175273876,
+     "measured": 0.4341160668978574,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "test point 2 m: width of the k = 1 bound, mean visible disc",
+     "reference": null,
+     "measured": 0.006652881978553182,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "test point 2 m: longest shadow, k = 2 lowered / raised (nominal 63 h)",
+     "reference": 63.0,
+     "measured": 63.0,
+     "tolerance": null,
+     "unit": "h",
+     "informational": true
+    },
+    {
+     "quantity": "test point 2 m: longest shadow, clone 5 / 95 %",
+     "reference": 63.0,
+     "measured": 63.0,
+     "tolerance": null,
+     "unit": "h",
+     "informational": true
+    },
+    {
+     "quantity": "test point 2 m: largest horizon change over azimuth, k = 2 raised / lowered",
+     "reference": 0.002516711265738136,
+     "measured": 0.002516497822326573,
+     "tolerance": null,
+     "unit": "deg",
+     "informational": true
+    },
+    {
+     "quantity": "test point 0 m: mean visible disc, k = 2 raised / lowered regional terrain",
+     "reference": 77.25051263892286,
+     "measured": 77.26323250087516,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "test point 0 m: change of the mean visible disc from the nominal, k = 2 raised / lowered",
+     "reference": -0.006374476127859907,
+     "measured": 0.006345385824445771,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "test point 0 m: width of the k = 2 bound / of the clone 5-95 % range, mean visible disc",
+     "reference": 0.012719861952305678,
+     "measured": 22.836917106613484,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "test point 0 m: width of the k = 1 bound, mean visible disc",
+     "reference": null,
+     "measured": 0.006364484489594702,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "test point 0 m: longest shadow, k = 2 lowered / raised (nominal 203 h)",
+     "reference": 203.0,
+     "measured": 203.0,
+     "tolerance": null,
+     "unit": "h",
+     "informational": true
+    },
+    {
+     "quantity": "test point 0 m: longest shadow, clone 5 / 95 %",
+     "reference": 85.8,
+     "measured": 544.2499999999999,
+     "tolerance": null,
+     "unit": "h",
+     "informational": true
+    },
+    {
+     "quantity": "test point 0 m: largest horizon change over azimuth, k = 2 raised / lowered",
+     "reference": 0.0025115886238606263,
+     "measured": 0.0025115352630077355,
+     "tolerance": null,
+     "unit": "deg",
+     "informational": true
+    },
+    {
+     "quantity": "C1-2m: mean visible disc, k = 2 raised / lowered regional terrain",
+     "reference": 86.37303195508078,
+     "measured": 86.37491562540622,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "C1-2m: change of the mean visible disc from the nominal, k = 2 raised / lowered",
+     "reference": -0.0009469704134090762,
+     "measured": 0.0009366999120317132,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "C1-2m: width of the k = 2 bound / of the clone 5-95 % range, mean visible disc",
+     "reference": 0.0018836703254407894,
+     "measured": 4.323405147741369,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "C1-2m: width of the k = 1 bound, mean visible disc",
+     "reference": null,
+     "measured": 0.0009409963452071679,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "C1-2m: longest shadow, k = 2 lowered / raised (nominal 115 h)",
+     "reference": 115.0,
+     "measured": 115.0,
+     "tolerance": null,
+     "unit": "h",
+     "informational": true
+    },
+    {
+     "quantity": "C1-2m: longest shadow, clone 5 / 95 %",
+     "reference": 112.0,
+     "measured": 280.34999999999997,
+     "tolerance": null,
+     "unit": "h",
+     "informational": true
+    },
+    {
+     "quantity": "C1-2m: largest horizon change over azimuth, k = 2 raised / lowered",
+     "reference": 0.0016422336085649407,
+     "measured": 0.0016422336085649407,
+     "tolerance": null,
+     "unit": "deg",
+     "informational": true
+    },
+    {
+     "quantity": "S-2m-a: mean visible disc, k = 2 raised / lowered regional terrain",
+     "reference": 84.23489291328964,
+     "measured": 84.24814991167325,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "S-2m-a: change of the mean visible disc from the nominal, k = 2 raised / lowered",
+     "reference": -0.006654879247349754,
+     "measured": 0.006602119136260853,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "S-2m-a: width of the k = 2 bound / of the clone 5-95 % range, mean visible disc",
+     "reference": 0.013256998383610608,
+     "measured": 3.303296169639097,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "S-2m-a: width of the k = 1 bound, mean visible disc",
+     "reference": null,
+     "measured": 0.00662876103076826,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "S-2m-a: longest shadow, k = 2 lowered / raised (nominal 64 h)",
+     "reference": 64.0,
+     "measured": 64.0,
+     "tolerance": null,
+     "unit": "h",
+     "informational": true
+    },
+    {
+     "quantity": "S-2m-a: longest shadow, clone 5 / 95 %",
+     "reference": 64.0,
+     "measured": 99.24999999999999,
+     "tolerance": null,
+     "unit": "h",
+     "informational": true
+    },
+    {
+     "quantity": "S-2m-a: largest horizon change over azimuth, k = 2 raised / lowered",
+     "reference": 0.002657370473958086,
+     "measured": 0.0026035827342442354,
+     "tolerance": null,
+     "unit": "deg",
+     "informational": true
+    },
+    {
+     "quantity": "S-2m-b: mean visible disc, k = 2 raised / lowered regional terrain",
+     "reference": 82.35741942771368,
+     "measured": 82.3665129699878,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "S-2m-b: change of the mean visible disc from the nominal, k = 2 raised / lowered",
+     "reference": -0.004565779376051182,
+     "measured": 0.004527762898064225,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "S-2m-b: width of the k = 2 bound / of the clone 5-95 % range, mean visible disc",
+     "reference": 0.009093542274115407,
+     "measured": 1.4182161437522893,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "S-2m-b: width of the k = 1 bound, mean visible disc",
+     "reference": null,
+     "measured": 0.004548614534911621,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "S-2m-b: longest shadow, k = 2 lowered / raised (nominal 63 h)",
+     "reference": 63.0,
+     "measured": 63.0,
+     "tolerance": null,
+     "unit": "h",
+     "informational": true
+    },
+    {
+     "quantity": "S-2m-b: longest shadow, clone 5 / 95 %",
+     "reference": 63.0,
+     "measured": 63.0,
+     "tolerance": null,
+     "unit": "h",
+     "informational": true
+    },
+    {
+     "quantity": "S-2m-b: largest horizon change over azimuth, k = 2 raised / lowered",
+     "reference": 0.0017170455243177367,
+     "measured": 0.0017170455243177367,
+     "tolerance": null,
+     "unit": "deg",
+     "informational": true
+    },
+    {
+     "quantity": "C1-0m: mean visible disc, k = 2 raised / lowered regional terrain",
+     "reference": 38.83545588405377,
+     "measured": 38.83545588405377,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "C1-0m: change of the mean visible disc from the nominal, k = 2 raised / lowered",
+     "reference": 0.0,
+     "measured": 0.0,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "C1-0m: width of the k = 2 bound / of the clone 5-95 % range, mean visible disc",
+     "reference": 0.0,
+     "measured": 41.35221736460911,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "C1-0m: width of the k = 1 bound, mean visible disc",
+     "reference": null,
+     "measured": 0.0,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "C1-0m: longest shadow, k = 2 lowered / raised (nominal 1388 h)",
+     "reference": 1388.0,
+     "measured": 1388.0,
+     "tolerance": null,
+     "unit": "h",
+     "informational": true
+    },
+    {
+     "quantity": "C1-0m: longest shadow, clone 5 / 95 %",
+     "reference": 599.9,
+     "measured": 6246.9,
+     "tolerance": null,
+     "unit": "h",
+     "informational": true
+    },
+    {
+     "quantity": "C1-0m: largest horizon change over azimuth, k = 2 raised / lowered",
+     "reference": 0.0,
+     "measured": 0.0,
+     "tolerance": null,
+     "unit": "deg",
+     "informational": true
+    },
+    {
+     "quantity": "S-0m: mean visible disc, k = 2 raised / lowered regional terrain",
+     "reference": 45.862349984319316,
+     "measured": 45.86314579734865,
+     "tolerance": null,
+     "unit": "%",
+     "informational": true
+    },
+    {
+     "quantity": "S-0m: change of the mean visible disc from the nominal, k = 2 raised / lowered",
+     "reference": -0.00039799364360249,
+     "measured": 0.0003978193857321344,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "S-0m: width of the k = 2 bound / of the clone 5-95 % range, mean visible disc",
+     "reference": 0.0007958130293346244,
+     "measured": 11.636462901526485,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "S-0m: width of the k = 1 bound, mean visible disc",
+     "reference": null,
+     "measured": 0.00039786521536200325,
+     "tolerance": null,
+     "unit": "pp",
+     "informational": true
+    },
+    {
+     "quantity": "S-0m: longest shadow, k = 2 lowered / raised (nominal 549 h)",
+     "reference": 549.0,
+     "measured": 549.0,
+     "tolerance": null,
+     "unit": "h",
+     "informational": true
+    },
+    {
+     "quantity": "S-0m: longest shadow, clone 5 / 95 %",
+     "reference": 439.85,
+     "measured": 2697.6,
+     "tolerance": null,
+     "unit": "h",
+     "informational": true
+    },
+    {
+     "quantity": "S-0m: largest horizon change over azimuth, k = 2 raised / lowered",
+     "reference": 0.0002571459500804019,
+     "measured": 0.0002571459500804019,
+     "tolerance": null,
+     "unit": "deg",
+     "informational": true
+    }
+   ],
+   "notes": [
+    "Pre-registered in docs/review/preregistration-f14-2026-11-16.md (finding F14 of the 2026-11-13 scientific review) before it was implemented or run.",
+    "Error map: PGDA 90 LDEM_80S_80MPP_ADJ_ERR, rms height error of the 80 m regional DEM per pixel (Barker2023 section 3). Only a per-pixel rms is published, so the regional DEM is raised and lowered everywhere by k errors: a bound for any regional error within k errors, whatever its correlation, not a confidence interval.",
+    "Observers: the reference scenario's point (2 m and 0 m) and the five Glaser2018 points of ILL-V5, 2026 hourly, default settings, nominal site DEMs. Clone ranges: 100 clones of pgda78.site04.surf, 100 clones of pgda78.site01.surf (near field only).",
+    "Points where the bound is wider than the clone range: none."
+   ],
+   "data": {
+    "pgda78.site01.surf": "3ba7b97cb00a2bcf21189c3aeb535f65afc21207154ab9f0d43c5bdc1f7e747e",
+    "pgda78.site04.surf": "38ff70dbdf2f066c2cfa94a646c3a59d653ce7f6b4528b15fc1b43ee397ce758",
+    "pgda90.ldem_80s_80mpp": "82030dcbdd7c4bb0c7d858e9b4b293b9f2cda5a543ba31ec0f42784bd6beee5a",
+    "pgda90.ldem_80s_80mpp_err": "e89306914bb209143f61ba66d341703d75221339424b774c6a1eb3c6c370ffc6",
+    "naif.lsk": "678e32bdb5a744117a467cd9601cd6b373f0e9bc9bbde1371d5eee39600a039b",
+    "naif.pck.text": "3dff7b1dbeceaa01f25467767d3fa25816051c85d162d1edf04acb310ee28bb1",
+    "naif.spk.de440s": "c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2",
+    "naif.pck.moon_pa_de440": "60cd55aa401ea2ea97360636f567554bfe4e37bb829f901b4460a455dfaf783f",
+    "naif.fk.moon_de440": "a47c71e9c9f33796bdafb2c9d69a7ee447b6016ecad80f71cd6f3e479f9cf768"
+   },
+   "seconds": 87.19828516704729,
+   "run_utc": "2026-11-16T21:32:48Z"
   },
   {
    "id": "TH-A1",
@@ -2986,6 +3409,7 @@
   "TH-V3": "not selected",
   "TH-V3b": "not selected",
   "TH-V3c": "not selected",
+  "TH-V3d": "not selected",
   "TH-V2c": "not selected",
   "TH-A3": "not selected",
   "TH-C1": "not selected",

@@ -704,6 +704,17 @@ def render_html(dataset: xr.Dataset, metadata: dict[str, Any]) -> str:
     ]
     if "illumination" in unc:
         notes.append(e(unc["illumination"]["source"]) + ".")
+    regional = unc.get("regional_error_bound")
+    if regional:
+        lo, hi = regional["raised"], regional["lowered"]
+        notes.append(
+            e(
+                f"Regional terrain: mean visible solar disc {100 * lo['mean_visible_fraction']:.2f}"
+                f" to {100 * hi['mean_visible_fraction']:.2f} %, longest shadow "
+                f"{hi['longest_shadow_hours']:.0f} to {lo['longest_shadow_hours']:.0f} h. "
+                + regional["source"]
+            )
+        )
     if "thermal" in unc:
         notes.append(
             f"Thermal: {unc['thermal']['members']} members. {e(unc['thermal']['source'])}."

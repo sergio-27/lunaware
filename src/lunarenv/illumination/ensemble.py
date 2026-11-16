@@ -8,8 +8,15 @@ linearity. This matters: raising the horizon takes one high pixel along a ray, l
 it takes many, so height errors bias illumination downwards (Barker2021, section 5).
 
 Scope: the clones cover the site tile only. Terrain beyond it is the same in every
-member, which is justified by the far field being three orders of magnitude farther
-away and averaged over many more altimeter shots (Barker2021).
+member (Barker2021 argue the far field matters less: it is much farther away and
+averaged over many more altimeter shots). The regional DEM's error is not available as
+clones, only as a per-pixel rms height error map (Barker2023, section 3), so
+:func:`regional_error_stacks` turns it into a bound instead: the regional terrain raised
+and lowered everywhere by ``k`` times its error. The horizon along a ray is the maximum
+of an increasing function of each sample's height, so any regional error with
+``|dh| <= k * error`` pixel by pixel, whatever its correlation, gives a horizon between
+the two, and every illumination statistic that is monotone in the horizon (visible
+fraction, longest shadow, longest illumination) is bounded with it.
 
 The observer follows the terrain: in each member it stands on that member's surface.
 """
@@ -28,7 +35,7 @@ from lunarenv.geometry.projection import FloatArray
 from lunarenv.illumination.horizon import compute_horizons
 from lunarenv.illumination.products import illumination_statistics
 from lunarenv.illumination.settings import IlluminationSettings
-from lunarenv.illumination.terrain import TerrainStack
+from lunarenv.illumination.terrain import TerrainStack, build_stack
 
 QUANTILES = (0.01, 0.05, 0.50, 0.95, 0.99)
 
@@ -109,3 +116,47 @@ def terrain_ensemble(
         raise ValueError("need at least one ensemble member")
     stacked = [np.stack(column) for column in columns]
     return IlluminationEnsemble(tuple(ids), *stacked)
+
+
+def shifted(dem: Dem, offset_m: ArrayLike, factor: float) -> Dem:
+    """``dem`` with ``factor * offset_m`` added to its heights (same grid and provenance)."""
+    offset = np.asarray(offset_m, dtype=np.float64)
+    if offset.shape != dem.heights_m.shape:
+        raise ValueError("offset must have the DEM's shape")
+    heights = dem.heights_m.astype(np.float64) + factor * offset
+    return Dem(heights.astype(np.float32), dem.grid, dem.source_id, dem.source_sha256)
+
+
+def regional_error_stacks(
+    near: Dem,
+    regional: Dem,
+    error: Dem,
+    k: float,
+    settings: IlluminationSettings | None = None,
+) -> tuple[TerrainStack, TerrainStack]:
+    """Terrain stacks with the regional DEM lowered and raised by ``k`` times its error.
+
+    ``error`` is the rms height error map of ``regional`` (same grid). The near level and
+    the observer are unchanged; the far level is block-averaged from the shifted DEM.
+    Returns ``(lowered, raised)``: horizons on them bound the horizon of any regional
+    terrain within ``k`` errors of the nominal one (see the module docstring).
+    """
+    if error.grid != regional.grid:
+        raise ValueError("the error map must be on the regional DEM's grid")
+    if not k > 0.0:
+        raise ValueError("k must be positive")
+    if float(error.heights_m.min()) < 0.0:
+        raise ValueError("height errors must be non-negative")
+    settings = settings or IlluminationSettings()
+
+    def stack(sign: float) -> TerrainStack:
+        return build_stack(
+            near,
+            shifted(regional, error.heights_m, sign * k),
+            near_radius_m=settings.near_radius_m,
+            mid_radius_m=settings.mid_radius_m,
+            step_fraction=settings.step_fraction,
+            far_coarsening=settings.far_coarsening,
+        )
+
+    return stack(-1.0), stack(1.0)

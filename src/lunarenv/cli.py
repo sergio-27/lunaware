@@ -41,6 +41,14 @@ def _run(args: argparse.Namespace) -> int:
         print(
             f"              terrain ensemble 5/50/95 %: {100 * q[0]:.2f} / {100 * q[1]:.2f} / {100 * q[2]:.2f} %"
         )
+    regional = meta["uncertainty"].get("regional_error_bound")
+    if regional:
+        lo, hi = regional["raised"], regional["lowered"]
+        print(
+            f"              regional DEM error bound (+/-{regional['k']:g} rms): "
+            f"{100 * lo['mean_visible_fraction']:.2f} - {100 * hi['mean_visible_fraction']:.2f} %, "
+            f"longest shadow {hi['longest_shadow_hours']:.0f} - {lo['longest_shadow_hours']:.0f} h"
+        )
     thermal = meta["summary"].get("thermal")
     if thermal:
         bounds = meta["uncertainty"].get("thermal_envelope", {}).get("bounds")

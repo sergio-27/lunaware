@@ -14,6 +14,7 @@ test-suite (`pytest -s tests/data`) run on 2026-11-12.
 | `pgda78.site04.clone.0001..0100` | same | same | Terrain ensemble for uncertainty propagation |
 | `pgda78.site01.*` | PGDA-78 Site 1 (connecting ridge) | 5 m | Validation case ILL-V1 only |
 | `pgda90.ldem_80s_80mpp` | PGDA-90 | 7600 x 7600 at 80 m, +/-304 km | Mid- and far-field terrain |
+| `pgda90.ldem_80s_80mpp_err` | PGDA-90 | same grid | RMS height error of the 80 m DEM (m); regional error bound (optional, group `regional-error`) |
 | `pgda90.ldem_60s_240mpp` | PGDA-90 | 240 m | Fallback for rays leaving the 80S product |
 | `pgda69.avgvisib_85s_60m*` | PGDA-69 | 60 m | Published illumination and Earth-visibility maps (validation) |
 | `naif.*` | NAIF generic kernels | - | Time, ephemerides, lunar orientation, frames |
