@@ -217,6 +217,7 @@ class ThermalModel:
                 "TH-V2c",
                 "TH-A2b",
                 "TH-C2",
+                "TH-V3d",
             ),
             references=(
                 "Hayne2017",
@@ -875,7 +876,8 @@ def run_scenario(
                     **_surface_stats(envelope_results["hot"]),
                 },
                 "validation": "TH-V3c: Diviner summer temperatures on a 720 m block at the site "
-                "against both bounds (VALIDATION.md)",
+                "against both bounds; TH-V3d: the same with terrain radiation and Earthshine "
+                "(VALIDATION.md)",
             }
         if diffuse_on:
             full = {"nominal": thermal_nominal}

@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "lunarenv_version": "0.1.0.dev0",
- "generated_utc": "2026-11-16T13:23:54Z",
+ "generated_utc": "2026-11-16T17:10:23Z",
  "results": [
   {
    "id": "ILL-A1",
@@ -2278,6 +2278,213 @@
    "run_utc": "2026-11-16T10:39:59Z"
   },
   {
+   "id": "TH-V3d",
+   "title": "Polar summer temperatures with terrain radiation and Earthshine",
+   "kind": "published",
+   "source": "Diviner PCP (diurnal, summer), PDS urn:nasa:pds:lro_diviner_derived1 (as TH-V3)",
+   "metric": "bias of block Tbol over sunlit summer bins, Hayne2017 law with the diffuse terms",
+   "tolerance": "10 K (pre-registered 2026-11-16)",
+   "status": "FAIL",
+   "summary": "bias -23.2 K over 8 sunlit summer bins (+0.66 K from TH-V3); all summer bins -37.9 K (+0.75 K) [with terrain radiation and Earthshine]",
+   "checks": [
+    {
+     "quantity": "bias of block Tbol over sunlit summer bins (model - Diviner), Hayne2017 law with terrain radiation and Earthshine",
+     "reference": 0.0,
+     "measured": -23.18012150359129,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "RMS over sunlit bins",
+     "reference": 0.0,
+     "measured": 24.030802219236804,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "bias over all summer bins with data",
+     "reference": 0.0,
+     "measured": -37.92703378477946,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "change of the sunlit-bin bias from TH-V3 (diffuse terms)",
+     "reference": 0.0,
+     "measured": 0.6556522181473916,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "change of the all-bin bias from TH-V3 (diffuse terms)",
+     "reference": 0.0,
+     "measured": 0.7488469706089305,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "hot law (Foote 2020) with the diffuse terms: sunlit-bin bias",
+     "reference": 0.0,
+     "measured": 0.09545747252970571,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "hot law with the diffuse terms: all-bin bias",
+     "reference": 0.0,
+     "measured": -17.434199049480327,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "hot law: change of the sunlit-bin / all-bin bias from TH-V3c",
+     "reference": 0.4861311722721986,
+     "measured": 0.557520679770299,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "low-temperature conductivity (Hayne2017, with diffuse): change of the sunlit-bin / all-bin block Tbol",
+     "reference": 0.05261501502848276,
+     "measured": 0.00626472044222548,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Hayne2017: absorbed terrain radiation, summer mean over the 36 receivers / largest receiver",
+     "reference": 0.7689164639293523,
+     "measured": 4.016185943485771,
+     "tolerance": null,
+     "unit": "W m-2",
+     "informational": true
+    },
+    {
+     "quantity": "Hayne2017: absorbed Earthshine, summer mean over the 36 receivers / largest receiver",
+     "reference": 0.0020823470158139955,
+     "measured": 0.008869870338320832,
+     "tolerance": null,
+     "unit": "W m-2",
+     "informational": true
+    },
+    {
+     "quantity": "hot law: absorbed terrain radiation, summer mean over the 36 receivers / largest receiver",
+     "reference": 0.8193242069605139,
+     "measured": 4.1859713259906215,
+     "tolerance": null,
+     "unit": "W m-2",
+     "informational": true
+    },
+    {
+     "quantity": "hot law: absorbed Earthshine, summer mean over the 36 receivers / largest receiver",
+     "reference": 0.0023732318038139286,
+     "measured": 0.00976369016702381,
+     "tolerance": null,
+     "unit": "W m-2",
+     "informational": true
+    },
+    {
+     "quantity": "largest bound of the flux from patches not computed (Hayne2017)",
+     "reference": null,
+     "measured": 0.0008878104423644249,
+     "tolerance": null,
+     "unit": "W m-2",
+     "informational": true
+    },
+    {
+     "quantity": "cell -13,-39: change of mean Tbol, sunlit bins / all bins with data",
+     "reference": 1.9249192678661902,
+     "measured": 3.3827337260332677,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -13,-38: change of mean Tbol, sunlit bins / all bins with data",
+     "reference": 0.7959838524493692,
+     "measured": 1.6882706399747207,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -13,-37: change of mean Tbol, sunlit bins / all bins with data",
+     "reference": 0.5524949444666838,
+     "measured": 3.3910182870093384,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -12,-39: change of mean Tbol, sunlit bins / all bins with data",
+     "reference": 0.4830599897313227,
+     "measured": 1.513996068624931,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -12,-38: change of mean Tbol, sunlit bins / all bins with data",
+     "reference": 0.14695423186951315,
+     "measured": 0.6124395082794424,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -12,-37: change of mean Tbol, sunlit bins / all bins with data",
+     "reference": 0.22727298953044953,
+     "measured": 0.3973541965230869,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -11,-39: change of mean Tbol, sunlit bins / all bins with data",
+     "reference": 0.7559830439611454,
+     "measured": 2.53924136028941,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -11,-38: change of mean Tbol, sunlit bins / all bins with data",
+     "reference": 1.100273086114451,
+     "measured": 0.9993260065065731,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "cell -11,-37: change of mean Tbol, sunlit bins / all bins with data",
+     "reference": 3.683220588980908,
+     "measured": 1.9738658130798068,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    }
+   ],
+   "notes": [
+    "Pre-registered in docs/review/preregistration-th-v3d-2026-11-16.md before it was implemented or run; TH-V3, TH-V3b and TH-V3c stay as recorded.",
+    "Base: the TH-V3 forward model (144 pixels per cell). Added: the change of the summer radiance caused by single-bounce terrain radiation (engine method, default patch settings, patch temperatures with the same law) and Earthshine (HLS-UG-001), computed at 4 receivers per cell (+/-60 m from the centre) and averaged per cell. Sunlit bins, data and tolerance as TH-V3.",
+    "The subsample estimates each cell's change, not its temperature. Not modelled: multiple scattering, sub-DEM roughness, the Diviner footprint and observation timing, spectral emissivity."
+   ],
+   "data": {
+    "pgda78.site04.surf": "38ff70dbdf2f066c2cfa94a646c3a59d653ce7f6b4528b15fc1b43ee397ce758",
+    "pgda90.ldem_80s_80mpp": "82030dcbdd7c4bb0c7d858e9b4b293b9f2cda5a543ba31ec0f42784bd6beee5a"
+   },
+   "seconds": 10684.846876707976,
+   "run_utc": "2026-11-16T17:10:23Z"
+  },
+  {
    "id": "TH-V2c",
    "title": "Apollo 17 mean temperatures, like for like",
    "kind": "published",
@@ -2781,6 +2988,7 @@
   "TH-V3c": "not selected",
   "TH-V2c": "not selected",
   "TH-A3": "not selected",
-  "TH-C1": "not selected"
+  "TH-C1": "not selected",
+  "TH-C2": "not selected"
  }
 }

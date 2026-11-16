@@ -164,8 +164,9 @@ Validation (TH-V3c, pre-registered): Diviner summer temperatures on the 720 m bl
 inside the envelope on average over the sunlit bins, but at its hot edge (hot law
 -0.4 K, cold law -34.2 K), and above the hot law in 5 of the 8 sunlit bins and in 59
 of 64 summer bins. The hot side of the envelope is therefore the realistic one at this
-site, and the missing terrain radiation and sub-DEM roughness (both of which warm the
-surface) are the likely reasons Diviner is warmer still. The constant albedo 0.12,
+site. Terrain radiation and Earthshine, added in TH-V3d, warm the block by only 0.7 K
+(sunlit bins) and 0.7 K (all summer bins), so they do not explain why Diviner is warmer
+still; sub-DEM roughness, the Diviner footprint and observation timing remain. The constant albedo 0.12,
 outside the envelope, is kept as a separate alternative.
 
 **Slope grid** (`slope_grid`). The DEM slope at a point is uncertain by about 2 degrees
@@ -351,3 +352,19 @@ scenario law: about 530 s of the 932 s wall-clock reference run on 7 worker proc
    depth moves by more than 1 K. The option is a bound on the conductivity form, not a
    refitted model: Hayne2017's K_s, K_d and chi were fitted with a constant contact term,
    and no measurement of lunar regolith conductivity below 100 K is known to this project.
+6. **Polar comparison with terrain radiation and Earthshine (TH-V3d, pre-registered
+   2026-11-16).** TH-V3's forward model plus the change caused by single-bounce terrain
+   radiation (engine method, default patch settings, patch temperatures with the same law)
+   and Earthshine, computed at 4 receivers per 240 m cell (36 in all; the full 1296
+   pixels would take over 100 h) and added per cell. Hayne2017 law: bias -23.2 K over the
+   8 sunlit bins, still FAIL (+0.66 K from TH-V3); all summer bins -37.9 K (+0.75 K). Hot
+   law: +0.1 K / -17.4 K (+0.49 / +0.56 K from TH-V3c). Absorbed terrain radiation over
+   the summer samples is 0.77 W m-2 on average over the receivers and 4.0 W m-2 at the
+   largest, Earthshine 0.002 W m-2; cell changes range from 0.1 to 3.7 K. Reading fixed
+   beforehand: the change is far below 5 K, consistent with TH-C1, and the Hayne2017
+   law's cold bias at this site is not due to the missing diffuse terms. Of TH-V3's
+   -39 K over all summer bins they explain under 1 K; the remainder points to sub-DEM
+   roughness, the 0 m horizon on a 5 m DEM, the Diviner footprint and observation timing,
+   or the low-temperature properties (the low-temperature conductivity option changes the
+   block by 0.05 K). Limits: 4 of 144 pixels per cell estimate the cell's change, not its
+   temperature; multiple scattering is absent. Run time 3.0 h.

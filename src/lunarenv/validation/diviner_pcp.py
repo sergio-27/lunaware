@@ -32,6 +32,7 @@ from lunarenv.illumination.horizon import compute_horizons
 from lunarenv.illumination.products import illumination_series
 from lunarenv.illumination.settings import IlluminationSettings, load_site_stack
 from lunarenv.illumination.terrain import TerrainLevel, TerrainStack, coarsen
+from lunarenv.thermal import terrain_radiation as tr
 from lunarenv.thermal.albedo_laws import BURGER2024, FOOTE2020
 from lunarenv.thermal.model import ThermalSettings, run_thermal
 from lunarenv.thermal.properties import RegolithProperties
@@ -164,6 +165,127 @@ def _pixel(xy: tuple[float, float]) -> dict[str, np.ndarray]:
         radiance = props.emissivity * result.surface_temperature_k[summer] ** 4
         out[name] = np.bincount(index, weights=radiance, minlength=N_BINS)
         out[name + "_season"] = np.bincount(seasonal_index, weights=radiance, minlength=n_seasonal)
+    return out
+
+
+#: Laws for which TH-V3d adds the diffuse terms (pre-registered 2026-11-16).
+DIFFUSE_LAWS = ("hayne", "foote2020")
+
+
+def _receiver(xy: tuple[float, float]) -> dict[str, np.ndarray]:
+    """TH-V3d: per-bin change of the summer radiance from terrain radiation and Earthshine
+    at one receiver, per law, and from the low-temperature conductivity (Hayne2017 law)."""
+    from lunarenv.runner import _diffuse_absorbed
+
+    w = _W
+    x, y = xy
+    s: IlluminationSettings = w["settings"]
+    horizons = compute_horizons(
+        w["horizon_stack"], np.array([x]), np.array([y]), n_azimuth=s.n_azimuth, diagnostics=False
+    )
+    series = illumination_series(
+        horizons,
+        w["et"],
+        w["sun"],
+        w["r_sun"],
+        n_strips=s.n_strips,
+        limb_u=s.limb_darkening,
+        mode=s.disc_mode_code,
+    )
+    position = PROJ.to_cartesian(x, y, float(horizons.observer_height_m[0]))
+    factor = earth_occultation_factor(w["sun"], w["earth"], position, w["r_sun"], w["r_earth"])
+    normal = surface_normal(w["stack"].levels[0].dem, x, y)
+    site = tr.site_radiation(
+        w["stack"],
+        x,
+        y,
+        {"ground": 0.0},
+        w["et"],
+        w["sun"],
+        w["r_sun"],
+        eclipse_factor=factor,
+        n_strips=s.n_strips,
+        limb_u=s.limb_darkening,
+        mode=s.disc_mode_code,
+    )
+    relevant = site.relevant([("ground", normal)])
+    earth = tr.earthshine(horizons, w["et"], w["earth"], w["sun"], w["r_earth"], projection=PROJ)
+    e_vis, e_ir, e_inc = earth.on(normal)
+    zeros = np.zeros_like(e_vis)
+    spin, summer, bins = w["spin"], w["summer"], w["bins"]
+    index = bins[summer]
+
+    def radiance(flux: np.ndarray, props: RegolithProperties) -> np.ndarray:
+        result = run_thermal(flux, 3600.0, spin, props, ThermalSettings())
+        rad = props.emissivity * result.surface_temperature_k[summer] ** 4
+        return np.bincount(index, weights=rad, minlength=N_BINS)
+
+    out: dict[str, np.ndarray] = {"count": np.bincount(index, minlength=N_BINS).astype(float)}
+    for name in DIFFUSE_LAWS:
+        props = LAWS[name]
+        site.compute(
+            name,
+            props,
+            relevant,
+            step_s=3600.0,
+            spinup_samples=spin,
+            settings=ThermalSettings(),
+            workers=1,
+        )
+        ts, ti = site.irradiance("ground", name, normal)
+        terrain = _diffuse_absorbed(
+            {
+                "terrain_scattered": ts,
+                "terrain_infrared": ti,
+                "earthshine_reflected": zeros,
+                "earthshine_infrared": zeros,
+            },
+            None,
+            props,
+        )
+        earthshine = _diffuse_absorbed(
+            {
+                "terrain_scattered": zeros,
+                "terrain_infrared": zeros,
+                "earthshine_reflected": e_vis,
+                "earthshine_infrared": e_ir,
+            },
+            e_inc,
+            props,
+        )
+        direct = absorbed_solar_flux(series, normal, props, eclipse_factor=factor)
+        base = radiance(direct, props)
+        with_diffuse = radiance(direct + terrain + earthshine, props)
+        out[name + "_change"] = with_diffuse - base
+        out[name + "_terrain_abs"] = np.array([terrain[spin:][summer].mean()])
+        out[name + "_earth_abs"] = np.array([earthshine[spin:][summer].mean()])
+        if name == "hayne":
+            low_t = props.model_copy(update={"conductivity_model": "woods_robinson2019"})
+            out["hayne_lowt_change"] = radiance(direct + terrain + earthshine, low_t) - with_diffuse
+    out["left_out_bound"] = np.array([site.left_out_bound_w_m2("ground", "hayne", normal)])
+    return out
+
+
+def forward_diffuse(
+    store: DataStore, cells: list[tuple[float, float]], spacing_m: float = 120.0
+) -> list[list[dict[str, np.ndarray]]]:
+    """TH-V3d receivers (every ``spacing_m`` in each cell): per-receiver results, per cell."""
+    tasks: list[tuple[int, tuple[float, float]]] = []
+    for c, (cx, cy) in enumerate(cells):
+        xs, ys = cell_pixels(cx, cy, spacing_m)
+        tasks += [(c, (float(x), float(y))) for x, y in zip(xs, ys, strict=True)]
+    workers = max(1, min(8, (os.cpu_count() or 2) - 1))
+    out: list[list[dict[str, np.ndarray]]] = [[] for _ in cells]
+    with ProcessPoolExecutor(
+        workers,
+        mp_context=get_context("spawn"),
+        initializer=_init_worker,
+        initargs=(str(store.root), 1),
+    ) as pool:
+        for (c, _), result in zip(
+            tasks, pool.map(_receiver, [t[1] for t in tasks], chunksize=1), strict=True
+        ):
+            out[c].append(result)
     return out
 
 

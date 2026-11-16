@@ -687,6 +687,174 @@ def _block_bias(store: DataStore, law: str) -> tuple[np.ndarray, np.ndarray, np.
     return model_block - diviner_block, (visible >= 0.5) & complete, complete
 
 
+def _block_from_radiance(
+    cell_rad: np.ndarray, diviner: np.ndarray, visible: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Model block Tbol, model - Diviner per bin, sunlit-and-complete and complete masks."""
+    with np.errstate(invalid="ignore"):
+        model_cell = cell_rad**0.25
+    complete = np.all(np.isfinite(diviner), axis=0)
+    diviner_block = np.where(
+        complete, np.mean(np.where(complete, diviner, 0.0) ** 4, axis=0) ** 0.25, np.nan
+    )
+    model_block = np.mean(model_cell**4, axis=0) ** 0.25
+    return model_block, model_block - diviner_block, (visible >= 0.5) & complete, complete
+
+
+def _th_v3d(store: DataStore) -> Outcome:
+    from lunarenv.validation import diviner_pcp as dp
+
+    d = _th_v3_data(store)
+    cells, diviner = d["cells"], d["diviner"]
+    centres = [(float(c["x_m"]), float(c["y_m"])) for c in d["reference"]["cells"]]
+    receivers = dp.forward_diffuse(store, centres)
+    visible = np.mean([c.sums["visible"] / c.sums["count"] for c in cells], axis=0)
+
+    def change(key: str) -> np.ndarray:  # (cell, bin) mean radiance change over receivers
+        return np.array([np.mean([r[key] / r["count"] for r in rs], axis=0) for rs in receivers])
+
+    def base(law: str) -> np.ndarray:
+        return np.array([c.sums[law] / c.sums["count"] for c in cells])
+
+    results = {}
+    for law in dp.DIFFUSE_LAWS:
+        before = _block_from_radiance(base(law), diviner, visible)
+        after = _block_from_radiance(base(law) + change(law + "_change"), diviner, visible)
+        results[law] = (before, after)
+    hayne_with = base("hayne") + change("hayne_change")
+    low_t = _block_from_radiance(hayne_with + change("hayne_lowt_change"), diviner, visible)
+    (_, diff0, used, every), (block, diff, _, _) = results["hayne"]
+    (_, hot0, _, _), (_, hot, _, _) = results["foote2020"]
+
+    def mean(x: np.ndarray, mask: np.ndarray) -> float:
+        return float(np.mean(x[mask])) if mask.any() else float("nan")
+
+    bias = mean(diff, used)
+    checks = [
+        Check(
+            quantity="bias of block Tbol over sunlit summer bins (model - Diviner), "
+            "Hayne2017 law with terrain radiation and Earthshine",
+            reference=0.0,
+            measured=bias,
+            tolerance=_TH_V3_TOLERANCE_K,
+            unit="K",
+        ),
+        Check(
+            quantity="RMS over sunlit bins",
+            reference=0.0,
+            measured=float(np.sqrt(np.mean(diff[used] ** 2))) if used.any() else None,
+            unit="K",
+            informational=True,
+        ),
+        Check(
+            quantity="bias over all summer bins with data",
+            reference=0.0,
+            measured=mean(diff, every),
+            unit="K",
+            informational=True,
+        ),
+        Check(
+            quantity="change of the sunlit-bin bias from TH-V3 (diffuse terms)",
+            reference=0.0,
+            measured=bias - mean(diff0, used),
+            unit="K",
+            informational=True,
+        ),
+        Check(
+            quantity="change of the all-bin bias from TH-V3 (diffuse terms)",
+            reference=0.0,
+            measured=mean(diff, every) - mean(diff0, every),
+            unit="K",
+            informational=True,
+        ),
+        Check(
+            quantity="hot law (Foote 2020) with the diffuse terms: sunlit-bin bias",
+            reference=0.0,
+            measured=mean(hot, used),
+            unit="K",
+            informational=True,
+        ),
+        Check(
+            quantity="hot law with the diffuse terms: all-bin bias",
+            reference=0.0,
+            measured=mean(hot, every),
+            unit="K",
+            informational=True,
+        ),
+        Check(
+            quantity="hot law: change of the sunlit-bin / all-bin bias from TH-V3c",
+            reference=mean(hot, used) - mean(hot0, used),
+            measured=mean(hot, every) - mean(hot0, every),
+            unit="K",
+            informational=True,
+        ),
+        Check(
+            quantity="low-temperature conductivity (Hayne2017, with diffuse): change of the "
+            "sunlit-bin / all-bin block Tbol",
+            reference=mean(low_t[0] - block, used),
+            measured=mean(low_t[0] - block, every),
+            unit="K",
+            informational=True,
+        ),
+    ]
+    flat = [r for rs in receivers for r in rs]
+    for law, label in (("hayne", "Hayne2017"), ("foote2020", "hot law")):
+        for part, name in (("terrain", "terrain radiation"), ("earth", "Earthshine")):
+            values = np.array([float(r[f"{law}_{part}_abs"][0]) for r in flat])
+            checks.append(
+                Check(
+                    quantity=f"{label}: absorbed {name}, summer mean over the {len(flat)} "
+                    "receivers / largest receiver",
+                    reference=float(values.mean()),
+                    measured=float(values.max()),
+                    unit="W m-2",
+                    informational=True,
+                )
+            )
+    checks.append(
+        Check(
+            quantity="largest bound of the flux from patches not computed (Hayne2017)",
+            measured=max(float(r["left_out_bound"][0]) for r in flat),
+            unit="W m-2",
+            informational=True,
+        )
+    )
+    with np.errstate(invalid="ignore"):
+        before_cell = base("hayne") ** 0.25
+        after_cell = hayne_with**0.25
+    for c, k in enumerate(d["keys"]):
+        ok = np.isfinite(diviner[c])
+        delta = after_cell[c] - before_cell[c]
+        checks.append(
+            Check(
+                quantity=f"cell {k}: change of mean Tbol, sunlit bins / all bins with data",
+                reference=mean(delta, (visible >= 0.5) & ok),
+                measured=mean(delta, ok),
+                unit="K",
+                informational=True,
+            )
+        )
+    notes = (
+        "Pre-registered in docs/review/preregistration-th-v3d-2026-11-16.md before it was "
+        "implemented or run; TH-V3, TH-V3b and TH-V3c stay as recorded.",
+        "Base: the TH-V3 forward model (144 pixels per cell). Added: the change of the summer "
+        "radiance caused by single-bounce terrain radiation (engine method, default patch "
+        "settings, patch temperatures with the same law) and Earthshine (HLS-UG-001), "
+        "computed at 4 receivers per cell (+/-60 m from the centre) and averaged per cell. "
+        "Sunlit bins, data and tolerance as TH-V3.",
+        "The subsample estimates each cell's change, not its temperature. Not modelled: "
+        "multiple scattering, sub-DEM roughness, the Diviner footprint and observation "
+        "timing, spectral emissivity.",
+    )
+    summary = (
+        f"bias {bias:+.1f} K over {int(used.sum())} sunlit summer bins "
+        f"({bias - mean(diff0, used):+.2f} K from TH-V3); all summer bins "
+        f"{mean(diff, every):+.1f} K ({mean(diff, every) - mean(diff0, every):+.2f} K) "
+        "[with terrain radiation and Earthshine]"
+    )
+    return Outcome(checks, summary, notes, None if used.any() else Status.PARTIAL)
+
+
 def _th_v3c(store: DataStore) -> Outcome:
     cold, used, complete = _block_bias(store, "burger2024")
     hot, _, _ = _block_bias(store, "foote2020")
@@ -1298,6 +1466,17 @@ CASES: tuple[Case, ...] = (
         requires=("pgda78.site04.surf", "pgda90.ldem_80s_80mpp"),
         slow=True,
         run=_th_v3c,
+    ),
+    Case(
+        "TH-V3d",
+        "Polar summer temperatures with terrain radiation and Earthshine",
+        "published",
+        "Diviner PCP (diurnal, summer), PDS urn:nasa:pds:lro_diviner_derived1 (as TH-V3)",
+        "bias of block Tbol over sunlit summer bins, Hayne2017 law with the diffuse terms",
+        "10 K (pre-registered 2026-11-16)",
+        requires=("pgda78.site04.surf", "pgda90.ldem_80s_80mpp"),
+        slow=True,
+        run=_th_v3d,
     ),
     Case(
         "TH-V2c",
