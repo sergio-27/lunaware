@@ -94,6 +94,7 @@ def _init_worker(
     horizon_coarsening: int = 1,
     near_id: str = SITE04_NEAR,
     laws: tuple[str, ...] | None = None,
+    hours: np.ndarray | None = None,
 ) -> None:
     # one numba thread per worker; set at run time (changing NUMBA_NUM_THREADS after numba
     # is imported fails as soon as a kernel is compiled in the worker)
@@ -132,7 +133,24 @@ def _init_worker(
         season=season,
         n_seasons=int(season[summer].max()) + 1,
         laws=tuple(LAWS) if laws is None else laws,
+        hours=hours,
     )
+
+
+def at_hours(series: np.ndarray, hours: np.ndarray) -> np.ndarray:
+    """Linear interpolation of an hourly ``series`` at fractional sample indices ``hours``."""
+    i0 = np.clip(np.floor(hours).astype(np.int64), 0, series.size - 2)
+    t = hours - i0
+    if (t < -1e-9).any() or (t > 1.0 + 1e-9).any():
+        raise ValueError("time outside the modelled period")
+    return np.asarray((1.0 - t) * series[i0] + t * series[i0 + 1])
+
+
+def hour_index(jd_utc: np.ndarray) -> np.ndarray:
+    """Fractional hourly sample index in the TH-V3 period (0 = PERIOD_START) of UTC
+    Julian dates."""
+    start = 2440587.5 + (PERIOD_START - np.datetime64("1970-01-01T00:00")) / np.timedelta64(1, "D")
+    return np.asarray((np.asarray(jd_utc, dtype=np.float64) - start) * 24.0)
 
 
 def _pixel(xy: tuple[float, float]) -> dict[str, np.ndarray]:
@@ -170,9 +188,15 @@ def _pixel(xy: tuple[float, float]) -> dict[str, np.ndarray]:
         props = LAWS[name]
         flux = absorbed_solar_flux(series, normal, props, eclipse_factor=factor)
         result = run_thermal(flux, 3600.0, spin, props, ThermalSettings())
-        radiance = props.emissivity * result.surface_temperature_k[summer] ** 4
+        full = props.emissivity * result.surface_temperature_k**4
+        radiance = full[summer]
         out[name] = np.bincount(index, weights=radiance, minlength=N_BINS)
         out[name + "_season"] = np.bincount(seasonal_index, weights=radiance, minlength=n_seasonal)
+        if w["hours"] is not None:  # TH-V3h: at the observation times; hottest summer hour
+            out[name + "_at"] = at_hours(full, w["hours"])
+            hottest = np.zeros(N_BINS)
+            np.maximum.at(hottest, index, radiance)
+            out[name + "_max"] = hottest
     return out
 
 
@@ -312,12 +336,15 @@ def forward(
     horizon_coarsening: int = 1,
     near_id: str = SITE04_NEAR,
     laws: tuple[str, ...] | None = None,
+    hours: np.ndarray | None = None,
 ) -> list[CellSums]:
     """Sum the per-pixel bin statistics over the pixels of each cell.
 
     ``horizon_coarsening`` > 1 computes the horizons on the site DEM block-averaged by that
     factor (the surface normal stays on the 5 m DEM): a sensitivity test, not TH-V3.
-    ``laws`` limits the albedo laws computed (default: all of ``LAWS``).
+    ``laws`` limits the albedo laws computed (default: all of ``LAWS``). With ``hours``
+    (fractional sample indices, see ``hour_index``) each law also gets ``<law>_at``, the
+    radiance at those times, and ``<law>_max``, the hottest summer hour per bin (TH-V3h).
     """
     tasks: list[tuple[int, tuple[float, float]]] = []
     for c, (cx, cy) in enumerate(cells):
@@ -330,7 +357,7 @@ def forward(
         workers,
         mp_context=get_context("spawn"),
         initializer=_init_worker,
-        initargs=(str(store.root), horizon_coarsening, near_id, laws),
+        initargs=(str(store.root), horizon_coarsening, near_id, laws, hours),
     ) as pool:
         for (c, _), result in zip(
             tasks, pool.map(_pixel, [t[1] for t in tasks], chunksize=8), strict=True

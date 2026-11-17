@@ -1960,6 +1960,262 @@ def _th_v3g(store: DataStore) -> Outcome:
     return Outcome(checks, "; ".join(parts), notes, status)
 
 
+def _timed_cells(
+    values: np.ndarray, member: np.ndarray, bins: np.ndarray, n_cells: int
+) -> np.ndarray:
+    """Cell bin means (n_cells, N_BINS) of per-observation ``values`` (n_cells, n_obs);
+    ``member`` (n_cells, n_obs) counts how often an observation is binned in a cell."""
+    from lunarenv.validation import diviner_pcp as dp
+
+    out = np.full((n_cells, dp.N_BINS), np.nan)
+    for c in range(n_cells):
+        w = member[c]
+        total = np.bincount(bins, weights=w * values[c], minlength=dp.N_BINS)
+        count = np.bincount(bins, weights=w, minlength=dp.N_BINS)
+        with np.errstate(invalid="ignore", divide="ignore"):
+            out[c] = np.where(count > 0, total / count, np.nan)
+    return out
+
+
+def _th_v3h(store: DataStore) -> Outcome:
+    import gzip
+
+    from lunarenv.geometry.ephemeris import spice_session
+    from lunarenv.illumination.settings import SITE04_NEAR
+    from lunarenv.validation import diviner_footprint as df
+    from lunarenv.validation import diviner_pcp as dp
+
+    ref = resources.files("lunarenv.validation") / "reference"
+    sites_ref = json.loads((ref / "diviner_pcp_sites.json").read_text(encoding="utf-8"))
+    times = json.loads(gzip.decompress((ref / "diviner_rdr_times.json.gz").read_bytes()))
+    sites: list[tuple[str, str, dict]] = [("Shackleton", SITE04_NEAR, dp.load_reference())]  # type: ignore[type-arg]
+    sites += [(label, near, sites_ref["sites"][label]) for label, near in dp.TH_V3E_SITES]
+    nominal = df.Footprint.at_altitude(50e3)
+    laws = ("hayne", "foote2020")
+    checks: list[Check] = []
+    parts: list[str] = []
+    qualifying: list[bool] = []
+    passed: list[bool] = []
+    change_h: list[float] = []
+    change_f: list[float] = []
+    colder: list[str] = []
+    bound_low: list[str] = []
+    hot_low: list[str] = []
+    sensitive: list[str] = []
+    for label, near_id, data in sites:
+        keys = [c["key"] for c in data["cells"]]
+        centres = [(float(c["x_m"]), float(c["y_m"])) for c in data["cells"]]
+        diviner = np.full((len(keys), dp.N_BINS), np.nan)
+        for b, entry in enumerate(data["bins"]):
+            for c, k in enumerate(keys):
+                if k in entry["tbol_k"]:
+                    diviner[c, b] = entry["tbol_k"][k]
+        obs = times["sites"][label]
+        jd = np.asarray(obs["jd"], dtype=np.float64)
+        ox = np.asarray(obs["x_m"], dtype=np.float64)
+        oy = np.asarray(obs["y_m"], dtype=np.float64)
+        obin = np.minimum(
+            (np.mod(np.asarray(obs["sunlon_deg"]), 360.0) // dp.BIN_DEG).astype(np.int64),
+            dp.N_BINS - 1,
+        )
+        hours = dp.hour_index(jd)
+        cells = dp.forward(store, centres, 20.0, near_id=near_id, laws=laws, hours=hours)
+        n_cells = len(centres)
+        visible = np.mean([c.sums["visible"] / c.sums["count"] for c in cells], axis=0)
+        # observation membership per cell: by its centre, and by its nine IFOV points
+        centre_member = np.array(
+            [((np.abs(ox - cx) < 120.0) & (np.abs(oy - cy) < 120.0)) for cx, cy in centres],
+            dtype=np.float64,
+        )
+        bx = float(np.mean([x for x, _ in centres]))
+        by = float(np.mean([y for _, y in centres]))
+        points = df.bin_points(nominal, float(np.arctan2(by, bx)))
+        nine_member = np.zeros_like(centre_member)
+        for d in points:
+            px, py = ox + d[0], oy + d[1]
+            nine_member += np.array(
+                [((np.abs(px - cx) < 120.0) & (np.abs(py - cy) < 120.0)) for cx, cy in centres],
+                dtype=np.float64,
+            )
+        rad: dict[tuple[str, str], np.ndarray] = {}
+        for law in laws:
+            at = np.array([c.sums[law + "_at"] / c.n_pixels for c in cells])
+            rad[(law, "uniform")] = np.array([c.sums[law] / c.sums["count"] for c in cells])
+            rad[(law, "timed")] = _timed_cells(at, nine_member, obin, n_cells)
+            rad[(law, "centre")] = _timed_cells(at, centre_member, obin, n_cells)
+            rad[(law, "hottest")] = np.array([c.sums[law + "_max"] / c.n_pixels for c in cells])
+        blocks = {key: _block_from_radiance(r, diviner, visible) for key, r in rad.items()}
+        _, _, sunlit, _ = blocks[("hayne", "uniform")]
+        timed_ok = np.all(np.isfinite(rad[("hayne", "timed")]), axis=0)
+        used = sunlit & timed_ok
+        n_used = int(used.sum())
+        ok = n_used >= _TH_V3E_MIN_SUNLIT
+        qualifying.append(ok)
+
+        def bias(
+            law: str,
+            kind: str,
+            mask: np.ndarray = used,
+            blocks: dict = blocks,  # type: ignore[type-arg]
+        ) -> float:
+            return float(np.mean(blocks[(law, kind)][1][mask])) if mask.any() else float("nan")
+
+        main = bias("hayne", "timed")
+        dh = main - bias("hayne", "uniform")
+        dfoot = bias("foote2020", "timed") - bias("foote2020", "uniform")
+        centre_ok = used & np.all(np.isfinite(rad[("hayne", "centre")]), axis=0)
+        if ok:
+            passed.append(abs(main) <= _TH_V3_TOLERANCE_K)
+            change_h.append(dh)
+            change_f.append(dfoot)
+            if dh < 0.0:
+                colder.append(label)
+            if bias("hayne", "hottest", sunlit) < -_TH_V3_TOLERANCE_K:
+                bound_low.append(label)
+            if label in ("Site01", "Site07") and bias("foote2020", "timed") < -_TH_V3_TOLERANCE_K:
+                hot_low.append(label)
+            centre_shift = bias("hayne", "centre", centre_ok) - bias("hayne", "timed", centre_ok)
+            if abs(centre_shift) > abs(dh):
+                sensitive.append(label)
+        checks.append(
+            Check(
+                quantity=f"{label}: Hayne2017 at the Diviner observation times, bias of block "
+                "Tbol over sunlit summer bins with observations in all nine cells"
+                + ("" if ok else f" (fewer than {_TH_V3E_MIN_SUNLIT} such bins: not in verdict)"),
+                reference=0.0,
+                measured=main if n_used else None,
+                tolerance=_TH_V3_TOLERANCE_K if ok else None,
+                unit="K",
+                informational=not ok,
+            )
+        )
+        for law, kind, name, mask in (
+            ("foote2020", "timed", "hot law at the observation times", used),
+            ("hayne", "uniform", "Hayne2017 averaged over every summer hour, same bins", used),
+            ("foote2020", "uniform", "hot law averaged over every summer hour, same bins", used),
+            ("hayne", "uniform", "Hayne2017 over all sunlit bins (as TH-V3 / TH-V3e)", sunlit),
+            ("foote2020", "uniform", "hot law over all sunlit bins (as TH-V3c / TH-V3e)", sunlit),
+            ("hayne", "hottest", "Hayne2017 hottest summer hour per bin, all sunlit bins", sunlit),
+            (
+                "foote2020",
+                "hottest",
+                "hot law hottest summer hour per bin, all sunlit bins",
+                sunlit,
+            ),
+        ):
+            checks.append(
+                Check(
+                    quantity=f"{label}: {name}, bias",
+                    reference=0.0,
+                    measured=bias(law, kind, mask) if mask.any() else None,
+                    unit="K",
+                    informational=True,
+                )
+            )
+        # observation statistics over the bins used
+        in_block = nine_member.sum(axis=0) > 0
+        in_used = in_block & used[obin]
+        years = 2000.0 + (jd[in_used] - 2451544.5) / 365.25
+        utc = dp.PERIOD_START + (hours[in_used] * 3.6e6).astype("timedelta64[ms]")
+        with spice_session(store) as eph:
+            sun = eph.position_from_center("SUN", eph.utc_to_et(utc))
+        model_lon = np.degrees(np.arctan2(sun[:, 1], sun[:, 0])) % 360.0
+        model_bin = np.minimum((model_lon // dp.BIN_DEG).astype(np.int64), dp.N_BINS - 1)
+        checks += [
+            Check(
+                quantity=f"{label}: Hayne2017 at the observation times binned by the nine IFOV "
+                "points / by the centre only, bias over the bins with observations in all nine "
+                "cells both ways",
+                reference=bias("hayne", "timed", centre_ok) if centre_ok.any() else None,
+                measured=bias("hayne", "centre", centre_ok) if centre_ok.any() else None,
+                unit="K",
+                informational=True,
+            ),
+            Check(
+                quantity=f"{label}: observations binned in the block in the bins used / "
+                "of them before 2012",
+                reference=float(in_used.sum()),
+                measured=float(np.sum(years < 2012.0)),
+                informational=True,
+            ),
+            Check(
+                quantity=f"{label}: sunlit bins used / sunlit bins with Diviner in all nine cells",
+                reference=float(sunlit.sum()),
+                measured=float(n_used),
+                informational=True,
+            ),
+            Check(
+                quantity=f"{label}: fraction of those observations whose RDR subsolar longitude "
+                "falls in the model's bin at the same time",
+                reference=1.0,
+                measured=float(np.mean(model_bin == obin[in_used])) if in_used.any() else None,
+                informational=True,
+            ),
+        ]
+        parts.append(
+            f"{label} Hayne {main:+.1f} K (every hour {bias('hayne', 'uniform'):+.1f}), "
+            f"hot {bias('foote2020', 'timed'):+.1f} K ({n_used} bins); hottest-hour bound "
+            f"{bias('hayne', 'hottest', sunlit):+.1f} K"
+        )
+    n_ok = sum(qualifying)
+    status: Status | None = Status.PARTIAL if n_ok < 3 else None
+    if passed and all(passed):
+        reading = (
+            "the observation timing explains the cold bias of the default law; TH-V3 to "
+            "TH-V3g need re-reading at the observation times"
+        )
+    elif change_h and all(
+        abs(a) < 5.0 and abs(b) < 5.0 for a, b in zip(change_h, change_f, strict=True)
+    ):
+        reading = (
+            "the observation timing does not explain the gap (under 5 K at every site, both "
+            "laws); remaining candidates: the albedo law and the illumination of the blocks"
+        )
+    else:
+        reading = "the timing changes some sites by 5 K or more; see the per-site values"
+    extra = []
+    if colder:
+        extra.append(
+            "the observation times make the model colder at "
+            + ", ".join(colder)
+            + ", so timing cannot be the cause there"
+        )
+    if bound_low:
+        extra.append(
+            "even the hottest summer hour in every bin leaves Hayne2017 below -10 K at "
+            + ", ".join(bound_low)
+            + ": no timing of the observations can close the gap there"
+        )
+    if hot_low:
+        extra.append(
+            "the hot law at the observation times is still below -10 K at " + ", ".join(hot_low)
+        )
+    if sensitive:
+        extra.append(
+            "binning by the centre only moves the bias by more than the timing change at "
+            + ", ".join(sensitive)
+        )
+    notes = (
+        "Pre-registered in docs/review/preregistration-th-v3h-2026-11-18.md before the model "
+        "was evaluated at the observation times.",
+        "Observation times: Diviner RDR channel 7 records, activity flag 110 (standard nadir), "
+        "subsolar latitude < 0, 10-450 K, 2009-07-05 to 2019-02-17, from the PDS Geosciences "
+        "Node ODE Diviner RDR service (benchmarks/extract_diviner_rdr_times.py, "
+        f"retrieved {times['retrieved_utc']}); temperatures not used. Each record is binned by "
+        "its RDR subsolar longitude and in every cell that one of its nine IFOV points (Diviner RDR "
+        "SIS section 5.4, 335 x 170 m at 50 km, in track along the meridian) falls in, once "
+        "per point; centre-only binning is informational.",
+        "Model: TH-V3's forward model (every 20 m, 144 pixels per cell), radiance interpolated "
+        "linearly between hourly samples to each observation time and averaged over the "
+        "cell's pixels; cell bin value = mean over its observations; block Tbol as TH-V3. "
+        "Sunlit bins from the hourly model as before; only sunlit bins with observations in "
+        "all nine cells are compared, with the every-hour model on the same bins.",
+        f"{n_ok} of {len(qualifying)} sites have at least {_TH_V3E_MIN_SUNLIT} such bins.",
+        f"Reading: {reading}." + ("" if not extra else " Also: " + "; ".join(extra) + "."),
+    )
+    return Outcome(checks, "; ".join(parts), notes, status)
+
+
 CASES: tuple[Case, ...] = (
     Case(
         "TH-A1",
@@ -2160,6 +2416,26 @@ CASES: tuple[Case, ...] = (
         ),
         slow=True,
         run=_th_v3g,
+    ),
+    Case(
+        "TH-V3h",
+        "Diviner observation timing at five polar sites",
+        "published",
+        "Diviner PCP (diurnal, summer), as TH-V3 and TH-V3e; observation times from the "
+        "Diviner RDR (channel 7, standard nadir) via the PDS Geosciences Node ODE",
+        "bias of block Tbol over sunlit summer bins, Hayne2017 law at the observation times, "
+        "per site",
+        "10 K at each of the five sites (pre-registered 2026-11-18)",
+        requires=(
+            "pgda78.site04.surf",
+            "pgda78.site01.surf",
+            "pgda78.site07.surf",
+            "pgda78.site11.surf",
+            "pgda78.site23.surf",
+            "pgda90.ldem_80s_80mpp",
+        ),
+        slow=True,
+        run=_th_v3h,
     ),
     Case(
         "TH-V2c",
