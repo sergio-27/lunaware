@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from lunarenv.export import export_run
 from lunarenv.runner import RunResult, describe_models, load_run, run_scenario
 from lunarenv.scenario.schema import Scenario, json_schema, load_scenario
 from lunarenv.validation.core import get_validation_status
@@ -56,6 +57,7 @@ __all__ = [
     "RunResult",
     "Scenario",
     "describe_models",
+    "export_run",
     "get_validation_status",
     "json_schema",
     "load_run",

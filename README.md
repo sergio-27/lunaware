@@ -167,6 +167,8 @@ lunarenv.get_validation_status()  # outcome of every validation case
 Other commands: `lunarenv validate` (stored validation status with the date each case was
 computed; `--run` to recompute, `--slow` to include the cases that take minutes; cases
 not recomputed are listed with the reason),
+`lunarenv export <run_id>` (the run as CSV tables and OBJ meshes for another thermal
+tool, see [docs/export.md](docs/export.md)),
 `lunarenv describe`, `lunarenv schema` (JSON Schema of a scenario, also in
 [docs/scenario.schema.json](docs/scenario.schema.json)), `lunarenv data list|verify`.
 For agents: `lunarenv-mcp`, see [docs/mcp.md](docs/mcp.md).
@@ -332,6 +334,7 @@ Details: [docs/models/illumination.md](docs/models/illumination.md),
 | [docs/data.md](docs/data.md) | Data sources, integrity model, conventions, how large the terrain model must be |
 | [docs/models/illumination.md](docs/models/illumination.md), [docs/models/thermal.md](docs/models/thermal.md) | Method, assumptions, uncertainty, performance |
 | [docs/convergence/](docs/convergence/) | Convergence and sensitivity studies behind every numerical default |
+| [docs/export.md](docs/export.md) | Export of a run for another thermal tool: files, columns, frame |
 | [docs/mcp.md](docs/mcp.md) | MCP server and client configuration |
 | [docs/references.md](docs/references.md) | References, with which ones were actually read |
 | [DESIGN.md](DESIGN.md) | Design system of the HTML report |

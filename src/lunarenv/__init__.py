@@ -1,7 +1,7 @@
 """lunarenv: open, verified lunar surface environment engine.
 
 Public entry points (imported lazily, so that ``import lunarenv`` stays cheap):
-``run_scenario``, ``describe_models``, ``get_validation_status``.
+``run_scenario``, ``describe_models``, ``get_validation_status``, ``export_run``.
 """
 
 from importlib.metadata import PackageNotFoundError, version
@@ -16,7 +16,14 @@ from lunarenv._numba_cache import invalidate_if_stale
 
 invalidate_if_stale()  # before any compiled kernel is loaded from numba's cache
 
-_API = ("run_scenario", "describe_models", "get_validation_status", "load_scenario", "load_run")
+_API = (
+    "run_scenario",
+    "describe_models",
+    "get_validation_status",
+    "load_scenario",
+    "load_run",
+    "export_run",
+)
 __all__ = ["__version__", *_API]
 
 

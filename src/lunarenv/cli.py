@@ -202,6 +202,28 @@ def _report(args: argparse.Namespace) -> int:
     return 0
 
 
+def _export(args: argparse.Namespace) -> int:
+    from lunarenv.export import export_run
+
+    run = args.run if args.run.is_dir() else Path("runs") / args.run
+    manifest = export_run(
+        run,
+        args.output,
+        mesh_half_width_m=args.mesh_half_width,
+        mesh_stride=args.mesh_stride,
+        ring_radius_m=args.ring_radius,
+    )
+    if args.json:
+        _print_json(manifest)
+        return 0
+    print(manifest["directory"])
+    for entry in manifest["files"]:
+        size = f"{entry['rows']} rows" if "rows" in entry else f"{entry['faces']} faces"
+        print(f"  {entry['name']}: {size}, {entry['bytes']} bytes")
+    print("  manifest.json: frame, units, checksums, validation status")
+    return 0
+
+
 def _schema(_: argparse.Namespace) -> int:
     from lunarenv.api import json_schema
 
@@ -264,6 +286,36 @@ def build_parser() -> argparse.ArgumentParser:
         "-o", "--output", type=Path, help="output file (default: inside the run directory)"
     )
     report.set_defaults(handler=_report)
+
+    export = sub.add_parser(
+        "export",
+        help="write a run as CSV tables and OBJ meshes for another thermal tool",
+    )
+    export.add_argument("run", type=Path, help="run directory, or a run id under ./runs")
+    export.add_argument(
+        "-o", "--output", type=Path, help="output directory (default: <run>/export)"
+    )
+    export.add_argument(
+        "--ring-radius",
+        type=float,
+        metavar="M",
+        help="also write horizon_ring.obj: the horizon as a wall of this radius (m)",
+    )
+    export.add_argument(
+        "--mesh-half-width",
+        type=float,
+        metavar="M",
+        help="also write terrain.obj: the site DEM within this distance (m) in x and y",
+    )
+    export.add_argument(
+        "--mesh-stride",
+        type=int,
+        default=1,
+        metavar="N",
+        help="with --mesh-half-width: keep every N-th DEM pixel (default 1)",
+    )
+    export.add_argument("--json", action="store_true", help="print the manifest")
+    export.set_defaults(handler=_export)
 
     schema = sub.add_parser("schema", help="print the JSON Schema of a scenario")
     schema.set_defaults(handler=_schema)

@@ -78,6 +78,8 @@ select = ["E", "F", "W", "I", "UP", "B", "NPY", "RUF"]
 "src/lunarenv/runner.py" = ["E501"]
 "src/lunarenv/scenario/schema.py" = ["E501"]
 "src/lunarenv/cli.py" = ["E501"]
+# column descriptions written into the export manifest
+"src/lunarenv/export.py" = ["E501"]
 "src/lunarenv/report.py" = ["E501"]
 
 [tool.mypy]
