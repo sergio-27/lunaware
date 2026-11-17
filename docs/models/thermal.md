@@ -189,6 +189,34 @@ a vertical wall receives up to 1400 W m-2, level ground 45 W m-2. Terrain-scatte
 sunlight, terrain infrared and Earthshine on these surfaces are computed with the
 scenario's albedo law for the terrain (`oriented_diffuse_irradiance`; see below).
 
+## Status of the polar comparison: closed (2026-11-18)
+
+Seven pre-registered cases compared the model with the Diviner summer Polar Cumulative
+Product on 720 m blocks:
+
+| Case | What was tried | Result over the sunlit summer bins |
+|---|---|---|
+| TH-V3 | published albedo law (Hayne2017), Shackleton rim | FAIL, -23.8 K |
+| TH-V3b | constant albedo 0.12 | PASS, +5.7 K (outside the published envelope) |
+| TH-V3c | albedo envelope | PASS at the hot edge: cold -34.2 K, hot -0.4 K |
+| TH-V3d | terrain radiation and Earthshine | FAIL, -23.2 K (+0.7 K) |
+| TH-V3e | four more sites | FAIL: hot bound -22.0 and -12.7 K at Sites 1 and 7 |
+| TH-V3f | sub-DEM roughness, 20 deg RMS | FAIL: -12.8 to -34.4 K |
+| TH-V3g | Diviner footprint and binning | FAIL: blocks change by -5 to +2 K |
+
+The default law stays 24-51 K too cold at the five blocks and the hot bound is not an
+upper bound at two of them. What these cases rule out as the main cause: single-bounce
+terrain radiation, Earthshine, roughness of the size measured at the equator, and the
+footprint. What stays open: which albedo law holds at grazing incidence (the cases bracket
+it, they do not settle it), and the timing of the observations inside each bin (not
+tested).
+
+Decision: no further model term is added to this comparison. It is reopened only with
+new information on one of these two (a measured albedo at grazing
+incidence, or the per-observation Diviner radiances with their times). The polar ground
+temperatures remain experimental bounds; they are not written by `lunarenv export`
+([export.md](../export.md)).
+
 ## Terrain radiation and Earthshine (review change 3)
 
 Method (`lunarenv.thermal.terrain_radiation`; pre-registered in

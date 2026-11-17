@@ -14,6 +14,12 @@ deterministic code.
 **Status: MVP, pre-alpha (0.1.0.dev0).** One test site (Shackleton crater rim) and two
 models. Read [Known limitations](#known-limitations) before using a number.
 
+What can be used today: the illumination results from a metre or more above the ground
+and the irradiance on asset surfaces, which `lunarenv export` writes for another thermal
+tool. **The polar ground temperatures are experimental bounds, not predictions**: seven
+comparisons with Diviner did not validate them (see
+[Thermal](#known-limitations), "The polar Diviner comparison is closed").
+
 ## Related work and what is new here
 
 Most ingredients exist already; lunarenv is an integration with an auditable validation
@@ -273,6 +279,18 @@ Thermal
   bound (under 1 K), so it closes part of the Hayne gap and none of the hot-bound gap at
   Sites 1 and 7. The Diviner footprint and binning (TH-V3g) change the blocks by -5 to
   +2 K, so they explain neither gap; observation timing and the albedo law remain.
+- **The polar Diviner comparison is closed (2026-11-18).** Seven pre-registered cases
+  (TH-V3 to TH-V3g) tried the published albedo law, a constant albedo, the albedo
+  envelope, terrain radiation and Earthshine, four more sites, sub-DEM roughness and the
+  Diviner footprint. None brings the default law within 10 K of Diviner at the five
+  blocks (it stays 24-51 K too cold; 13-34 K with roughness), and the hot bound stays
+  13-22 K too cold at Sites 1 and 7. No further model term will be added to this
+  comparison. It will be reopened only with new information on what remains: the albedo
+  at grazing incidence, or the timing of the Diviner observations within each bin (which
+  needs the per-observation radiances, not the binned product). Until then the polar
+  ground temperatures are experimental bounds: use them to bracket the ground boundary
+  condition of a coupled asset model, and expect sunlit summer ground to be warmer than
+  the hot bound at some sites. `lunarenv export` leaves them out for this reason.
 - **Slope dominates and is poorly known.** With the Sun never more than 1.8 degrees
   high, a tilt of one degree changes the absorbed flux severalfold. The slope of a 5 m
   terrain model is used unless the scenario gives one; a slope grid (`slope_grid`)
