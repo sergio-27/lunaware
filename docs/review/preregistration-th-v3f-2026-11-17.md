@@ -114,3 +114,16 @@ For one DEM point (the receiver) with DEM normal n0:
 - Limits: summer, sunlit bins, 720 m blocks; roughness parameter from equatorial
   regions; the change is estimated at 4 of 144 pixels per cell; Smith shadowing is an
   approximation that is poorest at grazing incidence, which is exactly the polar case.
+
+## Amendment 1 (2026-11-17, before any polar run)
+
+A smoke test of the implementation, run before the case, gave a 20 deg roughness change
+of -3.2 K at equatorial noon and -33.6 K at equatorial midnight. The midnight value is an
+artefact of the text above: with G1 = 0 when the Sun is below the plane, the whole night
+radiance came from the cast-shadow population, which never sees the Sun and so stores no
+daytime heat. Changed, before any polar receiver was computed: the lit / cast-shadow split
+(G1 L_lit + (1 - G1) L_shadow) applies only while the facet faces the Sun and the Sun is
+above the mean plane; otherwise the facet's radiance is that of its own run (which then
+receives only the adjacent-surface flux). Nothing else changes. One receiver at the
+Shackleton block was computed in the smoke test (all summer bins, mean Tbol per law); no
+block bias or Diviner comparison was computed.

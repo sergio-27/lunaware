@@ -36,6 +36,7 @@ from lunarenv.thermal import terrain_radiation as tr
 from lunarenv.thermal.albedo_laws import BURGER2024, FOOTE2020
 from lunarenv.thermal.model import ThermalSettings, run_thermal
 from lunarenv.thermal.properties import RegolithProperties
+from lunarenv.thermal.roughness import rough_radiance, sun_vectors
 from lunarenv.thermal.surface import absorbed_solar_flux, surface_normal
 
 PROJ = SouthPolarStereographic()
@@ -88,7 +89,12 @@ def _horizon_stack(
     return TerrainStack((level, *stack.levels[1:]))
 
 
-def _init_worker(data_root: str, horizon_coarsening: int = 1, near_id: str = SITE04_NEAR) -> None:
+def _init_worker(
+    data_root: str,
+    horizon_coarsening: int = 1,
+    near_id: str = SITE04_NEAR,
+    laws: tuple[str, ...] | None = None,
+) -> None:
     # one numba thread per worker; set at run time (changing NUMBA_NUM_THREADS after numba
     # is imported fails as soon as a kernel is compiled in the worker)
     numba.set_num_threads(1)
@@ -125,6 +131,7 @@ def _init_worker(data_root: str, horizon_coarsening: int = 1, near_id: str = SIT
         bins=bins,
         season=season,
         n_seasons=int(season[summer].max()) + 1,
+        laws=tuple(LAWS) if laws is None else laws,
     )
 
 
@@ -159,7 +166,8 @@ def _pixel(xy: tuple[float, float]) -> dict[str, np.ndarray]:
     seasonal_index = season[summer] * N_BINS + index
     n_seasonal = w["n_seasons"] * N_BINS
     out["season_count"] = np.bincount(seasonal_index, minlength=n_seasonal).astype(np.float64)
-    for name, props in LAWS.items():
+    for name in w["laws"]:
+        props = LAWS[name]
         flux = absorbed_solar_flux(series, normal, props, eclipse_factor=factor)
         result = run_thermal(flux, 3600.0, spin, props, ThermalSettings())
         radiance = props.emissivity * result.surface_temperature_k[summer] ** 4
@@ -303,11 +311,13 @@ def forward(
     spacing_m: float,
     horizon_coarsening: int = 1,
     near_id: str = SITE04_NEAR,
+    laws: tuple[str, ...] | None = None,
 ) -> list[CellSums]:
     """Sum the per-pixel bin statistics over the pixels of each cell.
 
     ``horizon_coarsening`` > 1 computes the horizons on the site DEM block-averaged by that
     factor (the surface normal stays on the 5 m DEM): a sensitivity test, not TH-V3.
+    ``laws`` limits the albedo laws computed (default: all of ``LAWS``).
     """
     tasks: list[tuple[int, tuple[float, float]]] = []
     for c, (cx, cy) in enumerate(cells):
@@ -320,7 +330,7 @@ def forward(
         workers,
         mp_context=get_context("spawn"),
         initializer=_init_worker,
-        initargs=(str(store.root), horizon_coarsening, near_id),
+        initargs=(str(store.root), horizon_coarsening, near_id, laws),
     ) as pool:
         for (c, _), result in zip(
             tasks, pool.map(_pixel, [t[1] for t in tasks], chunksize=8), strict=True
@@ -438,3 +448,101 @@ def select_block(
         "candidate_cells": int(ii.size),
         "summer_samples": count,
     }
+
+
+# ------------------------------------------------------- TH-V3f: sub-DEM roughness
+#: Laws and RMS slopes of TH-V3f (pre-registered 2026-11-17).
+ROUGH_LAWS = ("hayne", "foote2020")
+ROUGH_SLOPES_DEG = (20.0, 35.0)
+
+
+def rough_key(law: str, rms_deg: float) -> str:
+    return f"{law}_rough{rms_deg:g}"
+
+
+def _rough_receiver(task: tuple[float, float, int, int, bool]) -> dict[str, np.ndarray]:
+    """TH-V3f: per-bin summer radiance sums of the smooth DEM facet and of the rough
+    surface at one receiver, per law and RMS slope. ``task`` = (x, y, slope nodes,
+    azimuths, Hayne2017 at the first slope only)."""
+    w = _W
+    x, y, n_nodes, n_azimuth, single = task
+    s: IlluminationSettings = w["settings"]
+    horizons = compute_horizons(
+        w["horizon_stack"], np.array([x]), np.array([y]), n_azimuth=s.n_azimuth, diagnostics=False
+    )
+    series = illumination_series(
+        horizons,
+        w["et"],
+        w["sun"],
+        w["r_sun"],
+        n_strips=s.n_strips,
+        limb_u=s.limb_darkening,
+        mode=s.disc_mode_code,
+    )
+    position = PROJ.to_cartesian(x, y, float(horizons.observer_height_m[0]))
+    factor = earth_occultation_factor(w["sun"], w["earth"], position, w["r_sun"], w["r_earth"])
+    normal = surface_normal(w["stack"].levels[0].dem, x, y)
+    irradiance = series.normal_irradiance_w_m2 * factor
+    sun = sun_vectors(series.elevation_rad, series.azimuth_rad)
+    spin, summer, bins = w["spin"], w["summer"], w["bins"]
+    index = bins[summer]
+    out: dict[str, np.ndarray] = {
+        "count": np.bincount(index, minlength=N_BINS).astype(float),
+        "xy": np.array([x, y]),
+    }
+    laws = ("hayne",) if single else ROUGH_LAWS
+    slopes = ROUGH_SLOPES_DEG[:1] if single else ROUGH_SLOPES_DEG
+    for name in laws:
+        result = rough_radiance(
+            irradiance,
+            sun,
+            normal,
+            LAWS[name],
+            slopes,
+            3600.0,
+            spin,
+            ThermalSettings(),
+            n_nodes=n_nodes,
+            n_azimuth=n_azimuth,
+        )
+        out[name] = np.bincount(index, weights=result.smooth[summer], minlength=N_BINS)
+        for rms, rad in result.rough.items():
+            out[rough_key(name, rms)] = np.bincount(index, weights=rad[summer], minlength=N_BINS)
+    return out
+
+
+def forward_rough(
+    store: DataStore,
+    cells: list[tuple[float, float]],
+    near_id: str = SITE04_NEAR,
+    spacing_m: float = 120.0,
+    convergence: tuple[float, float] | None = None,
+) -> tuple[list[list[dict[str, np.ndarray]]], dict[str, np.ndarray] | None]:
+    """TH-V3f receivers (every ``spacing_m`` in each cell, 3 slope nodes x 12 azimuths):
+    per-receiver results per cell, and, if ``convergence`` gives a point, its result with
+    5 nodes x 24 azimuths (Hayne2017, first RMS slope)."""
+    tasks: list[tuple[int, tuple[float, float, int, int, bool]]] = []
+    for c, (cx, cy) in enumerate(cells):
+        xs, ys = cell_pixels(cx, cy, spacing_m)
+        tasks += [(c, (float(x), float(y), 3, 12, False)) for x, y in zip(xs, ys, strict=True)]
+    if convergence is not None:
+        tasks.append((-1, (float(convergence[0]), float(convergence[1]), 5, 24, True)))
+    workers = max(1, min(8, (os.cpu_count() or 2) - 1))
+    out: list[list[dict[str, np.ndarray]]] = [[] for _ in cells]
+    fine: dict[str, np.ndarray] | None = None
+    with ProcessPoolExecutor(
+        workers,
+        mp_context=get_context("spawn"),
+        initializer=_init_worker,
+        initargs=(str(store.root), 1, near_id),
+    ) as pool:
+        # the long convergence task first, so it does not finish last on its own
+        order = sorted(range(len(tasks)), key=lambda i: tasks[i][0] >= 0)
+        results = pool.map(_rough_receiver, [tasks[i][1] for i in order], chunksize=1)
+        for i, result in zip(order, results, strict=True):
+            c = tasks[i][0]
+            if c < 0:
+                fine = result
+            else:
+                out[c].append(result)
+    return out, fine

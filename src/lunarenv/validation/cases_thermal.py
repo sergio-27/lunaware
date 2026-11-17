@@ -1482,6 +1482,236 @@ def _th_v3e(store: DataStore) -> Outcome:
     return Outcome(checks, "; ".join(parts), notes, status)
 
 
+def _th_v3f_equator() -> tuple[float, float]:
+    """Level ground at the equator, equinox, Hayne2017: rough (20 deg) minus smooth Tbol
+    at noon and at midnight (K)."""
+    from lunarenv.core.constants import SOLAR_CONSTANT_W_M2
+    from lunarenv.thermal.roughness import rough_radiance, sun_vectors
+
+    n = 709  # hourly samples per synodic month
+    hour_angle = 2.0 * np.pi * np.arange(2 * n + 1) / n
+    elevation = np.arcsin(np.clip(np.cos(hour_angle), -1.0, 1.0))
+    azimuth = np.where(np.sin(hour_angle) < 0.0, np.pi / 2.0, -np.pi / 2.0)  # east a.m.
+    irradiance = np.where(elevation > 0.0, SOLAR_CONSTANT_W_M2, 0.0)
+    result = rough_radiance(
+        irradiance,
+        sun_vectors(elevation, azimuth),
+        [0.0, 0.0, 1.0],
+        RegolithProperties(),
+        (20.0,),
+        SYNODIC_MONTH_S / n,
+        n,
+        ThermalSettings(),
+    )
+    smooth = result.smooth**0.25
+    rough = result.rough[20.0] ** 0.25
+    return float(rough[0] - smooth[0]), float(rough[n // 2] - smooth[n // 2])
+
+
+_TH_V3F_SLOPES = (0.0, 20.0, 35.0)
+
+
+def _th_v3f(store: DataStore) -> Outcome:
+    from lunarenv.illumination.settings import SITE04_NEAR
+    from lunarenv.validation import diviner_pcp as dp
+
+    path = resources.files("lunarenv.validation") / "reference" / "diviner_pcp_sites.json"
+    sites_ref = json.loads(path.read_text(encoding="utf-8"))
+    shackleton = dp.load_reference()
+    sites: list[tuple[str, str, dict]] = [("Shackleton", SITE04_NEAR, shackleton)]  # type: ignore[type-arg]
+    sites += [(label, near, sites_ref["sites"][label]) for label, near in dp.TH_V3E_SITES]
+    checks: list[Check] = []
+    parts: list[str] = []
+    qualifying: list[bool] = []
+    passed: list[bool] = []
+    improvement: list[float] = []
+    hot_too_warm: list[str] = []
+    fine_check: Check | None = None
+    for s_i, (label, near_id, data) in enumerate(sites):
+        keys = [c["key"] for c in data["cells"]]
+        centres = [(float(c["x_m"]), float(c["y_m"])) for c in data["cells"]]
+        diviner = np.full((len(keys), dp.N_BINS), np.nan)
+        for b, entry in enumerate(data["bins"]):
+            for c, k in enumerate(keys):
+                if k in entry["tbol_k"]:
+                    diviner[c, b] = entry["tbol_k"][k]
+        cells = dp.forward(store, centres, 20.0, near_id=near_id, laws=dp.ROUGH_LAWS)
+        middle = len(centres) // 2
+        px, py = dp.cell_pixels(*centres[middle], 120.0)
+        point = (float(px[0]), float(py[0]))
+        receivers, fine = dp.forward_rough(
+            store, centres, near_id=near_id, convergence=point if s_i == 0 else None
+        )
+        visible = np.mean([c.sums["visible"] / c.sums["count"] for c in cells], axis=0)
+
+        def change(key: str, law: str, rs_all: list = receivers) -> np.ndarray:  # type: ignore[type-arg]
+            return np.array(
+                [np.mean([(r[key] - r[law]) / r["count"] for r in rs], axis=0) for rs in rs_all]
+            )
+
+        blocks = {}
+        for law in dp.ROUGH_LAWS:
+            base = np.array([c.sums[law] / c.sums["count"] for c in cells])
+            for rms in _TH_V3F_SLOPES:
+                rad = base if rms == 0.0 else base + change(dp.rough_key(law, rms), law)
+                blocks[(law, rms)] = _block_from_radiance(rad, diviner, visible)
+        _, _, used, complete = blocks[("hayne", 0.0)]
+        n_used = int(used.sum())
+        ok = n_used >= _TH_V3E_MIN_SUNLIT
+        qualifying.append(ok)
+
+        def bias(
+            law: str,
+            rms: float,
+            mask: np.ndarray = used,
+            blocks: dict = blocks,  # type: ignore[type-arg]
+        ) -> float:
+            return float(np.mean(blocks[(law, rms)][1][mask])) if mask.any() else float("nan")
+
+        main = bias("hayne", 20.0)
+        if ok:
+            passed.append(abs(main) <= _TH_V3_TOLERANCE_K)
+            improvement.append(main - bias("hayne", 0.0))
+            if abs(bias("foote2020", 0.0)) <= _TH_V3_TOLERANCE_K and (
+                bias("foote2020", 20.0) > _TH_V3_TOLERANCE_K
+            ):
+                hot_too_warm.append(label)
+        checks.append(
+            Check(
+                quantity=f"{label}: Hayne2017 with 20 deg RMS roughness, bias of block Tbol "
+                "over sunlit summer bins"
+                + ("" if ok else f" (fewer than {_TH_V3E_MIN_SUNLIT} sunlit bins: not in verdict)"),
+                reference=0.0,
+                measured=main if n_used else None,
+                tolerance=_TH_V3_TOLERANCE_K if ok else None,
+                unit="K",
+                informational=not ok,
+            )
+        )
+        for law, rms, name in (
+            ("hayne", 35.0, "Hayne2017, 35 deg"),
+            ("hayne", 0.0, "Hayne2017, smooth (as TH-V3 / TH-V3e)"),
+            ("foote2020", 0.0, "hot law, smooth (as TH-V3c / TH-V3e)"),
+            ("foote2020", 20.0, "hot law, 20 deg"),
+            ("foote2020", 35.0, "hot law, 35 deg"),
+        ):
+            checks.append(
+                Check(
+                    quantity=f"{label}: {name}, bias over sunlit bins",
+                    reference=0.0,
+                    measured=bias(law, rms) if n_used else None,
+                    unit="K",
+                    informational=True,
+                )
+            )
+        hayne20 = blocks[("hayne", 20.0)]
+        checks += [
+            Check(
+                quantity=f"{label}: Hayne2017 20 deg, RMS over sunlit bins / bias over all "
+                "summer bins with data",
+                reference=float(np.sqrt(np.mean(hayne20[1][used] ** 2))) if n_used else None,
+                measured=bias("hayne", 20.0, complete),
+                unit="K",
+                informational=True,
+            ),
+            Check(
+                quantity=f"{label}: change of block Tbol from roughness (Hayne2017, sunlit "
+                "bins), 20 / 35 deg",
+                reference=float(np.mean(hayne20[0][used] - blocks[("hayne", 0.0)][0][used]))
+                if n_used
+                else None,
+                measured=float(
+                    np.mean(blocks[("hayne", 35.0)][0][used] - blocks[("hayne", 0.0)][0][used])
+                )
+                if n_used
+                else None,
+                unit="K",
+                informational=True,
+            ),
+            Check(
+                quantity=f"{label}: sunlit bins used / bins with all nine cells",
+                reference=float(complete.sum()),
+                measured=float(n_used),
+                informational=True,
+            ),
+        ]
+        if fine is not None:
+            coarse_r = next(r for r in receivers[middle] if np.allclose(r["xy"], point))
+            key = dp.rough_key("hayne", 20.0)
+            sunlit_c = used & (coarse_r["count"] > 0)
+            with np.errstate(invalid="ignore", divide="ignore"):
+                t_coarse = (coarse_r[key] / coarse_r["count"]) ** 0.25
+                t_fine = (fine[key] / fine["count"]) ** 0.25
+            fine_check = Check(
+                quantity="quadrature: Shackleton centre-cell receiver, Hayne2017 20 deg, "
+                "sunlit-bin mean Tbol, 3 nodes x 12 azimuths / 5 x 24",
+                reference=float(np.mean(t_coarse[sunlit_c])) if sunlit_c.any() else None,
+                measured=float(np.mean(t_fine[sunlit_c])) if sunlit_c.any() else None,
+                unit="K",
+                informational=True,
+            )
+        parts.append(
+            f"{label} Hayne 20 deg {main:+.1f} K (smooth {bias('hayne', 0.0):+.1f}), hot 20 deg "
+            f"{bias('foote2020', 20.0):+.1f} K ({n_used} bins)"
+        )
+    noon, midnight = _th_v3f_equator()
+    checks.append(
+        Check(
+            quantity="equator, equinox, level, Hayne2017: Tbol change from 20 deg roughness, "
+            "noon / midnight",
+            reference=noon,
+            measured=midnight,
+            unit="K",
+            informational=True,
+        )
+    )
+    if fine_check is not None:
+        checks.append(fine_check)
+    n_ok = sum(qualifying)
+    status: Status | None = Status.PARTIAL if n_ok < 3 else None
+    if passed and all(passed):
+        reading = (
+            "roughness of the size measured by Diviner at the equator explains the cold bias of "
+            "the default law at every qualifying block"
+        )
+    elif improvement and all(d > 10.0 for d in improvement):
+        reading = "roughness is a major part of the gap (over 10 K at every site), not all of it"
+    elif improvement and all(abs(d) < 5.0 for d in improvement):
+        reading = "roughness of this kind does not explain the gap (under 5 K at every site)"
+    else:
+        reading = "roughness closes part of the gap at some sites; see the per-site values"
+    extra = []
+    if hot_too_warm:
+        extra.append(
+            "hot law with 20 deg roughness more than 10 K too warm at "
+            + ", ".join(hot_too_warm)
+            + ", where it passed smooth"
+        )
+    if abs(noon) > 5.0:
+        extra.append(
+            f"equatorial noon changes by {noon:+.1f} K: the default law and the roughness "
+            "model are not independent"
+        )
+    notes = (
+        "Pre-registered in docs/review/preregistration-th-v3f-2026-11-17.md before the "
+        "roughness model was implemented or run.",
+        "Roughness (lunarenv.thermal.roughness, after Bandfield et al. 2015, section 2): "
+        "Gaussian slopes, tan(theta_rms)^2 = <|grad h|^2>, 3 Gauss-Laguerre nodes x 12 "
+        "azimuths about the DEM normal; Smith (1967) cast shadows, lit and shadowed "
+        "populations; adjacent-surface sunlight and infrared over (1 - cos beta)/2 of the "
+        "hemisphere from a plane with the smooth facet's sunlight and temperature (radiative "
+        "equilibrium over the spin-up year); nadir view along the DEM normal; each facet runs "
+        "the 1-D model.",
+        "Change (rough - smooth radiance) at 4 receivers per cell, averaged per cell and "
+        "added to the smooth forward model at every 20 m (as TH-V3d). Sunlit bins from the "
+        "smooth model geometry. Not included: lateral conduction, shadow-orientation "
+        "correlation, multiple scattering, oblique views.",
+        f"{n_ok} of {len(qualifying)} sites have at least {_TH_V3E_MIN_SUNLIT} sunlit bins.",
+        f"Reading: {reading}." + ("" if not extra else " Also: " + "; ".join(extra) + "."),
+    )
+    return Outcome(checks, "; ".join(parts), notes, status)
+
+
 CASES: tuple[Case, ...] = (
     Case(
         "TH-A1",
@@ -1643,6 +1873,26 @@ CASES: tuple[Case, ...] = (
         ),
         slow=True,
         run=_th_v3e,
+    ),
+    Case(
+        "TH-V3f",
+        "Sub-DEM roughness against Diviner at five polar sites",
+        "published",
+        "Diviner PCP (diurnal, summer), as TH-V3 and TH-V3e; roughness after Bandfield et al. "
+        "2015 (Icarus 248, 357), Smith 1967 shadowing",
+        "bias of block Tbol over sunlit summer bins, Hayne2017 law with 20 deg RMS roughness, "
+        "per site",
+        "10 K at each of the five sites (pre-registered 2026-11-17)",
+        requires=(
+            "pgda78.site04.surf",
+            "pgda78.site01.surf",
+            "pgda78.site07.surf",
+            "pgda78.site11.surf",
+            "pgda78.site23.surf",
+            "pgda90.ldem_80s_80mpp",
+        ),
+        slow=True,
+        run=_th_v3f,
     ),
     Case(
         "TH-V2c",
