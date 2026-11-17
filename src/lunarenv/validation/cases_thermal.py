@@ -1712,6 +1712,254 @@ def _th_v3f(store: DataStore) -> Outcome:
     return Outcome(checks, "; ".join(parts), notes, status)
 
 
+_TH_V3G_ORIENTATIONS = 12
+
+
+def _th_v3g(store: DataStore) -> Outcome:
+    from lunarenv.illumination.settings import SITE04_NEAR
+    from lunarenv.validation import diviner_footprint as df
+    from lunarenv.validation import diviner_pcp as dp
+
+    path = resources.files("lunarenv.validation") / "reference" / "diviner_pcp_sites.json"
+    sites_ref = json.loads(path.read_text(encoding="utf-8"))
+    sites: list[tuple[str, str, dict]] = [("Shackleton", SITE04_NEAR, dp.load_reference())]  # type: ignore[type-arg]
+    sites += [(label, near, sites_ref["sites"][label]) for label, near in dp.TH_V3E_SITES]
+    nominal = df.Footprint.at_altitude(50e3)
+    point = df.Footprint(0.0, 0.0, 0.0)
+    laws = ("hayne", "foote2020")
+    checks: list[Check] = []
+    parts: list[str] = []
+    qualifying: list[bool] = []
+    passed: list[bool] = []
+    change_h: list[float] = []
+    change_f: list[float] = []
+    colder: list[str] = []
+    hot_low: list[str] = []
+    sensitive: list[str] = []
+    for label, near_id, data in sites:
+        keys = [c["key"] for c in data["cells"]]
+        centres = [(float(c["x_m"]), float(c["y_m"])) for c in data["cells"]]
+        diviner = np.full((len(keys), dp.N_BINS), np.nan)
+        for b, entry in enumerate(data["bins"]):
+            for c, k in enumerate(keys):
+                if k in entry["tbol_k"]:
+                    diviner[c, b] = entry["tbol_k"][k]
+        xmin = min(x for x, _ in centres) - dp.CELL_M / 2
+        ymin = min(y for _, y in centres) - dp.CELL_M / 2
+        layout = df.block_layout(xmin, ymin)
+        ix, iy = layout.inner_points()
+        rx, ry, _, _ = layout.ring_points()
+        res = dp.forward_points(store, np.r_[ix, rx], np.r_[iy, ry], near_id=near_id, laws=laws)
+        n_in = ix.size
+        visible = np.mean(res["visible"][:n_in], axis=0)
+        # only bins where Diviner has all nine cells enter any statistic
+        use = np.flatnonzero(np.all(np.isfinite(diviner), axis=0))
+        fields = {
+            law: layout.assemble(res[law][:n_in][:, use], res[law][n_in:][:, use]) for law in laws
+        }
+        bx, by = xmin + 360.0, ymin + 360.0
+        theta = float(np.arctan2(by, bx))  # in track along the meridian
+
+        def cells_rad(
+            law: str,
+            fp: df.Footprint,
+            th: float,
+            fields: dict = fields,  # type: ignore[type-arg]
+            centres: list = centres,  # type: ignore[type-arg]
+            use: np.ndarray = use,
+            **kw: object,
+        ) -> np.ndarray:
+            out = np.full((len(centres), dp.N_BINS), np.nan)
+            for c, (cx, cy) in enumerate(centres):
+                px, py = dp.cell_pixels(cx, cy, 20.0)
+                out[c, use] = df.cell_radiance(fields[law], px, py, fp, th, **kw)  # type: ignore[arg-type]
+            return out
+
+        rad = {
+            ("hayne", "smooth"): cells_rad("hayne", point, theta, nine_points=False),
+            ("foote2020", "smooth"): cells_rad("foote2020", point, theta, nine_points=False),
+            ("hayne", "fp"): cells_rad("hayne", nominal, theta),
+            ("foote2020", "fp"): cells_rad("foote2020", nominal, theta),
+            ("hayne", "big"): cells_rad("hayne", nominal.scaled(1.5), theta, binning=nominal),
+            ("hayne", "centre"): cells_rad("hayne", nominal, theta, nine_points=False),
+            ("hayne", "iso"): np.mean(
+                [
+                    cells_rad("hayne", nominal, k * np.pi / _TH_V3G_ORIENTATIONS)
+                    for k in range(_TH_V3G_ORIENTATIONS)
+                ],
+                axis=0,
+            ),
+        }
+        blocks = {key: _block_from_radiance(r, diviner, visible) for key, r in rad.items()}
+        # ring sampling: block from the inner pixels on the 60 m sub-grid
+        f = layout.factor
+        local = np.arange(layout.block_nodes)
+        sub_axis = local % f == f // 2
+        sub = np.outer(sub_axis, sub_axis).ravel()
+        hayne_in = res["hayne"][:n_in]
+        coarse = np.array(
+            [
+                np.mean(
+                    hayne_in[sub & (np.abs(ix - cx) < 120.0) & (np.abs(iy - cy) < 120.0)], axis=0
+                )
+                for cx, cy in centres
+            ]
+        )
+        blocks[("hayne", "coarse")] = _block_from_radiance(coarse, diviner, visible)
+        _, _, used, complete = blocks[("hayne", "smooth")]
+        n_used = int(used.sum())
+        ok = n_used >= _TH_V3E_MIN_SUNLIT
+        qualifying.append(ok)
+
+        def bias(
+            law: str,
+            kind: str,
+            mask: np.ndarray = used,
+            blocks: dict = blocks,  # type: ignore[type-arg]
+        ) -> float:
+            return float(np.mean(blocks[(law, kind)][1][mask])) if mask.any() else float("nan")
+
+        def tblock(
+            law: str,
+            kind: str,
+            blocks: dict = blocks,  # type: ignore[type-arg]
+            used: np.ndarray = used,
+        ) -> float:
+            return float(np.mean(blocks[(law, kind)][0][used])) if used.any() else float("nan")
+
+        main = bias("hayne", "fp")
+        dh = main - bias("hayne", "smooth")
+        dfoot = bias("foote2020", "fp") - bias("foote2020", "smooth")
+        if ok:
+            passed.append(abs(main) <= _TH_V3_TOLERANCE_K)
+            change_h.append(dh)
+            change_f.append(dfoot)
+            if dh < 0.0:
+                colder.append(label)
+            if label in ("Site01", "Site07") and bias("foote2020", "fp") < -_TH_V3_TOLERANCE_K:
+                hot_low.append(label)
+            if max(abs(bias("hayne", "big") - main), abs(bias("hayne", "iso") - main)) > abs(dh):
+                sensitive.append(label)
+        checks.append(
+            Check(
+                quantity=f"{label}: Hayne2017 with Diviner footprint and binning, bias of block "
+                "Tbol over sunlit summer bins"
+                + ("" if ok else f" (fewer than {_TH_V3E_MIN_SUNLIT} sunlit bins: not in verdict)"),
+                reference=0.0,
+                measured=main if n_used else None,
+                tolerance=_TH_V3_TOLERANCE_K if ok else None,
+                unit="K",
+                informational=not ok,
+            )
+        )
+        for law, kind, name in (
+            ("foote2020", "fp", "hot law with footprint"),
+            ("hayne", "smooth", "Hayne2017 without footprint (as TH-V3 / TH-V3e)"),
+            ("foote2020", "smooth", "hot law without footprint (as TH-V3c / TH-V3e)"),
+            ("hayne", "big", "Hayne2017, footprint response x 1.5"),
+            (
+                "hayne",
+                "iso",
+                f"Hayne2017, footprint averaged over {_TH_V3G_ORIENTATIONS} orientations",
+            ),
+            ("hayne", "centre", "Hayne2017, footprint binned by its centre only"),
+        ):
+            checks.append(
+                Check(
+                    quantity=f"{label}: {name}, bias over sunlit bins",
+                    reference=0.0,
+                    measured=bias(law, kind) if n_used else None,
+                    unit="K",
+                    informational=True,
+                )
+            )
+        fp_block = blocks[("hayne", "fp")]
+        checks += [
+            Check(
+                quantity=f"{label}: change of block Tbol from the footprint over sunlit bins, "
+                "Hayne2017 / hot law",
+                reference=tblock("hayne", "fp") - tblock("hayne", "smooth"),
+                measured=tblock("foote2020", "fp") - tblock("foote2020", "smooth"),
+                unit="K",
+                informational=True,
+            ),
+            Check(
+                quantity=f"{label}: Hayne2017 block Tbol over sunlit bins without footprint, "
+                "pixels every 20 m / every 60 m (ring sampling)",
+                reference=tblock("hayne", "smooth"),
+                measured=tblock("hayne", "coarse"),
+                unit="K",
+                informational=True,
+            ),
+            Check(
+                quantity=f"{label}: Hayne2017 with footprint, RMS over sunlit bins / bias over "
+                "all summer bins with data",
+                reference=float(np.sqrt(np.mean(fp_block[1][used] ** 2))) if n_used else None,
+                measured=bias("hayne", "fp", complete),
+                unit="K",
+                informational=True,
+            ),
+            Check(
+                quantity=f"{label}: sunlit bins used / bins with all nine cells",
+                reference=float(complete.sum()),
+                measured=float(n_used),
+                informational=True,
+            ),
+        ]
+        parts.append(
+            f"{label} Hayne {main:+.1f} K (without footprint {bias('hayne', 'smooth'):+.1f}), "
+            f"hot {bias('foote2020', 'fp'):+.1f} K ({n_used} bins)"
+        )
+    n_ok = sum(qualifying)
+    status: Status | None = Status.PARTIAL if n_ok < 3 else None
+    if passed and all(passed):
+        reading = (
+            "the comparison method explains the cold bias of the default law; TH-V3 to "
+            "TH-V3f need re-reading with the footprint"
+        )
+    elif change_h and all(
+        abs(a) < 5.0 and abs(b) < 5.0 for a, b in zip(change_h, change_f, strict=True)
+    ):
+        reading = (
+            "the footprint and binning do not explain the gap at 720 m block scale (under 5 K "
+            "at every site, both laws); remaining candidates: the albedo law, the observation "
+            "timing within the bins and the illumination of the blocks"
+        )
+    else:
+        reading = "the footprint changes some sites by 5 K or more; see the per-site values"
+    extra = []
+    if colder:
+        extra.append(
+            "the footprint makes the model colder at "
+            + ", ".join(colder)
+            + ", widening the gap there, so it cannot be its cause there"
+        )
+    if hot_low:
+        extra.append("the hot law with the footprint is still below -10 K at " + ", ".join(hot_low))
+    if sensitive:
+        extra.append(
+            "the 1.5 x response or the orientation average moves the bias by more than the "
+            "nominal footprint change at "
+            + ", ".join(sensitive)
+            + ": sensitive to unknown instrument details"
+        )
+    notes = (
+        "Pre-registered in docs/review/preregistration-th-v3g-2026-11-17.md before the "
+        "footprint model was implemented or run.",
+        "Footprint (lunarenv.validation.diviner_footprint): geometric IFOV 6.7 x 3.4 mrad at "
+        f"50 km ({nominal.in_track_m:.0f} x {nominal.cross_track_m:.0f} m, Diviner RDR SIS "
+        f"Table 1), in-track smear {nominal.smear_m:.0f} m (0.128 s at the ground speed), in "
+        "track along the meridian; each observation binned once per IFOV point (centre, edge "
+        "midpoints, corners) that falls in a bin (SIS section 5.4; assumed to hold for the "
+        "PCP); observation centres uniform. Flat footprints, geometric response.",
+        "Model field: TH-V3's forward model every 20 m inside the block and every 60 m in a "
+        "660 m ring; sunlit bins from the smooth model geometry inside the block.",
+        f"{n_ok} of {len(qualifying)} sites have at least {_TH_V3E_MIN_SUNLIT} sunlit bins.",
+        f"Reading: {reading}." + ("" if not extra else " Also: " + "; ".join(extra) + "."),
+    )
+    return Outcome(checks, "; ".join(parts), notes, status)
+
+
 CASES: tuple[Case, ...] = (
     Case(
         "TH-A1",
@@ -1893,6 +2141,25 @@ CASES: tuple[Case, ...] = (
         ),
         slow=True,
         run=_th_v3f,
+    ),
+    Case(
+        "TH-V3g",
+        "Diviner footprint and binning at five polar sites",
+        "published",
+        "Diviner PCP (diurnal, summer), as TH-V3 and TH-V3e; footprint and binning from the "
+        "Diviner RDR and Derived Products SIS (Table 1, section 5.4)",
+        "bias of block Tbol over sunlit summer bins, Hayne2017 law with the footprint, per site",
+        "10 K at each of the five sites (pre-registered 2026-11-17)",
+        requires=(
+            "pgda78.site04.surf",
+            "pgda78.site01.surf",
+            "pgda78.site07.surf",
+            "pgda78.site11.surf",
+            "pgda78.site23.surf",
+            "pgda90.ldem_80s_80mpp",
+        ),
+        slow=True,
+        run=_th_v3g,
     ),
     Case(
         "TH-V2c",

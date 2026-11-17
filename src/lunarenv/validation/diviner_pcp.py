@@ -341,6 +341,35 @@ def forward(
     return [CellSums(n, t) for n, t in zip(counts, totals, strict=True)]
 
 
+def forward_points(
+    store: DataStore,
+    xs: np.ndarray,
+    ys: np.ndarray,
+    near_id: str = SITE04_NEAR,
+    laws: tuple[str, ...] = ("hayne", "foote2020"),
+) -> dict[str, np.ndarray]:
+    """Per-pixel bin means (n, N_BINS): radiance per law and visible fraction; and the
+    sample count per bin (N_BINS,), the same for every pixel (TH-V3g)."""
+    points = [(float(x), float(y)) for x, y in zip(xs, ys, strict=True)]
+    workers = max(1, min(8, (os.cpu_count() or 2) - 1))
+    out: dict[str, list[np.ndarray]] = {k: [] for k in (*laws, "visible")}
+    count = np.zeros(N_BINS)
+    with ProcessPoolExecutor(
+        workers,
+        mp_context=get_context("spawn"),
+        initializer=_init_worker,
+        initargs=(str(store.root), 1, near_id, laws),
+    ) as pool:
+        for result in pool.map(_pixel, points, chunksize=8):
+            count = result["count"]
+            with np.errstate(invalid="ignore", divide="ignore"):
+                for key in out:
+                    out[key].append(result[key] / count)
+    arrays = {k: np.array(v) for k, v in out.items()}
+    arrays["count"] = count
+    return arrays
+
+
 # ------------------------------------------------------- TH-V3e: block selection
 #: Sites of TH-V3e (pre-registered 2026-11-17): label, site DEM.
 TH_V3E_SITES = (
