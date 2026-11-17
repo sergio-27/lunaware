@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "lunarenv_version": "0.1.0.dev0",
- "generated_utc": "2026-11-16T23:59:47Z",
+ "generated_utc": "2026-11-17T10:39:21Z",
  "results": [
   {
    "id": "ILL-A1",
@@ -3223,6 +3223,411 @@
    "run_utc": "2026-11-16T23:59:47Z"
   },
   {
+   "id": "TH-V3f",
+   "title": "Sub-DEM roughness against Diviner at five polar sites",
+   "kind": "published",
+   "source": "Diviner PCP (diurnal, summer), as TH-V3 and TH-V3e; roughness after Bandfield et al. 2015 (Icarus 248, 357), Smith 1967 shadowing",
+   "metric": "bias of block Tbol over sunlit summer bins, Hayne2017 law with 20 deg RMS roughness, per site",
+   "tolerance": "10 K at each of the five sites (pre-registered 2026-11-17)",
+   "status": "FAIL",
+   "summary": "Shackleton Hayne 20 deg -12.8 K (smooth -23.8), hot 20 deg -0.8 K (8 bins); Site01 Hayne 20 deg -34.4 K (smooth -51.4), hot 20 deg -21.9 K (28 bins); Site07 Hayne 20 deg -27.0 K (smooth -44.9), hot 20 deg -12.9 K (26 bins); Site11 Hayne 20 deg -14.1 K (smooth -27.2), hot 20 deg -1.0 K (14 bins); Site23 Hayne 20 deg -21.1 K (smooth -33.7), hot 20 deg -7.9 K (28 bins)",
+   "checks": [
+    {
+     "quantity": "Shackleton: Hayne2017 with 20 deg RMS roughness, bias of block Tbol over sunlit summer bins",
+     "reference": 0.0,
+     "measured": -12.81063680237607,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Shackleton: Hayne2017, 35 deg, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -9.624177071891566,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: Hayne2017, smooth (as TH-V3 / TH-V3e), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -23.835773721738683,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: hot law, smooth (as TH-V3c / TH-V3e), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -0.3906736997424929,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: hot law, 20 deg, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -0.7794563025339691,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: hot law, 35 deg, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -3.035057539051401,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: Hayne2017 20 deg, RMS over sunlit bins / bias over all summer bins with data",
+     "reference": 14.142588184725632,
+     "measured": -29.112994437199283,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: change of block Tbol from roughness (Hayne2017, sunlit bins), 20 / 35 deg",
+     "reference": 11.025136919362613,
+     "measured": 14.211596649847117,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: sunlit bins used / bins with all nine cells",
+     "reference": 64.0,
+     "measured": 8.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: Hayne2017 with 20 deg RMS roughness, bias of block Tbol over sunlit summer bins",
+     "reference": 0.0,
+     "measured": -34.40288885615867,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Site01: Hayne2017, 35 deg, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -30.052521609593793,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: Hayne2017, smooth (as TH-V3 / TH-V3e), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -51.430871083830695,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: hot law, smooth (as TH-V3c / TH-V3e), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -21.995998758890718,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: hot law, 20 deg, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -21.92236301691761,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: hot law, 35 deg, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -23.793735636626145,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: Hayne2017 20 deg, RMS over sunlit bins / bias over all summer bins with data",
+     "reference": 36.14418123016867,
+     "measured": -27.616715915224045,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: change of block Tbol from roughness (Hayne2017, sunlit bins), 20 / 35 deg",
+     "reference": 17.02798222767203,
+     "measured": 21.378349474236902,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: sunlit bins used / bins with all nine cells",
+     "reference": 68.0,
+     "measured": 28.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: Hayne2017 with 20 deg RMS roughness, bias of block Tbol over sunlit summer bins",
+     "reference": 0.0,
+     "measured": -26.970860565618906,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Site07: Hayne2017, 35 deg, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -22.583339483379632,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: Hayne2017, smooth (as TH-V3 / TH-V3e), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -44.85830861905258,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: hot law, smooth (as TH-V3c / TH-V3e), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -12.716976996615184,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: hot law, 20 deg, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -12.927720025675635,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: hot law, 35 deg, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -14.981081235546718,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: Hayne2017 20 deg, RMS over sunlit bins / bias over all summer bins with data",
+     "reference": 28.06635143005539,
+     "measured": -18.08138513330898,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: change of block Tbol from roughness (Hayne2017, sunlit bins), 20 / 35 deg",
+     "reference": 17.887448053433673,
+     "measured": 22.274969135672944,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: sunlit bins used / bins with all nine cells",
+     "reference": 56.0,
+     "measured": 26.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: Hayne2017 with 20 deg RMS roughness, bias of block Tbol over sunlit summer bins",
+     "reference": 0.0,
+     "measured": -14.116128938096745,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Site11: Hayne2017, 35 deg, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -10.49355034685444,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: Hayne2017, smooth (as TH-V3 / TH-V3e), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -27.22800690533173,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: hot law, smooth (as TH-V3c / TH-V3e), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -0.595105750967617,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: hot law, 20 deg, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -0.9583034698183326,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: hot law, 35 deg, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -3.6736053975726413,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: Hayne2017 20 deg, RMS over sunlit bins / bias over all summer bins with data",
+     "reference": 17.897579339157467,
+     "measured": -24.594845840576642,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: change of block Tbol from roughness (Hayne2017, sunlit bins), 20 / 35 deg",
+     "reference": 13.111877967234985,
+     "measured": 16.734456558477287,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: sunlit bins used / bins with all nine cells",
+     "reference": 42.0,
+     "measured": 14.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: Hayne2017 with 20 deg RMS roughness, bias of block Tbol over sunlit summer bins",
+     "reference": 0.0,
+     "measured": -21.098226656656045,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Site23: Hayne2017, 35 deg, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -17.461324293637215,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: Hayne2017, smooth (as TH-V3 / TH-V3e), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -33.735956399170114,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: hot law, smooth (as TH-V3c / TH-V3e), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -7.260857099984667,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: hot law, 20 deg, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -7.89505572480954,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: hot law, 35 deg, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -10.604358327281863,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: Hayne2017 20 deg, RMS over sunlit bins / bias over all summer bins with data",
+     "reference": 22.982908437974025,
+     "measured": -17.896786049402873,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: change of block Tbol from roughness (Hayne2017, sunlit bins), 20 / 35 deg",
+     "reference": 12.63772974251406,
+     "measured": 16.27463210553289,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: sunlit bins used / bins with all nine cells",
+     "reference": 63.0,
+     "measured": 28.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "equator, equinox, level, Hayne2017: Tbol change from 20 deg roughness, noon / midnight",
+     "reference": -3.1702420669489015,
+     "measured": 0.36739896990285104,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "quadrature: Shackleton centre-cell receiver, Hayne2017 20 deg, sunlit-bin mean Tbol, 3 nodes x 12 azimuths / 5 x 24",
+     "reference": 253.4744704388684,
+     "measured": 253.67580321436708,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    }
+   ],
+   "notes": [
+    "Pre-registered in docs/review/preregistration-th-v3f-2026-11-17.md before the roughness model was implemented or run.",
+    "Roughness (lunarenv.thermal.roughness, after Bandfield et al. 2015, section 2): Gaussian slopes, tan(theta_rms)^2 = <|grad h|^2>, 3 Gauss-Laguerre nodes x 12 azimuths about the DEM normal; Smith (1967) cast shadows, lit and shadowed populations; adjacent-surface sunlight and infrared over (1 - cos beta)/2 of the hemisphere from a plane with the smooth facet's sunlight and temperature (radiative equilibrium over the spin-up year); nadir view along the DEM normal; each facet runs the 1-D model.",
+    "Change (rough - smooth radiance) at 4 receivers per cell, averaged per cell and added to the smooth forward model at every 20 m (as TH-V3d). Sunlit bins from the smooth model geometry. Not included: lateral conduction, shadow-orientation correlation, multiple scattering, oblique views.",
+    "5 of 5 sites have at least 4 sunlit bins.",
+    "Reading: roughness is a major part of the gap (over 10 K at every site), not all of it."
+   ],
+   "data": {
+    "pgda78.site04.surf": "38ff70dbdf2f066c2cfa94a646c3a59d653ce7f6b4528b15fc1b43ee397ce758",
+    "pgda78.site01.surf": "3ba7b97cb00a2bcf21189c3aeb535f65afc21207154ab9f0d43c5bdc1f7e747e",
+    "pgda78.site07.surf": "38aaee10bb4da4d63e7427aa1ca25c79bdbc649d212079a04990e135462091f8",
+    "pgda78.site11.surf": "58f3372c35bbd6baf38ffd5633c1c96b59bd89dbd252150581d12893a43136e5",
+    "pgda78.site23.surf": "12d280a59cd7580415f6bada638d0abe025ce6727541fddf68d5dc371a6c94cf",
+    "pgda90.ldem_80s_80mpp": "82030dcbdd7c4bb0c7d858e9b4b293b9f2cda5a543ba31ec0f42784bd6beee5a"
+   },
+   "seconds": 12689.276346082974,
+   "run_utc": "2026-11-17T10:39:21Z"
+  },
+  {
    "id": "TH-V2c",
    "title": "Apollo 17 mean temperatures, like for like",
    "kind": "published",
@@ -3726,6 +4131,7 @@
   "TH-V3b": "not selected",
   "TH-V3c": "not selected",
   "TH-V3d": "not selected",
+  "TH-V3e": "not selected",
   "TH-V2c": "not selected",
   "TH-A3": "not selected",
   "TH-C1": "not selected",

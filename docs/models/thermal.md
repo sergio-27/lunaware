@@ -168,7 +168,9 @@ site. Terrain radiation and Earthshine, added in TH-V3d, warm the block by only 
 (sunlit bins) and 0.7 K (all summer bins), so they do not explain why Diviner is warmer
 still; sub-DEM roughness, the Diviner footprint and observation timing remain. At four more polar sites (TH-V3e) the hot law is within
 10 K at two and 13-22 K too cold at the other two, where Diviner is warmer than the
-envelope: the hot edge is not an upper bound for sunlit summer ground everywhere. The constant albedo 0.12,
+envelope: the hot edge is not an upper bound for sunlit summer ground everywhere. Sub-DEM
+roughness (TH-V3f, 20 deg RMS) warms the Hayne law by 11-18 K at the five blocks, not
+enough to pass anywhere, and changes the hot law by under 1 K. The constant albedo 0.12,
 outside the envelope, is kept as a separate alternative.
 
 **Slope grid** (`slope_grid`). The DEM slope at a point is uncertain by about 2 degrees
@@ -396,3 +398,35 @@ scenario law: about 530 s of the 932 s wall-clock reference run on 7 worker proc
    facets warm a grazing-incidence footprint), the Diviner footprint and timing, spectral
    emissivity; night and shadow temperatures. Limits: summer and sunlit bins only, 720 m
    blocks, sites chosen for illumination. Run time 1.9 h.
+8. **Sub-DEM roughness at the five polar blocks (TH-V3f, pre-registered 2026-11-17).**
+   Roughness after Bandfield et al. (2015, section 2), in
+   `lunarenv.thermal.roughness` (validation only, not used by the engine): Gaussian
+   slopes about the DEM normal (3 Gauss-Laguerre nodes x 12 azimuths), Smith (1967) cast
+   shadows as separate lit and shadowed populations while a facet faces a Sun above the
+   mean plane (Amendment 1), sunlight and infrared from adjacent surfaces over
+   (1 - cos beta)/2 of the hemisphere, nadir view; every facet runs the 1-D model. The
+   change (rough - smooth) at 4 receivers per cell is added to TH-V3's forward model.
+   Bias of block Tbol over the sunlit summer bins (model - Diviner):
+
+   | Block | Sunlit bins | Hayne smooth | Hayne 20 deg | Hayne 35 deg | Hot smooth | Hot 20 deg | Hot 35 deg |
+   |---|---|---|---|---|---|---|---|
+   | Shackleton | 8 | -23.8 K | -12.8 K (fail) | -9.6 K | -0.4 K | -0.8 K | -3.0 K |
+   | Site 1 | 28 | -51.4 K | -34.4 K (fail) | -30.1 K | -22.0 K | -21.9 K | -23.8 K |
+   | Site 7 | 26 | -44.9 K | -27.0 K (fail) | -22.6 K | -12.7 K | -12.9 K | -15.0 K |
+   | Site 11 | 14 | -27.2 K | -14.1 K (fail) | -10.5 K | -0.6 K | -1.0 K | -3.7 K |
+   | Site 23 | 28 | -33.7 K | -21.1 K (fail) | -17.5 K | -7.3 K | -7.9 K | -10.6 K |
+
+   The smooth columns reproduce TH-V3 / TH-V3c / TH-V3e. Checks: equatorial noon change
+   -3.2 K and midnight +0.4 K at 20 deg (under the 5 K that would mean double counting
+   with the Hayne law); 5 x 24 against 3 x 12 quadrature at one receiver: +0.2 K.
+   Reading fixed beforehand: the Hayne law improves by more than 10 K at every site
+   (11.0-17.9 K) but stays outside 10 K at all five, so roughness of this size is a
+   major part of the Hayne gap, not all of it; the hot law with roughness is not too warm
+   anywhere, so the hot law and this roughness are not in conflict. No engine option is
+   proposed (that needed a PASS). Beyond the pre-registered reading: under the hot law
+   roughness changes the block by under 1 K at 20 deg and cools it at 35 deg, so it does
+   not explain why Diviner is above the hot bound at Sites 1 and 7. The gain under the
+   Hayne law is consistent with its steep rise of albedo at grazing incidence (sunward
+   facets see lower incidence and absorb more); this was not tested separately. Limits:
+   roughness parameter from equatorial regions; Smith shadowing is poorest at grazing
+   incidence; 4 of 144 pixels per cell; summer, sunlit bins, 720 m blocks. Run time 3.5 h.
