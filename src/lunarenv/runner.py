@@ -227,6 +227,7 @@ class ThermalModel:
                 "TH-A2b",
                 "TH-C2",
                 "TH-V3d",
+                "TH-V3e",
             ),
             references=(
                 "Hayne2017",
@@ -919,7 +920,8 @@ def run_scenario(
                     **_surface_stats(envelope_results["hot"]),
                 },
                 "validation": "TH-V3c: Diviner summer temperatures on a 720 m block at the site "
-                "against both bounds; TH-V3d: the same with terrain radiation and Earthshine "
+                "against both bounds; TH-V3d: the same with terrain radiation and Earthshine; "
+                "TH-V3e: four more polar sites, where Diviner is above the hot bound at two "
                 "(VALIDATION.md)",
             }
         if diffuse_on:

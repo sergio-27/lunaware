@@ -186,9 +186,9 @@ For agents: `lunarenv-mcp`, see [docs/mcp.md](docs/mcp.md).
 ## Validation
 
 [VALIDATION.md](VALIDATION.md) lists every case with its source, metric, tolerance and
-result. Summary (30 cases): 19 pass, 6 fail, 1 partial, 2 informational, 2 pending. Fifteen
+result. Summary (31 cases): 19 pass, 7 fail, 1 partial, 2 informational, 2 pending. Sixteen
 cases (TH-V1b, ILL-V2b, ILL-V5, TH-V3, TH-V3b, TH-V3c, TH-X1b, TH-X1c, TH-A3, TH-C1,
-TH-V2c, TH-A2b, TH-C2, TH-V3d, ILL-C1) follow an independent scientific review and were
+TH-V2c, TH-A2b, TH-C2, TH-V3d, ILL-C1, TH-V3e) follow an independent scientific review and were
 pre-registered in [docs/review/](docs/review/) before they were run.
 
 | Compared with | Result |
@@ -206,6 +206,7 @@ pre-registered in [docs/review/](docs/review/) before they were run.
 | Diviner polar summer temperatures, 720 m block on the Shackleton rim (TH-V3, TH-V3b) | published albedo law: **fail**, 24 K too cold over the sunlit summer bins; constant albedo: pass, +5.7 K (tolerance 10 K). Only 8 bins qualify; single 240 m cells differ by up to 70 K, and both laws are 43-67 K below the hottest Diviner bin |
 | Diviner, same block, against the albedo envelope (TH-V3c) | **pass**, at the hot edge: cold law (Bürger 2024) -34.2 K, hot law (Foote 2020) -0.4 K over the sunlit bins. Diviner lies between the two laws in only 3 of 8 sunlit bins and 5 of 64 summer bins; elsewhere it is warmer than the hot law |
 | Diviner, same block, with terrain radiation and Earthshine added (TH-V3d) | published albedo law: still **fail**, -23.2 K over the sunlit bins (+0.7 K from TH-V3); hot law +0.1 K. Over all summer bins the diffuse terms explain +0.7 K of the -39 K. Absorbed terrain radiation 0.77 W m-2 on average over the summer (up to 4.0 W m-2 at one receiver); cells change by 0.1-3.7 K |
+| Diviner at four more polar sites, 720 m blocks chosen from model geometry (TH-V3e: PGDA 78 Sites 1, 7, 11, 23) | **fail**: hot law -22.0 / -12.7 / -0.6 / -7.3 K over 28 / 26 / 14 / 28 sunlit bins (tolerance 10 K; passes at Sites 11 and 23). Cold law -39 to -63 K and published law -27 to -51 K at every site. Diviner lies between the two laws in 16 of 96 sunlit bins |
 | Spherical bowl crater, single-bounce terrain radiation (TH-A3, Ingersoll et al. 1992) | **pass**: scattered sunlight and terrain infrared within 0.4 % at three shadowed floor points (tolerance 5 %); default patch layout within 3 % |
 | Terrain irradiance at the rim minimum against the earlier 0.0217 W m-2 bound and the review's 0.05 W m-2 threshold (TH-C1) | **pass**: 8.5e-5 W m-2 at most over the three albedo laws; Earthshine 0.006 W m-2 absorbed, +0.23 K on the minimum. With twice the patches the terrain value is 4.5e-5 W m-2: not converged in relative terms, negligible in absolute ones |
 | Low-temperature conductivity, Woods-Robinson et al. 2019 shape below 150 K (TH-A2b, TH-C2) | analytic steady case with the option: **pass** (1e-15). Effect at the test point (sensitivity, no pass/fail): minimum -3.3 K, mean -1.6 K, mean at 0.3 m +5.2 K, at 1 m +7.8 K; equatorial night -0.6 K (still within TH-V1's 2 K) |
@@ -258,7 +259,12 @@ Thermal
   (outside the envelope) 6 K too warm; Diviner sits at the hot edge of the envelope,
   above it in most individual bins. The evidence is thin (8 sunlit bins, one site),
   single 240 m cells disagree by up to 70 K. Adding terrain radiation and Earthshine to
-  the comparison (TH-V3d) moves it by only +0.7 K, so they do not explain the gap.
+  the comparison (TH-V3d) moves it by only +0.7 K, so they do not explain the gap. At
+  four more polar sites (TH-V3e) the Hayne law is 27-51 K too cold and the cold bound
+  39-63 K too cold everywhere, and **Diviner is warmer than the hot bound** by 22 K
+  (Site 1, connecting ridge) and 13 K (Site 7) over the sunlit summer bins. So the hot
+  bound is not an upper bound for sunlit summer ground at 720 m scale; the cause
+  (sub-DEM roughness, footprint, timing or the model) is not established.
 - **Slope dominates and is poorly known.** With the Sun never more than 1.8 degrees
   high, a tilt of one degree changes the absorbed flux severalfold. The slope of a 5 m
   terrain model is used unless the scenario gives one; a slope grid (`slope_grid`)

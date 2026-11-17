@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "lunarenv_version": "0.1.0.dev0",
- "generated_utc": "2026-11-16T21:32:48Z",
+ "generated_utc": "2026-11-16T23:59:47Z",
  "results": [
   {
    "id": "ILL-A1",
@@ -2908,6 +2908,321 @@
    "run_utc": "2026-11-16T17:10:23Z"
   },
   {
+   "id": "TH-V3e",
+   "title": "Polar summer temperatures at four more sites",
+   "kind": "published",
+   "source": "Diviner PCP (diurnal, summer), PDS urn:nasa:pds:lro_diviner_derived1 (as TH-V3); PGDA 78 Sites 1, 7, 11, 23",
+   "metric": "bias of block Tbol over sunlit summer bins, hot bound of the albedo envelope, per site",
+   "tolerance": "10 K at every site with at least 4 sunlit bins (pre-registered 2026-11-17)",
+   "status": "FAIL",
+   "summary": "Site01 hot -22.0 / cold -62.9 / Hayne -51.4 K (28 bins); Site07 hot -12.7 / cold -57.5 / Hayne -44.9 K (26 bins); Site11 hot -0.6 / cold -38.8 / Hayne -27.2 K (14 bins); Site23 hot -7.3 / cold -45.5 / Hayne -33.7 K (28 bins)",
+   "checks": [
+    {
+     "quantity": "Site01 (-89.42 deg, block centre -12240, -12720 m): hot bound, bias of block Tbol over sunlit summer bins",
+     "reference": 0.0,
+     "measured": -21.995998758890718,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Site01: cold bound (Burger 2024), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -62.90988243847197,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: Hayne2017, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -51.430871083830695,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: constant 0.12, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -15.676889220855882,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: RMS over sunlit bins, hot bound / Hayne2017",
+     "reference": 24.916272640478866,
+     "measured": 52.53296662798915,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: bias over all summer bins with data, hot bound / Hayne2017",
+     "reference": -19.39485177509428,
+     "measured": -41.145398780331554,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: sunlit bins used / bins with all nine cells",
+     "reference": 68.0,
+     "measured": 28.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: sunlit bins with Diviner between the cold and hot bounds",
+     "reference": 28.0,
+     "measured": 0.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: block mean visible fraction, selection (cell centres) / summer (all pixels)",
+     "reference": 0.5099095474665386,
+     "measured": 0.4877526816343563,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site07 (-88.68 deg, block centre 29760, -26640 m): hot bound, bias of block Tbol over sunlit summer bins",
+     "reference": 0.0,
+     "measured": -12.716976996615184,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Site07: cold bound (Burger 2024), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -57.46002965286652,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: Hayne2017, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -44.85830861905258,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: constant 0.12, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -5.86265610958416,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: RMS over sunlit bins, hot bound / Hayne2017",
+     "reference": 15.172665206370572,
+     "measured": 45.65919499569777,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: bias over all summer bins with data, hot bound / Hayne2017",
+     "reference": -9.126387561527412,
+     "measured": -31.523764968352776,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: sunlit bins used / bins with all nine cells",
+     "reference": 56.0,
+     "measured": 26.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: sunlit bins with Diviner between the cold and hot bounds",
+     "reference": 26.0,
+     "measured": 0.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: block mean visible fraction, selection (cell centres) / summer (all pixels)",
+     "reference": 0.5198839367038477,
+     "measured": 0.4928838606014853,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site11 (-88.58 deg, block centre -39600, 16800 m): hot bound, bias of block Tbol over sunlit summer bins",
+     "reference": 0.0,
+     "measured": -0.595105750967617,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Site11: cold bound (Burger 2024), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -38.753926198539084,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: Hayne2017, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -27.22800690533173,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: constant 0.12, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": 6.126782350478024,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: RMS over sunlit bins, hot bound / Hayne2017",
+     "reference": 10.718467116110642,
+     "measured": 29.42812430427341,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: bias over all summer bins with data, hot bound / Hayne2017",
+     "reference": -17.25267843789346,
+     "measured": -31.698880037122326,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: sunlit bins used / bins with all nine cells",
+     "reference": 42.0,
+     "measured": 14.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: sunlit bins with Diviner between the cold and hot bounds",
+     "reference": 14.0,
+     "measured": 6.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: block mean visible fraction, selection (cell centres) / summer (all pixels)",
+     "reference": 0.5083692624050373,
+     "measured": 0.4831198906747327,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site23 (-85.90 deg, block centre -9600, 124080 m): hot bound, bias of block Tbol over sunlit summer bins",
+     "reference": 0.0,
+     "measured": -7.260857099984667,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Site23: cold bound (Burger 2024), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -45.4847652962116,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: Hayne2017, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -33.735956399170114,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: constant 0.12, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -0.3742296573186173,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: RMS over sunlit bins, hot bound / Hayne2017",
+     "reference": 12.160986306225135,
+     "measured": 35.5859850914756,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: bias over all summer bins with data, hot bound / Hayne2017",
+     "reference": -8.837806118982796,
+     "measured": -27.098463491731128,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: sunlit bins used / bins with all nine cells",
+     "reference": 63.0,
+     "measured": 28.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: sunlit bins with Diviner between the cold and hot bounds",
+     "reference": 28.0,
+     "measured": 10.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: block mean visible fraction, selection (cell centres) / summer (all pixels)",
+     "reference": 0.5050798191180761,
+     "measured": 0.4917473249437789,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    }
+   ],
+   "notes": [
+    "Pre-registered in docs/review/preregistration-th-v3e-2026-11-17.md before it was implemented, before the site DEMs were downloaded and before any Diviner value outside the TH-V3 block was read.",
+    "Blocks chosen from model geometry only (highest summer mean visible disc at the nine cell centres, 1 km inside the tile, TH-V3 block excluded) and recorded in diviner_pcp_sites.json before the Diviner values were extracted.",
+    "Forward model, bins and data as TH-V3 (no terrain radiation or Earthshine: under 1 K at Shackleton, TH-V3d). A site needs at least 4 sunlit bins with all nine cells to enter the verdict; 4 of 4 sites qualify.",
+    "Reading: the Shackleton pattern does not hold at every qualifying site."
+   ],
+   "data": {
+    "pgda78.site01.surf": "3ba7b97cb00a2bcf21189c3aeb535f65afc21207154ab9f0d43c5bdc1f7e747e",
+    "pgda78.site07.surf": "38aaee10bb4da4d63e7427aa1ca25c79bdbc649d212079a04990e135462091f8",
+    "pgda78.site11.surf": "58f3372c35bbd6baf38ffd5633c1c96b59bd89dbd252150581d12893a43136e5",
+    "pgda78.site23.surf": "12d280a59cd7580415f6bada638d0abe025ce6727541fddf68d5dc371a6c94cf",
+    "pgda90.ldem_80s_80mpp": "82030dcbdd7c4bb0c7d858e9b4b293b9f2cda5a543ba31ec0f42784bd6beee5a"
+   },
+   "seconds": 6753.414377833018,
+   "run_utc": "2026-11-16T23:59:47Z"
+  },
+  {
    "id": "TH-V2c",
    "title": "Apollo 17 mean temperatures, like for like",
    "kind": "published",
@@ -3395,6 +3710,7 @@
   "ILL-V2": "not selected",
   "ILL-V2b": "not selected",
   "ILL-V5": "not selected",
+  "ILL-C1": "not selected",
   "TH-A1": "not selected",
   "TH-A2": "not selected",
   "TH-A2b": "not selected",
