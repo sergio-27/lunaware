@@ -19,6 +19,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from lunarenv.illumination.settings import IlluminationSettings
+from lunarenv.sites import DEFAULT_TERRAIN, TERRAIN_SETS
 from lunarenv.thermal.model import ThermalSettings
 from lunarenv.thermal.properties import RegolithProperties
 
@@ -29,6 +30,10 @@ class _Strict(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
 
+def _terrain_enum(schema: dict[str, Any]) -> None:
+    schema["enum"] = sorted(TERRAIN_SETS)
+
+
 class Site(_Strict):
     """Location of the point of interest.
 
@@ -37,8 +42,11 @@ class Site(_Strict):
     covers the site.
     """
 
-    terrain: Literal["site04", "site01"] = Field(
-        "site04", description="Terrain set: 5 m site DEM plus regional DEM (see lunarenv.sites)."
+    terrain: str = Field(
+        DEFAULT_TERRAIN,
+        description="Terrain set: 5 m site DEM plus regional DEM (see lunarenv.sites, "
+        "`lunarenv sites`).",
+        json_schema_extra=_terrain_enum,
     )
     x_m: float | None = Field(None, description="Polar stereographic x, metres.")
     y_m: float | None = Field(None, description="Polar stereographic y, metres.")
@@ -52,6 +60,15 @@ class Site(_Strict):
         le=1000.0,
         description="Height of the point above the terrain, for illumination and Earth visibility.",
     )
+
+    @field_validator("terrain")
+    @classmethod
+    def _known_terrain(cls, value: str) -> str:
+        if value not in TERRAIN_SETS:
+            raise ValueError(
+                f"unknown terrain set {value!r}; known sets: {', '.join(sorted(TERRAIN_SETS))}"
+            )
+        return value
 
     @model_validator(mode="after")
     def _one_coordinate_pair(self) -> Site:

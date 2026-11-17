@@ -13,6 +13,8 @@ test-suite (`pytest -s tests/data`) run on 2026-11-12.
 | `pgda78.site04.toterr`, `.slperr` | same | same | Formal height and slope uncertainty |
 | `pgda78.site04.clone.0001..0100` | same | same | Terrain ensemble for uncertainty propagation |
 | `pgda78.site01.*` | PGDA-78 Site 1 (connecting ridge) | 5 m | Validation case ILL-V1 only |
+| `pgda78.site07.surf`, `.site11.surf`, `.site23.surf` | PGDA-78 Sites 7, 11, 23 | 5 m | Terrain sets `site07`, `site11`, `site23`; validation case TH-V3e. No clones in the catalog |
+| `pgda78.<name>.surf` for the other 22 sites | PGDA-78 | 5 m | Terrain sets of the same name (`lunarenv sites`). URLs answered on 2026-11-18; checksums not pinned yet, so they cannot be fetched without `--pin` |
 | `pgda90.ldem_80s_80mpp` | PGDA-90 | 7600 x 7600 at 80 m, +/-304 km | Mid- and far-field terrain |
 | `pgda90.ldem_80s_80mpp_err` | PGDA-90 | same grid | RMS height error of the 80 m DEM (m); regional error bound (optional, group `regional-error`) |
 | `pgda90.ldem_60s_240mpp` | PGDA-90 | 240 m | Fallback for rays leaving the 80S product |

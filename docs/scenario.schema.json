@@ -354,10 +354,35 @@
    "properties": {
     "terrain": {
      "default": "site04",
-     "description": "Terrain set: 5 m site DEM plus regional DEM (see lunarenv.sites).",
+     "description": "Terrain set: 5 m site DEM plus regional DEM (see lunarenv.sites, `lunarenv sites`).",
      "enum": [
+      "dm1",
+      "dm2",
+      "haworth",
+      "lm1",
+      "lm2",
+      "lm3",
+      "lm4",
+      "lm5",
+      "lm6",
+      "lm7",
+      "lm8",
+      "npa",
+      "npb",
+      "npc",
+      "npd",
+      "shoemaker",
+      "site01",
       "site04",
-      "site01"
+      "site06",
+      "site07",
+      "site11",
+      "site20",
+      "site20v2",
+      "site23",
+      "site42",
+      "sl2",
+      "sl3"
      ],
      "title": "Terrain",
      "type": "string"

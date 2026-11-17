@@ -224,6 +224,25 @@ def _export(args: argparse.Namespace) -> int:
     return 0
 
 
+def _sites(args: argparse.Namespace) -> int:
+    from lunarenv.sites import site_status
+
+    rows = site_status()
+    if args.json:
+        _print_json(rows)
+        return 0
+    print(f"{'terrain':<10s} {'DEM':<12s} {'clones':<7s} description")
+    for row in rows:
+        state = "cached" if row["cached"] else "pinned" if row["pinned"] else "not pinned"
+        clones = "-" if row["clones_cached"] is None else str(row["clones_cached"])
+        print(f"{row['name']:<10s} {state:<12s} {clones:<7s} {row['description']}")
+    print(
+        "cached: ready to run. pinned: `lunarenv data fetch <terrain>`. "
+        "not pinned: a maintainer fetches it once with --pin."
+    )
+    return 0
+
+
 def _schema(_: argparse.Namespace) -> int:
     from lunarenv.api import json_schema
 
@@ -316,6 +335,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     export.add_argument("--json", action="store_true", help="print the manifest")
     export.set_defaults(handler=_export)
+
+    sites = sub.add_parser("sites", help="list the terrain sets and which can be run")
+    sites.add_argument("--json", action="store_true")
+    sites.set_defaults(handler=_sites)
 
     schema = sub.add_parser("schema", help="print the JSON Schema of a scenario")
     schema.set_defaults(handler=_schema)

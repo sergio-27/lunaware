@@ -170,6 +170,228 @@ version = "final_adj"
 citation = "Barker2021"
 description = "Site 23 (Malapert massif) surface height, 5 m/pix; used by validation case TH-V3e."
 
+# Remaining sites of the product: surface height only. URLs checked 2026-11-18; a file
+# can be fetched once its checksum is pinned (`lunarenv data fetch <group> --pin`).
+[[file]]
+id = "pgda78.site06.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site06/Site06_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["site06"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "Site06 (Nobile rim 1) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.site20.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site20/Site20_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["site20"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "Site20 (Leibnitz beta plateau) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.site20v2.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site20v2/Site20v2_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["site20v2"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "Site20v2 (Leibnitz beta plateau, extended boundaries) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.site42.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site42/Site42_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["site42"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "Site42 (de Gerlache-Kocher massif) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.haworth.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Haworth/Haworth_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["haworth"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "Haworth surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.shoemaker.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Shoemaker/Shoemaker_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["shoemaker"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "Shoemaker surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.dm1.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/DM1/DM1_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["dm1"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "DM1 (Amundsen rim) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.dm2.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/DM2/DM2_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["dm2"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "DM2 (Nobile rim 2) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.sl2.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/SL2/SL2_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["sl2"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "SL2 (de Gerlache rim) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.sl3.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/SL3/SL3_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["sl3"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "SL3 (Connecting ridge extension) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.npa.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/NPA/NPA_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["npa"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "NPA (Cabeus exterior wall 1) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.npb.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/NPB/NPB_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["npb"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "NPB (Amundsen 1) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.npc.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/NPC/NPC_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["npc"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "NPC (Idel'son L crater 1) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.npd.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/NPD/NPD_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["npd"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "NPD (Malapert crater 1) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.lm1.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/LM1/LM1_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["lm1"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "LM1 (Shackleton Rim B) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.lm2.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/LM2/LM2_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["lm2"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "LM2 (Shoemaker Rim A) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.lm3.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/LM3/LM3_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["lm3"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "LM3 (Shoemaker Rim B) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.lm4.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/LM4/LM4_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["lm4"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "LM4 (Shoemaker Rim C) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.lm5.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/LM5/LM5_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["lm5"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "LM5 (Shoemaker Rim D) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.lm6.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/LM6/LM6_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["lm6"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "LM6 (Shoemaker Rim E) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.lm7.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/LM7/LM7_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["lm7"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "LM7 (Faustini Rim A) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
+[[file]]
+id = "pgda78.lm8.surf"
+url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/LM8/LM8_final_adj_5mpp_surf.tif"
+kind = "geotiff"
+groups = ["lm8"]
+product = "PGDA-78 High-Resolution LOLA Topography for Lunar South Pole Sites"
+version = "final_adj"
+citation = "Barker2021"
+description = "LM8 (Shoemaker Rim F) surface height, 5 m/pix, metres above the 1737.4 km sphere."
+
 # Error clones: 100 statistically consistent realizations per site.
 [[series]]
 id = "pgda78.site04.clone.{n:04d}"

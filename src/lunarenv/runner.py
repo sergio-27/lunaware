@@ -424,9 +424,11 @@ def run_scenario(
             f"scenario needs data that is not in the cache at {store.root}: {', '.join(missing)}; "
             "fetch it with `lunarenv data fetch <id>`"
         )
-    cached_clones = [
-        e.id for e in store.catalog.group(terrain.clone_group) if store.is_available(e.id)
-    ]
+    cached_clones = (
+        []
+        if terrain.clone_group is None
+        else [e.id for e in store.catalog.group(terrain.clone_group) if store.is_available(e.id)]
+    )
     clone_ids = cached_clones[: scenario.uncertainty.terrain_clones]
     error_k = scenario.uncertainty.regional_error_k
     error_ids = (
@@ -1178,7 +1180,11 @@ def run_scenario(
         _terrain_products(stack.with_near(load_dem(store, clone)), xy, scenario, eph, spin)
         for clone in clone_ids
     ]
-    if len(clone_ids) < scenario.uncertainty.terrain_clones:
+    if terrain.clone_group is None and scenario.uncertainty.terrain_clones:
+        warnings.append(
+            f"uncertainty: no terrain error clones in the catalog for '{terrain.name}'; the near terrain is not varied"
+        )
+    elif len(clone_ids) < scenario.uncertainty.terrain_clones:
         warnings.append(
             f"uncertainty: {len(clone_ids)} terrain clones in the data cache, {scenario.uncertainty.terrain_clones} requested"
         )

@@ -762,7 +762,11 @@ def _ill_c1(store: DataStore) -> Outcome:
             for label, value in evaluate(stack, members).items():
                 results[label][name] = value
         group = next(t.clone_group for t in TERRAIN_SETS.values() if t.near_id == near_id)
-        clone_ids = [e.id for e in store.catalog.group(group) if store.is_available(e.id)]
+        clone_ids = (
+            []
+            if group is None
+            else [e.id for e in store.catalog.group(group) if store.is_available(e.id)]
+        )
         n_clones[near_id] = len(clone_ids)
         for clone_id in clone_ids:
             for label, value in evaluate(
