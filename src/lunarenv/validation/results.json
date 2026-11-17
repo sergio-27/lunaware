@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "lunarenv_version": "0.1.0.dev0",
- "generated_utc": "2026-11-17T10:39:21Z",
+ "generated_utc": "2026-11-17T21:03:32Z",
  "results": [
   {
    "id": "ILL-A1",
@@ -3628,6 +3628,475 @@
    "run_utc": "2026-11-17T10:39:21Z"
   },
   {
+   "id": "TH-V3g",
+   "title": "Diviner footprint and binning at five polar sites",
+   "kind": "published",
+   "source": "Diviner PCP (diurnal, summer), as TH-V3 and TH-V3e; footprint and binning from the Diviner RDR and Derived Products SIS (Table 1, section 5.4)",
+   "metric": "bias of block Tbol over sunlit summer bins, Hayne2017 law with the footprint, per site",
+   "tolerance": "10 K at each of the five sites (pre-registered 2026-11-17)",
+   "status": "FAIL",
+   "summary": "Shackleton Hayne -28.8 K (without footprint -23.8), hot -5.7 K (8 bins); Site01 Hayne -49.3 K (without footprint -51.4), hot -20.7 K (28 bins); Site07 Hayne -44.3 K (without footprint -44.9), hot -12.6 K (26 bins); Site11 Hayne -26.5 K (without footprint -27.2), hot -0.3 K (14 bins); Site23 Hayne -33.9 K (without footprint -33.7), hot -7.8 K (28 bins)",
+   "checks": [
+    {
+     "quantity": "Shackleton: Hayne2017 with Diviner footprint and binning, bias of block Tbol over sunlit summer bins",
+     "reference": 0.0,
+     "measured": -28.81419272631536,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Shackleton: hot law with footprint, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -5.687179484705105,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: Hayne2017 without footprint (as TH-V3 / TH-V3e), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -23.835773721738686,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: hot law without footprint (as TH-V3c / TH-V3e), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -0.39067369974249644,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: Hayne2017, footprint response x 1.5, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -28.919478444507106,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: Hayne2017, footprint averaged over 12 orientations, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -29.199052933088097,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: Hayne2017, footprint binned by its centre only, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -27.22425340064564,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: change of block Tbol from the footprint over sunlit bins, Hayne2017 / hot law",
+     "reference": -4.978419004576693,
+     "measured": -5.296505784962619,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: Hayne2017 block Tbol over sunlit bins without footprint, pixels every 20 m / every 60 m (ring sampling)",
+     "reference": 180.43612802307953,
+     "measured": 180.1149853783191,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: Hayne2017 with footprint, RMS over sunlit bins / bias over all summer bins with data",
+     "reference": 29.457535624230452,
+     "measured": -38.50509938651439,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: sunlit bins used / bins with all nine cells",
+     "reference": 64.0,
+     "measured": 8.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: Hayne2017 with Diviner footprint and binning, bias of block Tbol over sunlit summer bins",
+     "reference": 0.0,
+     "measured": -49.253808327754136,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Site01: hot law with footprint, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -20.734397388314296,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: Hayne2017 without footprint (as TH-V3 / TH-V3e), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -51.4308710838307,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: hot law without footprint (as TH-V3c / TH-V3e), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -21.995998758890725,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: Hayne2017, footprint response x 1.5, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -48.612955383469775,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: Hayne2017, footprint averaged over 12 orientations, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -48.488983934667644,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: Hayne2017, footprint binned by its centre only, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -50.35063655321546,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: change of block Tbol from the footprint over sunlit bins, Hayne2017 / hot law",
+     "reference": 2.177062756076566,
+     "measured": 1.261601370576443,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: Hayne2017 block Tbol over sunlit bins without footprint, pixels every 20 m / every 60 m (ring sampling)",
+     "reference": 168.37602844009032,
+     "measured": 168.97518294754042,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: Hayne2017 with footprint, RMS over sunlit bins / bias over all summer bins with data",
+     "reference": 50.0706614352059,
+     "measured": -38.440109479183945,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: sunlit bins used / bins with all nine cells",
+     "reference": 68.0,
+     "measured": 28.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: Hayne2017 with Diviner footprint and binning, bias of block Tbol over sunlit summer bins",
+     "reference": 0.0,
+     "measured": -44.257150676327015,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Site07: hot law with footprint, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -12.63825594821905,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: Hayne2017 without footprint (as TH-V3 / TH-V3e), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -44.85830861905258,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: hot law without footprint (as TH-V3c / TH-V3e), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -12.71697699661519,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: Hayne2017, footprint response x 1.5, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -43.92951189982826,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: Hayne2017, footprint averaged over 12 orientations, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -44.002661638292984,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: Hayne2017, footprint binned by its centre only, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -44.73557971292981,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: change of block Tbol from the footprint over sunlit bins, Hayne2017 / hot law",
+     "reference": 0.601157942725564,
+     "measured": 0.0787210483962042,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: Hayne2017 block Tbol over sunlit bins without footprint, pixels every 20 m / every 60 m (ring sampling)",
+     "reference": 181.75713668921782,
+     "measured": 181.67859775419527,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: Hayne2017 with footprint, RMS over sunlit bins / bias over all summer bins with data",
+     "reference": 45.06550884807635,
+     "measured": -30.869229422975177,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: sunlit bins used / bins with all nine cells",
+     "reference": 56.0,
+     "measured": 26.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: Hayne2017 with Diviner footprint and binning, bias of block Tbol over sunlit summer bins",
+     "reference": 0.0,
+     "measured": -26.48253868332895,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Site11: hot law with footprint, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -0.34960100769072866,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: Hayne2017 without footprint (as TH-V3 / TH-V3e), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -27.228006905331736,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: hot law without footprint (as TH-V3c / TH-V3e), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -0.595105750967621,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: Hayne2017, footprint response x 1.5, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -26.11678723327911,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: Hayne2017, footprint averaged over 12 orientations, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -27.642756238797112,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: Hayne2017, footprint binned by its centre only, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -26.89432005400735,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: change of block Tbol from the footprint over sunlit bins, Hayne2017 / hot law",
+     "reference": 0.7454682220027564,
+     "measured": 0.2455047432768822,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: Hayne2017 block Tbol over sunlit bins without footprint, pixels every 20 m / every 60 m (ring sampling)",
+     "reference": 198.66339060109885,
+     "measured": 199.10457085196475,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: Hayne2017 with footprint, RMS over sunlit bins / bias over all summer bins with data",
+     "reference": 28.735185490000397,
+     "measured": -31.254419311935543,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: sunlit bins used / bins with all nine cells",
+     "reference": 42.0,
+     "measured": 14.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: Hayne2017 with Diviner footprint and binning, bias of block Tbol over sunlit summer bins",
+     "reference": 0.0,
+     "measured": -33.93444351289421,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Site23: hot law with footprint, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -7.805767160511052,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: Hayne2017 without footprint (as TH-V3 / TH-V3e), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -33.73595639917011,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: hot law without footprint (as TH-V3c / TH-V3e), bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -7.260857099984666,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: Hayne2017, footprint response x 1.5, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -34.05634111280926,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: Hayne2017, footprint averaged over 12 orientations, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -33.23218207027907,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: Hayne2017, footprint binned by its centre only, bias over sunlit bins",
+     "reference": 0.0,
+     "measured": -33.74619877952319,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: change of block Tbol from the footprint over sunlit bins, Hayne2017 / hot law",
+     "reference": -0.19848711372407024,
+     "measured": -0.544910060526405,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: Hayne2017 block Tbol over sunlit bins without footprint, pixels every 20 m / every 60 m (ring sampling)",
+     "reference": 208.16096732716528,
+     "measured": 208.49629564365796,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: Hayne2017 with footprint, RMS over sunlit bins / bias over all summer bins with data",
+     "reference": 35.409289141394865,
+     "measured": -25.70340912597702,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: sunlit bins used / bins with all nine cells",
+     "reference": 63.0,
+     "measured": 28.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    }
+   ],
+   "notes": [
+    "Pre-registered in docs/review/preregistration-th-v3g-2026-11-17.md before the footprint model was implemented or run.",
+    "Footprint (lunarenv.validation.diviner_footprint): geometric IFOV 6.7 x 3.4 mrad at 50 km (335 x 170 m, Diviner RDR SIS Table 1), in-track smear 206 m (0.128 s at the ground speed), in track along the meridian; each observation binned once per IFOV point (centre, edge midpoints, corners) that falls in a bin (SIS section 5.4; assumed to hold for the PCP); observation centres uniform. Flat footprints, geometric response.",
+    "Model field: TH-V3's forward model every 20 m inside the block and every 60 m in a 660 m ring; sunlit bins from the smooth model geometry inside the block.",
+    "5 of 5 sites have at least 4 sunlit bins.",
+    "Reading: the footprint changes some sites by 5 K or more; see the per-site values. Also: the footprint makes the model colder at Shackleton, Site23, widening the gap there, so it cannot be its cause there; the hot law with the footprint is still below -10 K at Site01, Site07; the 1.5 x response or the orientation average moves the bias by more than the nominal footprint change at Site11, Site23: sensitive to unknown instrument details."
+   ],
+   "data": {
+    "pgda78.site04.surf": "38ff70dbdf2f066c2cfa94a646c3a59d653ce7f6b4528b15fc1b43ee397ce758",
+    "pgda78.site01.surf": "3ba7b97cb00a2bcf21189c3aeb535f65afc21207154ab9f0d43c5bdc1f7e747e",
+    "pgda78.site07.surf": "38aaee10bb4da4d63e7427aa1ca25c79bdbc649d212079a04990e135462091f8",
+    "pgda78.site11.surf": "58f3372c35bbd6baf38ffd5633c1c96b59bd89dbd252150581d12893a43136e5",
+    "pgda78.site23.surf": "12d280a59cd7580415f6bada638d0abe025ce6727541fddf68d5dc371a6c94cf",
+    "pgda90.ldem_80s_80mpp": "82030dcbdd7c4bb0c7d858e9b4b293b9f2cda5a543ba31ec0f42784bd6beee5a"
+   },
+   "seconds": 6188.738348541956,
+   "run_utc": "2026-11-17T21:03:32Z"
+  },
+  {
    "id": "TH-V2c",
    "title": "Apollo 17 mean temperatures, like for like",
    "kind": "published",
@@ -4132,6 +4601,7 @@
   "TH-V3c": "not selected",
   "TH-V3d": "not selected",
   "TH-V3e": "not selected",
+  "TH-V3f": "not selected",
   "TH-V2c": "not selected",
   "TH-A3": "not selected",
   "TH-C1": "not selected",

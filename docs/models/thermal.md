@@ -170,7 +170,8 @@ still; sub-DEM roughness, the Diviner footprint and observation timing remain. A
 10 K at two and 13-22 K too cold at the other two, where Diviner is warmer than the
 envelope: the hot edge is not an upper bound for sunlit summer ground everywhere. Sub-DEM
 roughness (TH-V3f, 20 deg RMS) warms the Hayne law by 11-18 K at the five blocks, not
-enough to pass anywhere, and changes the hot law by under 1 K. The constant albedo 0.12,
+enough to pass anywhere, and changes the hot law by under 1 K. The Diviner footprint and
+binning applied to the model (TH-V3g) change the blocks by -5 to +2 K. The constant albedo 0.12,
 outside the envelope, is kept as a separate alternative.
 
 **Slope grid** (`slope_grid`). The DEM slope at a point is uncertain by about 2 degrees
@@ -430,3 +431,34 @@ scenario law: about 530 s of the 932 s wall-clock reference run on 7 worker proc
    facets see lower incidence and absorb more); this was not tested separately. Limits:
    roughness parameter from equatorial regions; Smith shadowing is poorest at grazing
    incidence; 4 of 144 pixels per cell; summer, sunlit bins, 720 m blocks. Run time 3.5 h.
+9. **Diviner footprint and binning at the five polar blocks (TH-V3g, pre-registered
+   2026-11-17).** In `lunarenv.validation.diviner_footprint` (validation only): geometric
+   IFOV 6.7 x 3.4 mrad at 50 km (335 x 170 m, Diviner RDR SIS Table 1), smeared in track
+   by 206 m (0.128 s at the ground speed), in track along the meridian; each observation
+   binned once for each of its nine IFOV points (centre, edge midpoints, corners) that
+   falls in a bin (SIS section 5.4, assumed to hold for the PCP); observation centres
+   uniform. The model field is TH-V3's forward model every 20 m in the block and every
+   60 m in a 660 m ring. Bias of block Tbol over the sunlit summer bins (model - Diviner):
+
+   | Block | Sunlit bins | Hayne | Hayne + footprint | Change | Hot | Hot + footprint | x 1.5 | 12 orientations | Centre only |
+   |---|---|---|---|---|---|---|---|---|---|
+   | Shackleton | 8 | -23.8 K | -28.8 K (fail) | -5.0 K | -0.4 K | -5.7 K | -28.9 K | -29.2 K | -27.2 K |
+   | Site 1 | 28 | -51.4 K | -49.3 K (fail) | +2.2 K | -22.0 K | -20.7 K | -48.6 K | -48.5 K | -50.4 K |
+   | Site 7 | 26 | -44.9 K | -44.3 K (fail) | +0.6 K | -12.7 K | -12.6 K | -43.9 K | -44.0 K | -44.7 K |
+   | Site 11 | 14 | -27.2 K | -26.5 K (fail) | +0.7 K | -0.6 K | -0.3 K | -26.1 K | -27.6 K | -26.9 K |
+   | Site 23 | 28 | -33.7 K | -33.9 K (fail) | -0.2 K | -7.3 K | -7.8 K | -34.1 K | -33.2 K | -33.8 K |
+
+   The columns without footprint reproduce TH-V3 / TH-V3c / TH-V3e exactly. The x 1.5,
+   orientation and centre-only columns are the Hayne law with the footprint. Ring
+   sampling (block pixels on the 60 m sub-grid against 20 m): -0.3 to +0.6 K. Reading
+   fixed beforehand: the footprint makes the model colder at Shackleton and Site 23, so it
+   cannot be the cause there; elsewhere it warms the blocks by at most 2.2 K (hot law
+   1.3 K) against gaps of 27-51 K, so the footprint and binning do not explain the Hayne
+   gap, and the hot law is still 21 K and 13 K too cold at Sites 1 and 7. Only Shackleton
+   reaches 5 K (Hayne -5.0 K, hot -5.3 K, both colder). At Sites 11 and 23 the orientation
+   average moves the bias by more than the nominal change (1.2 K and 0.7 K against 0.7 K
+   and 0.2 K), so the per-site change there depends on instrument details at the 1 K
+   level; this does not affect the reading. The expectation that the footprint would cool
+   every block held at two of five. Limits: the PCP binning method is assumed from the
+   GDR description; flat footprints with a geometric response; summer, sunlit bins,
+   720 m blocks. Run time 1.7 h.
