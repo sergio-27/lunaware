@@ -23,6 +23,9 @@ Definitions of the statistics follow Barker2021 (section 5).
 1. **Terrain stack.** Three DEM levels: the 5 m site product near the observer, the
    80 m regional product in the mid field, the same product block-averaged to 240 m in
    the far field. A ray that leaves a level early falls through to the next one.
+   Where the 80S product is not provably large enough for the observer, a fourth level,
+   the 240 m product poleward of 60 S, takes the rays that leave it
+   ([data.md](../data.md), "Beyond the 80S product").
 2. **Horizon.** For each azimuth a ray follows the great circle through the observer.
    At each sample the terrain height is interpolated bilinearly and its elevation
    computed from exact spherical geometry,

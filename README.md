@@ -66,6 +66,13 @@ terrain). Every file is checked against a pinned SHA-256.
 uv run lunarenv data fetch kernels site04 regional
 ```
 
+For sites other than the Shackleton rim, also the wide regional terrain (219 MB) and the
+site itself (`lunarenv sites` lists them):
+
+```bash
+uv run lunarenv data fetch regional-wide site23
+```
+
 Optional, for the regional terrain error bound: its error map (255 MB). Without it runs
 warn and report no bound.
 
@@ -240,12 +247,19 @@ Scope
   only check is that a run at the centre of the tile completes. Terrain error clones are
   in the catalog for `site04` and `site01`; elsewhere the near terrain is not varied and
   the run says so.
-- **Far from the pole the regional terrain can be too small.** The regional DEM ends at
-  80 S. For high ground far from the pole, terrain beyond it can still hide the Sun and
-  is not in the model; the run then warns ("the regional DEM is too small for this
-  observer") and its illumination is an upper bound. At the centres of the 27 tiles this
-  happens at `site06` (Nobile rim 1) and `site42` (de Gerlache-Kocher massif); it depends
-  on the point and its height, so read the warnings of each run.
+- **Away from the Shackleton rim, fetch the wide regional DEM.** The regional DEM ends at
+  80 S. Where it is not provably large enough for the observer (terrain at the height cap
+  of 11 km right at its edge could hide part of the Sun), horizon rays that leave it
+  continue on the 240 m DEM poleward of 60 S, if that is in the cache
+  (`lunarenv data fetch regional-wide`, 219 MB); `site.wide_regional_dem` in the metadata
+  says whether it was needed and used. The test is conservative: it asks for the wide DEM
+  at the centre of 24 of the 27 tiles and on 4 % of the `site04` tile (not at the
+  reference point). Without the file the run warns, and where rays that matter for the
+  Sun were cut short (the centres of `site06` and `site42`) the illumination is an upper
+  bound. With it no such ray is left at any of the 27 centres. At the seven centres
+  compared, the horizon did not change at any of 1440 azimuths, and the 2026 mean visible
+  disc at `site06` and `site42` is the same to six digits: the wide DEM turned those
+  results from upper bounds into results, it did not move them.
 - **Two models.** No structural, seismic, radiation, dust or ejecta model. The thermal
   model gives the temperature of the *ground*, not of a structure.
 

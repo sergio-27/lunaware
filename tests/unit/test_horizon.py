@@ -11,7 +11,13 @@ import pytest
 from lunarenv.core.constants import MOON_REFERENCE_RADIUS_M as R
 from lunarenv.geometry.visibility import horizon_dip
 from lunarenv.illumination.horizon import compute_horizons, sun_relevant_incomplete
-from lunarenv.illumination.terrain import TerrainLevel, TerrainStack, build_stack, coarsen
+from lunarenv.illumination.terrain import (
+    TerrainLevel,
+    TerrainStack,
+    build_stack,
+    coarsen,
+    regional_edge_distance_m,
+)
 from tests.helpers import analytic_dem, reference_horizon
 
 
@@ -153,3 +159,82 @@ def test_surface_height_override_holds_the_observer_fixed():
     )
     assert raised.observer_height_m[0] == 155.0
     assert np.all(raised.elevation_rad < default.elevation_rad)  # deeper dip from higher up
+
+
+#: Observer of the wide-level tests: off the pole, where true azimuths are defined.
+_SPOT = (20_000.0, -30_000.0)
+
+
+def _wall(x, y):
+    """A ridge along map y, 60 km towards +x: beyond the regional DEM below, inside the wide one."""
+    return 3000.0 * np.exp(-((x - _SPOT[0] - 60_000.0) ** 2) / 4_000.0**2)
+
+
+def _stacks_with_and_without_wide():
+    near = analytic_dem(flat(0.0), center=_SPOT, half_width_m=1_000.0, pixel_m=5.0)
+    regional = analytic_dem(flat(0.0), center=_SPOT, half_width_m=40_000.0, pixel_m=80.0)
+    wide = analytic_dem(_wall, center=_SPOT, half_width_m=120_000.0, pixel_m=240.0)
+    radii = {"near_radius_m": 800.0, "mid_radius_m": 20_000.0}
+    return build_stack(near, regional, **radii), build_stack(near, regional, wide=wide, **radii)
+
+
+def test_wide_level_layout():
+    plain, extended = _stacks_with_and_without_wide()
+    assert [level.dem.grid.pixel_size_m for level in plain.levels] == [5.0, 80.0, 240.0]
+    assert [level.dem.grid.pixel_size_m for level in extended.levels] == [5.0, 80.0, 240.0, 240.0]
+    for a, b in zip(plain.levels, extended.levels[:3], strict=True):
+        assert (a.start_m, a.end_m, a.step_m, a.dem.grid) == (
+            b.start_m,
+            b.end_m,
+            b.step_m,
+            b.dem.grid,
+        )
+        np.testing.assert_array_equal(a.dem.heights_m, b.dem.heights_m)
+    assert extended.levels[3].start_m == plain.levels[2].end_m
+    # the crest falls between pixel centres of the 240 m grid
+    assert extended.max_height_m == pytest.approx(3000.0, abs=5.0) and plain.max_height_m == 0.0
+
+    near, regional = plain.levels[0].dem, plain.levels[1].dem
+    small = analytic_dem(flat(0.0), center=_SPOT, half_width_m=30_000.0, pixel_m=240.0)
+    with pytest.raises(ValueError, match="cover the regional DEM"):
+        build_stack(near, regional, near_radius_m=800.0, mid_radius_m=20_000.0, wide=small)
+
+
+def test_wide_level_continues_rays_that_leave_the_regional_dem():
+    plain, extended = _stacks_with_and_without_wide()
+    n = 72
+    short = compute_horizons(plain, *_SPOT, height_above_surface_m=2.0, n_azimuth=n)
+    long = compute_horizons(extended, *_SPOT, height_above_surface_m=2.0, n_azimuth=n)
+    azimuth = long.azimuth_rad
+
+    # without the wide DEM the wall does not exist: the horizon is the dip of the sphere
+    dip = float(horizon_dip(2.0, R))
+    assert np.max(np.abs(short.elevation_rad[0] - dip)) < 1e-6
+
+    # with it, the wall is seen where an independent computation puts it
+    towards = np.abs(np.degrees(azimuth) - 90.0) <= 40.0
+    expected = reference_horizon(
+        _wall, _SPOT, 2.0, azimuth[towards], max_distance_m=115_000.0, step_m=20.0
+    )
+    assert long.complete.all()
+    # The 240 m grid lowers the crest: bilinear interpolation of a curvature of
+    # 2 * 3000 / 4000^2 per metre loses up to 240^2 / 8 times that, 2.7 m, which is
+    # 4.5e-5 rad at 60 km. The tracer is lower than the reference by 1.7e-5 to 3.9e-5 rad.
+    difference = long.elevation_rad[0][towards] - expected
+    assert np.max(np.abs(difference)) < 6e-5 and np.all(difference < 0.0)
+    assert np.degrees(long.elevation_rad[0][n // 4]) == pytest.approx(1.87, abs=0.02)
+    assert 55_000.0 < long.distance_m[0][n // 4] < 61_000.0
+
+    # away from it nothing changes, to the last bit
+    away = np.degrees(azimuth) >= 180.0
+    np.testing.assert_array_equal(long.elevation_rad[0][away], short.elevation_rad[0][away])
+
+
+def test_regional_edge_distance_is_a_lower_bound():
+    regional = analytic_dem(flat(0.0), center=(0.0, 0.0), half_width_m=304_000.0, pixel_m=8_000.0)
+    k_corner = 1.0 + 2.0 * 304_000.0**2 / (4.0 * R**2)
+    assert regional_edge_distance_m(regional.grid, 0.0, 0.0) == pytest.approx(304_000.0 / k_corner)
+    near_edge = regional_edge_distance_m(regional.grid, 185_000.0, -40_000.0)
+    assert near_edge == pytest.approx(119_000.0 / k_corner)
+    assert near_edge < 119_000.0  # shorter than the map distance: conservative
+    assert regional_edge_distance_m(regional.grid, 310_000.0, 0.0) < 0.0

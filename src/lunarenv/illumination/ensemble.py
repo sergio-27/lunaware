@@ -133,11 +133,14 @@ def regional_error_stacks(
     error: Dem,
     k: float,
     settings: IlluminationSettings | None = None,
+    wide: Dem | None = None,
 ) -> tuple[TerrainStack, TerrainStack]:
     """Terrain stacks with the regional DEM lowered and raised by ``k`` times its error.
 
     ``error`` is the rms height error map of ``regional`` (same grid). The near level and
     the observer are unchanged; the far level is block-averaged from the shifted DEM.
+    ``wide``, the DEM beyond the regional one (see :func:`build_stack`), is not shifted:
+    the error map does not cover it.
     Returns ``(lowered, raised)``: horizons on them bound the horizon of any regional
     terrain within ``k`` errors of the nominal one (see the module docstring).
     """
@@ -157,6 +160,7 @@ def regional_error_stacks(
             mid_radius_m=settings.mid_radius_m,
             step_fraction=settings.step_fraction,
             far_coarsening=settings.far_coarsening,
+            wide=wide,
         )
 
     return stack(-1.0), stack(1.0)

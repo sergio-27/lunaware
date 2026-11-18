@@ -27,6 +27,7 @@ from lunarenv.data.dem import Bounds, load_dem
 from lunarenv.data.store import DataNotAvailableError, DataStore
 from lunarenv.geometry.ephemeris import DE440, spice_session
 from lunarenv.geometry.projection import SouthPolarStereographic
+from lunarenv.geometry.visibility import dem_extent_is_sufficient_for_sun
 from lunarenv.illumination.eclipse import earth_occultation_factor
 from lunarenv.illumination.ensemble import regional_error_stacks
 from lunarenv.illumination.horizon import compute_horizons, sun_relevant_incomplete
@@ -38,7 +39,7 @@ from lunarenv.illumination.products import (
 )
 from lunarenv.illumination.settings import NUMERICAL_ERROR_ESTIMATE as ILLUMINATION_ERROR
 from lunarenv.illumination.settings import IlluminationSettings
-from lunarenv.illumination.terrain import TerrainStack, build_stack
+from lunarenv.illumination.terrain import TerrainStack, build_stack, regional_edge_distance_m
 from lunarenv.scenario.schema import Scenario, load_scenario
 from lunarenv.sites import TERRAIN_SETS
 from lunarenv.thermal import terrain_radiation as tr
@@ -425,37 +426,8 @@ def run_scenario(
             f"scenario needs data that is not in the cache at {store.root}: {', '.join(missing)}; "
             "fetch it with `lunarenv data fetch <id>`"
         )
-    cached_clones = (
-        []
-        if terrain.clone_group is None
-        else [e.id for e in store.catalog.group(terrain.clone_group) if store.is_available(e.id)]
-    )
-    clone_ids = cached_clones[: scenario.uncertainty.terrain_clones]
-    error_k = scenario.uncertainty.regional_error_k
-    error_ids = (
-        (terrain.regional_error_id,)
-        if error_k > 0.0 and store.is_available(terrain.regional_error_id)
-        else ()
-    )
-    used_ids = (*required, *clone_ids, *error_ids)
-    checksums = {i: store.record(i).sha256 for i in used_ids}
-    models = registered_models()
-    versions = {name: model.version for name, model in models.items()}
-    run_id = compute_run_id(scenario.resolved(), checksums, versions, __version__)
-    warnings: list[str] = []
-    timing: dict[str, float] = {}
-
-    # ----------------------------------------------------------------- site and time
     near = load_dem(store, terrain.near_id)
     regional = load_dem(store, terrain.regional_id)
-    stack = build_stack(
-        near,
-        regional,
-        near_radius_m=scenario.illumination.settings.near_radius_m,
-        mid_radius_m=scenario.illumination.settings.mid_radius_m,
-        step_fraction=scenario.illumination.settings.step_fraction,
-        far_coarsening=scenario.illumination.settings.far_coarsening,
-    )
     site = scenario.site
     if site.x_m is not None and site.y_m is not None:
         xy = (float(site.x_m), float(site.y_m))
@@ -470,6 +442,51 @@ def run_scenario(
             f"site ({xy[0]:.1f}, {xy[1]:.1f}) m lies outside the '{terrain.name}' terrain tile {near.grid.bounds}"
         ) from error
     longitude, latitude = (float(v) for v in PROJ.inverse(*xy))
+    # Is the regional DEM provably large enough for this observer (decision D4)? If not,
+    # rays that leave it continue on the wide DEM, when that is in the cache.
+    wide_needed = not bool(
+        dem_extent_is_sufficient_for_sun(
+            regional_edge_distance_m(regional.grid, *xy),
+            surface_height + site.height_above_surface_m,
+            latitude,
+        )
+    )
+    wide_ids = (terrain.wide_id,) if wide_needed and store.is_available(terrain.wide_id) else ()
+    cached_clones = (
+        []
+        if terrain.clone_group is None
+        else [e.id for e in store.catalog.group(terrain.clone_group) if store.is_available(e.id)]
+    )
+    clone_ids = cached_clones[: scenario.uncertainty.terrain_clones]
+    error_k = scenario.uncertainty.regional_error_k
+    error_ids = (
+        (terrain.regional_error_id,)
+        if error_k > 0.0 and store.is_available(terrain.regional_error_id)
+        else ()
+    )
+    used_ids = (*required, *wide_ids, *clone_ids, *error_ids)
+    checksums = {i: store.record(i).sha256 for i in used_ids}
+    models = registered_models()
+    versions = {name: model.version for name, model in models.items()}
+    run_id = compute_run_id(scenario.resolved(), checksums, versions, __version__)
+    warnings: list[str] = []
+    timing: dict[str, float] = {}
+
+    # ----------------------------------------------------------------- site and time
+    wide = load_dem(store, terrain.wide_id) if wide_ids else None
+    stack = build_stack(
+        near,
+        regional,
+        near_radius_m=scenario.illumination.settings.near_radius_m,
+        mid_radius_m=scenario.illumination.settings.mid_radius_m,
+        step_fraction=scenario.illumination.settings.step_fraction,
+        far_coarsening=scenario.illumination.settings.far_coarsening,
+        wide=wide,
+    )
+    if wide_needed and wide is None:
+        warnings.append(
+            f"illumination: terrain beyond the regional DEM is not provably irrelevant for this observer and the wider DEM {terrain.wide_id} is not in the data cache (fetch group regional-wide)"
+        )
 
     step_min = scenario.period.step_minutes
     step_s = 60.0 * step_min
@@ -1216,6 +1233,7 @@ def run_scenario(
             load_dem(store, terrain.regional_error_id),
             error_k,
             scenario.illumination.settings,
+            wide,
         )
         regional_bound: dict[str, Any] = {
             "k": error_k,
@@ -1450,6 +1468,14 @@ def run_scenario(
             "terrain_height_m": surface_height,
             "terrain_set": terrain.name,
             "terrain_description": terrain.description,
+            "wide_regional_dem": {
+                "needed": wide_needed,
+                "used": wide is not None,
+                "id": terrain.wide_id,
+                "note": "needed: the regional DEM is not provably large enough for this "
+                "observer (terrain at the height cap right at its edge could hide part of "
+                "the Sun). used: horizon rays that leave the regional DEM continue on it.",
+            },
             "body_fixed_frame": DE440.body_fixed_frame,
             "reference_radius_m": PROJ.radius_m,
         },

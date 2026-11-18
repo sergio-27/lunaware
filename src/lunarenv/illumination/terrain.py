@@ -124,6 +124,7 @@ def build_stack(
     mid_radius_m: float,
     step_fraction: float = 0.5,
     far_coarsening: int = 3,
+    wide: Dem | None = None,
 ) -> TerrainStack:
     """Three-level stack: site DEM, regional DEM, coarsened regional DEM.
 
@@ -134,6 +135,11 @@ def build_stack(
     Every level is sampled every ``step_fraction`` pixels. Where a ray leaves the near
     DEM before ``near_radius_m`` the tracer falls through to the next level, so the
     near DEM does not have to be centred on the observers.
+
+    With ``wide``, a coarser DEM that reaches beyond ``regional``, a fourth level is
+    added. In the same way a ray that leaves ``regional`` falls through to it, so the
+    horizon no longer ends at the edge of the regional product. Inside ``regional`` the
+    terrain sampled is the same with and without it.
     """
     if not 0.0 < near_radius_m < mid_radius_m:
         raise ValueError("need 0 < near_radius_m < mid_radius_m")
@@ -145,12 +151,37 @@ def build_stack(
     reach = float(np.hypot(bounds.x_max - bounds.x_min, bounds.y_max - bounds.y_min))
     if mid_radius_m >= reach:
         raise ValueError("mid_radius_m lies beyond the regional DEM")
-    return TerrainStack(
-        (
-            TerrainLevel(near, 0.0, near_radius_m, step_fraction * near.grid.pixel_size_m),
-            TerrainLevel(
-                regional, near_radius_m, mid_radius_m, step_fraction * regional.grid.pixel_size_m
-            ),
-            TerrainLevel(far, mid_radius_m, reach, step_fraction * far.grid.pixel_size_m),
+    levels = [
+        TerrainLevel(near, 0.0, near_radius_m, step_fraction * near.grid.pixel_size_m),
+        TerrainLevel(
+            regional, near_radius_m, mid_radius_m, step_fraction * regional.grid.pixel_size_m
+        ),
+        TerrainLevel(far, mid_radius_m, reach, step_fraction * far.grid.pixel_size_m),
+    ]
+    if wide is not None:
+        if not wide.grid.bounds.contains(bounds):
+            raise ValueError("the wide DEM must cover the regional DEM")
+        wide_bounds = wide.grid.bounds
+        wide_reach = float(
+            np.hypot(wide_bounds.x_max - wide_bounds.x_min, wide_bounds.y_max - wide_bounds.y_min)
         )
+        if wide_reach <= reach:
+            raise ValueError("the wide DEM must reach beyond the regional DEM")
+        levels.append(TerrainLevel(wide, reach, wide_reach, step_fraction * wide.grid.pixel_size_m))
+    return TerrainStack(tuple(levels))
+
+
+def regional_edge_distance_m(regional: GridGeometry, x_m: float, y_m: float) -> float:
+    """Lower bound of the ground distance from a map point to the edge of a DEM.
+
+    The shortest map distance to the edge, divided by the largest scale factor of the
+    projection inside the DEM (map distances are longer than ground distances away from
+    the pole). Negative if the point is outside.
+    """
+    bounds = regional.bounds
+    map_distance = min(
+        x_m - bounds.x_min, bounds.x_max - x_m, y_m - bounds.y_min, bounds.y_max - y_m
     )
+    corner_x = max(abs(bounds.x_min), abs(bounds.x_max))
+    corner_y = max(abs(bounds.y_min), abs(bounds.y_max))
+    return float(map_distance / regional.projection.scale_factor(corner_x, corner_y))

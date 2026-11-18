@@ -26,6 +26,9 @@ class TerrainSet:
     regional_id: str
     clone_group: str | None = None
     regional_error_id: str = "pgda90.ldem_80s_80mpp_err"
+    #: Coarser DEM beyond the regional one, used when the regional one is not provably
+    #: large enough for the observer (group ``regional-wide``).
+    wide_id: str = "pgda90.ldem_60s_240mpp"
 
     @property
     def required_ids(self) -> tuple[str, ...]:

@@ -17,7 +17,7 @@ test-suite (`pytest -s tests/data`) run on 2026-11-12.
 | `pgda78.<name>.surf` for the other 22 sites | PGDA-78 | 5 m; 3200 to 6000 pixels on a side | Terrain sets of the same name (`lunarenv sites`). Pinned 2026-11-18. No clones in the catalog |
 | `pgda90.ldem_80s_80mpp` | PGDA-90 | 7600 x 7600 at 80 m, +/-304 km | Mid- and far-field terrain |
 | `pgda90.ldem_80s_80mpp_err` | PGDA-90 | same grid | RMS height error of the 80 m DEM (m); regional error bound (optional, group `regional-error`) |
-| `pgda90.ldem_60s_240mpp` | PGDA-90 | 240 m | Fallback for rays leaving the 80S product |
+| `pgda90.ldem_60s_240mpp` | PGDA-90 | 7760 x 7760 at 240 m, +/-931 km | Terrain beyond the 80S product, for observers it is not provably large enough for (group `regional-wide`) |
 | `pgda69.avgvisib_85s_60m*` | PGDA-69 | 60 m | Published illumination and Earth-visibility maps (validation) |
 | `naif.*` | NAIF generic kernels | - | Time, ephemerides, lunar orientation, frames |
 
@@ -59,11 +59,9 @@ the 1737.4 km sphere.
 | `lm7` | LM7: Faustini Rim A | 4000 x 4000 | 54 to 74 | -10 to 10 | -87.89, 90.0 | -2776 to 579 |
 | `lm8` | LM8: Shoemaker Rim F | 4000 x 4000 | 60 to 80 | 30 to 50 | -87.34, 60.3 | -2498 to 714 |
 
-The regional DEM of every set is the 80 m product poleward of 80 S (+/-304 km). A short
-illumination run at the centre of each tile completes at all 27; at `site06` and `site42`
-it warns that the regional DEM is too small for the observer (terrain beyond 80 S could
-still hide the Sun), so the illumination there is an upper bound. The 240 m product
-poleward of 60 S is in the catalog but is not part of the terrain sets.
+The regional DEM of every set is the 80 m product poleward of 80 S (+/-304 km); beyond
+it the 240 m product poleward of 60 S is used where needed (next section). A short
+illumination run at the centre of each tile completes at all 27.
 The south-pole lies inside the Site 4 tile; the tile is 16 km on a side, not 20 km.
 
 ## Integrity and provenance
@@ -105,6 +103,7 @@ cache directory. `lunarenv validate --run` prints the location it used.
 |---|---|---|
 | Projection vs PROJ, 500 random points poleward of 60S | < 1e-6 m | 1e-6 m |
 | Site 4 (5 m, 2020) block-averaged vs regional (80 m, 2023) | RMS 0.46 m at zero shift; 21.1 m when shifted one 80 m cell | zero shift is the minimum |
+| Wide DEM (60S, 240 m) vs regional (80S, 80 m) block-averaged to 240 m, on the whole 80S area | mean 0.00 m, RMS 2.4 m at zero shift; RMS 33 m when shifted one 240 m cell in any direction | zero shift is the minimum |
 | Error clone 0001 minus nominal Site 4 DEM | mean < 1 cm, RMS 0.47 m | consistent with 0.30-0.50 m median error (Barker2021) |
 | Shackleton rim-circle centre vs Zuber2012 Table 1 | 243 m offset | < 500 m |
 | Shackleton rim diameter | 21.1 km | 21 km +/- 1 km |
@@ -149,6 +148,41 @@ Applied to the Site 4 tile with the 80S product (edge at least 287 km away):
 
 This criterion is for the Sun. The Earth ranges over about +/-7 deg of elevation at the
 pole, so for Earth visibility the per-ray rule is the only bound.
+
+
+### Beyond the 80S product: the wide DEM (2026-11-18)
+
+The same test is applied to the observer of every run, with the shortest distance to the
+edge of the 80S product (a lower bound: the map distance divided by the largest scale
+factor inside the product, 1.0153) and the observer's height. Where it fails, the terrain
+stack gets a fourth level, the 240 m product poleward of 60 S (`pgda90.ldem_60s_240mpp`,
++/-931 km), and a ray that leaves the 80S product continues on it. Inside the 80S product
+the terrain sampled is the same as before; only the height cap of the stopping rule can
+change (the highest point of the stack), which makes rays stop later, never earlier. If
+the file is not in the cache the run keeps the three levels and warns.
+
+Evaluated 2 m above the ground on every eighth pixel of the 27 site tiles:
+
+| Where the 80S product is not provably sufficient | Tiles |
+|---|---|
+| Nowhere at the reference point of `site04` (rim crest); 4.3 % of that tile (the crater floor) | `site04` |
+| 12 %, 45 %, 97 % of the tile | `site01`, `lm1`, `sl3` |
+| The whole tile | the other 23 |
+
+The test assumes terrain 11 km high right at the edge; the highest point of the 60S
+product is 7.0 km, so it asks for the wide DEM far more often than terrain there turns
+out to matter. Measured at the centres of seven tiles (`site04`, `site06`, `site20`,
+`site23`, `site42`, `npb`, `dm2`; 1440 azimuths, 2 m): the horizon is identical with and
+without the wide level at every azimuth. At `site06` and `site42`, 121 rays each ended at
+the edge of the 80S product while terrain beyond could still have hidden the Sun; with
+the wide level none does, and the 2026 mean visible disc is unchanged (30.1857 % and
+79.2568 %, longest shadow 512 h and 214 h). The wide level therefore changed no number
+that was checked; it replaces "upper bound" by a result at those points.
+
+Not checked: observers other than tile centres, heights other than 2 m, and the 240 m
+resolution of the wide level against a finer product (there is none beyond 80 S in the
+catalog). Unit test: a ridge placed beyond the regional DEM is found within 4e-5 rad of
+an independent geodesic computation, and azimuths away from it are unchanged to the bit.
 
 ## Known limitations
 

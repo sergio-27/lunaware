@@ -955,6 +955,10 @@
     "sha256": "a18c153dab5c9e7e0b4d8a5f1547bd7ef5e31fba7dd1c3252d84060aebf0283b",
     "bytes": 64025611
   },
+  "pgda90.ldem_60s_240mpp": {
+    "sha256": "3f9663257b63022f2b0d5a623482ff3cadddceb91594a4e4ca14a94d8cec8b34",
+    "bytes": 218961039
+  },
   "pgda90.ldem_80s_40mpp": {
     "sha256": "b7f3567bfa405dbcb42f867f6cd3c9932ca9752b4363ce1eef835f9115c1dd76",
     "bytes": 716299920

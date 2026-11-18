@@ -49,3 +49,36 @@ def test_run_at_the_centre_of_the_site_tile(name, store):
     # the Sun stays within the lunar obliquity plus the colatitude of the site
     assert np.abs(dataset["sun_elevation"].values).max() < 90.0 + latitude + 1.6 + 1.0
     assert 0.0 <= float(dataset["sun_visible_fraction"].mean()) <= 1.0
+    # with the wide DEM in the cache no ray is left without terrain that matters
+    wide = site["wide_regional_dem"]
+    if store.is_available(terrain.wide_id):
+        assert wide["used"] == wide["needed"]
+        assert not [w for w in result.metadata["validity"]["warnings"] if "too small" in w]
+        assert (terrain.wide_id in {d["id"] for d in result.metadata["data"]}) == wide["used"]
+    else:
+        assert not wide["used"]
+
+
+def test_the_reference_point_does_not_need_the_wide_dem(store):
+    terrain = TERRAIN_SETS["site04"]
+    missing = [i for i in (*terrain.required_ids, *DE440.kernel_ids) if not store.is_available(i)]
+    if missing:
+        pytest.skip(f"not in the data cache: {', '.join(missing)}")
+    result = run_scenario(
+        {
+            "name": "rim",
+            "site": {"x_m": -2822.5, "y_m": -9062.5},
+            "period": {
+                "start_utc": "2026-03-01T00:00:00",
+                "end_utc": "2026-03-03T00:00:00",
+                "step_minutes": 120,
+            },
+            "illumination": {"settings": {"n_azimuth": 360}},
+            "thermal": {"enabled": False},
+            "uncertainty": {"members": 0, "terrain_clones": 0, "regional_error_k": 0.0},
+        },
+        store=store,
+    )
+    wide = result.metadata["site"]["wide_regional_dem"]
+    assert not wide["needed"] and not wide["used"]
+    assert terrain.wide_id not in {d["id"] for d in result.metadata["data"]}
