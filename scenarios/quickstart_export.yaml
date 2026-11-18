@@ -1,0 +1,35 @@
+# Quick start: one month on the Shackleton crater rim, exported for another thermal tool.
+#
+# Needs only the default data (kernels, site04, regional). No uncertainty ensemble, so it
+# runs in a few minutes; see shackleton_rim_2026.yaml for the full reference scenario.
+#
+#   lunarenv run scenarios/quickstart_export.yaml
+#   lunarenv export <run_id> --ring-radius 1000 --mesh-half-width 500
+schema_version: 1
+name: quickstart-export
+description: One month of illumination and irradiance on asset surfaces at the Shackleton rim crest.
+
+site:
+  terrain: site04
+  x_m: -2822.5          # south polar stereographic, metres (the reference point of the project)
+  y_m: -9062.5
+  height_above_surface_m: 2.0
+
+period:
+  start_utc: 2026-09-01T00:00:00   # early spring: mostly lit, with terrain shadows
+  end_utc: 2026-10-01T00:00:00
+  step_minutes: 60
+
+thermal:
+  constant_albedo_alternative: false
+  albedo_envelope: false
+  conductivity_alternative: false
+  oriented_surfaces:     # the surfaces whose irradiance is exported
+    - {name: radiator-up, tilt_deg: 0}
+    - {name: wall-north, tilt_deg: 90, facing_azimuth_deg: 0}
+    - {name: wall-south, tilt_deg: 90, facing_azimuth_deg: 180}
+
+uncertainty:
+  members: 0
+  terrain_clones: 0
+  regional_error_k: 0

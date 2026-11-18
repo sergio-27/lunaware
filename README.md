@@ -1,26 +1,39 @@
 # lunarenv
 
-Open, verified lunar surface environment engine. Given a point near the lunar south
-pole and a period of time, it computes the **illumination** (terrain horizon, visible
-fraction of the Sun, Earth visibility, eclipses) and the **regolith temperature** at the
-surface and at depth, with uncertainty, and with every result traceable to its input
-data, model version and validation status.
+From LOLA terrain to the boundary conditions of a thermal model at the lunar south pole.
 
-It is meant for engineers who design structures for the lunar surface and need
-environmental conditions they can audit. The same three operations are available as a
-Python API, a command line and an MCP server for AI agents. All physics is computed by
-deterministic code.
+Given a point in one of 27 south-pole site tiles and a period of time, lunarenv computes
+and writes, as CSV tables and OBJ meshes that another thermal tool can read (Thermal
+Desktop, ESATAN-TMS, a script):
 
-**Status: MVP, pre-alpha (0.1.0.dev0).** Two models, developed and validated at one test
-site (Shackleton crater rim); the other 26 sites of the terrain product can be run
-(`lunarenv sites`) but are not validated. Read [Known limitations](#known-limitations)
-before using a number.
+- the direction of the Sun, the elevation of the Earth and the fraction of each disc
+  above the terrain horizon, per time step (nested 5 m / 80 m / 240 m LOLA terrain);
+- the irradiance on asset surfaces of any orientation: direct sunlight, sunlight
+  scattered and infrared emitted by the terrain (single bounce), and Earthshine;
+- the terrain horizon, the site terrain as a triangle mesh in a local frame, and the
+  far-field horizon as a ring around the observer;
+- a manifest with the frame, the units of every column, checksums of inputs and outputs,
+  and the validation status of the engine.
 
-What can be used today: the illumination results from a metre or more above the ground
-and the irradiance on asset surfaces, which `lunarenv export` writes for another thermal
-tool. **The polar ground temperatures are experimental bounds, not predictions**: eight
-comparisons with Diviner did not validate them (see
-[Thermal](#known-limitations), "The polar Diviner comparison is closed").
+These inputs are otherwise assembled by hand from elevation models, ephemerides and
+meshing tools, as in the terrain-model procedure taught at TFAWS 2026
+([NTRS 20260007830](https://ntrs.nasa.gov/citations/20260007830)). Here they come from
+one command, with terrain uncertainty where the terrain product provides it and a record
+of what has been checked against published data. All physics is deterministic code; the
+same operations are available from Python, the command line and an MCP server.
+
+**Status: pre-alpha (0.1.0.dev0).** What has been checked, and what has not:
+
+| Output | Evidence |
+|---|---|
+| Illumination from 1 m or more above the ground | Agrees with Barker et al. 2021 within 2.2 percentage points, with the PGDA 18.6-year map (r = 0.96) and with Gläser et al. 2018 at 2 m within 2.1, at the Shackleton rim and the connecting ridge |
+| Illumination at ground level | Fails against Gläser et al. 2018 (37-44 % against 76-81 %): do not use it |
+| The other 25 sites | They run; nothing published has been compared there |
+| Exported files | Never loaded into Thermal Desktop or ESATAN-TMS. The horizon of the exported mesh agrees with the engine's within 0.05 degrees |
+| Polar ground temperature | **Experimental bounds, not predictions**: eight comparisons with Diviner did not validate it (24-51 K too cold with the published albedo law). It is not exported |
+
+[VALIDATION.md](VALIDATION.md) has every case, including the failures, and
+[Known limitations](#known-limitations) says what each number can bear.
 
 ## Related work and what is new here
 
@@ -91,6 +104,59 @@ uv run lunarenv data fetch site04-clones
 The cache lives in `$LUNARENV_DATA_DIR` if set; otherwise in `.data/` at the root of the
 repository, if that directory exists (the location the tests use); otherwise in the
 per-user cache directory.
+
+## Quick start: one month, exported
+
+With the default data above (`kernels`, `site04`, `regional`),
+[scenarios/quickstart_export.yaml](scenarios/quickstart_export.yaml) computes September
+2026 at the Shackleton rim crest for three asset surfaces, without an uncertainty
+ensemble:
+
+```bash
+uv run lunarenv run scenarios/quickstart_export.yaml
+```
+
+It takes about two minutes (132 s on an Apple M1 Pro) and prints, among other lines:
+
+```text
+run 7a3c58c81a675845  ->  runs/7a3c58c81a675845
+illumination: mean visible solar disc 95.97 %, longest shadow 20 h, longest illumination 595 h
+surface radiator-up (tilt 0, facing 0): direct sun mean 14 W m-2, max 21 W m-2, lit 97 %; view factor sky 1.000, ground 0.000
+surface wall-north (tilt 90, facing 0): direct sun mean 436 W m-2, max 1347 W m-2, lit 51 %; view factor sky 0.517, ground 0.483
+         diffuse mean: terrain 6.7 W m-2 scattered, 2.6 W m-2 infrared; Earthshine 0.05 W m-2
+```
+
+Then write it for another tool, here with the horizon as a ring of 1 km radius and the
+terrain within 500 m as a mesh:
+
+```bash
+uv run lunarenv export <run_id> --ring-radius 1000 --mesh-half-width 500
+```
+
+```text
+runs/7a3c58c81a675845/export
+  sun_earth.csv: 721 rows, 92504 bytes
+  horizon.csv: 1440 rows, 37417 bytes
+  surface_radiator-up.csv: 721 rows, 71880 bytes
+  surface_wall-north.csv: 721 rows, 64253 bytes
+  surface_wall-south.csv: 721 rows, 54147 bytes
+  horizon_ring.obj: 2880 faces, 132998 bytes
+  terrain.obj: 80000 faces, 2736299 bytes
+  manifest.json: frame, units, checksums, validation status
+```
+
+`surface_wall-north.csv` begins:
+
+```text
+time_utc,elapsed_s,direct_w_m2,terrain_scattered_w_m2,terrain_infrared_w_m2,earthshine_reflected_w_m2,earthshine_infrared_w_m2,total_w_m2
+2026-09-01T00:00:00Z,0,835.4697397,1.68140986,0.5625593905,0.01633673323,0.05761636458,837.7876621
+2026-09-01T01:00:00Z,3600,826.2923348,1.705658805,0.5708795086,0.01669465689,0.05765015547,828.6432179
+```
+
+Columns, frame and limits are in [docs/export.md](docs/export.md). The run also prints a
+ground temperature; at the pole it is an experimental bound and is not exported. For
+another site, fetch it as shown above and change `site.terrain` and the coordinates
+(`x_m`, `y_m`, or `longitude_deg`, `latitude_deg`); `lunarenv sites` lists the 27.
 
 ## A complete example
 

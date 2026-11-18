@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -177,3 +178,25 @@ def test_cli_reports_errors_without_a_traceback(tmp_path, capsys):
     assert main(["run", str(tmp_path / "missing.yaml")]) == 2
     with pytest.raises(SystemExit):
         build_parser().parse_args(["frobnicate"])
+
+
+@pytest.mark.parametrize(
+    "path", sorted((Path(__file__).resolve().parents[2] / "scenarios").glob("*.yaml")), ids=str
+)
+def test_shipped_scenarios_load(path):
+    """Every scenario in the repository is valid, and the README commands can run it."""
+    scenario = load_scenario(path)
+    assert scenario.resolved()["name"] == scenario.name
+    assert scenario.site.terrain == "site04"  # they need only the default data
+
+
+def test_the_quick_start_scenario_is_cheap():
+    path = Path(__file__).resolve().parents[2] / "scenarios" / "quickstart_export.yaml"
+    scenario = load_scenario(path)
+    assert scenario.uncertainty.members == 0 and scenario.uncertainty.terrain_clones == 0
+    assert scenario.uncertainty.regional_error_k == 0.0  # no optional data needed
+    assert [s.name for s in scenario.thermal.oriented_surfaces] == [
+        "radiator-up",
+        "wall-north",
+        "wall-south",
+    ]
