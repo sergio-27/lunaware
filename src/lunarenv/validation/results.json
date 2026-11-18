@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "lunarenv_version": "0.1.0.dev0",
- "generated_utc": "2026-11-17T21:03:32Z",
+ "generated_utc": "2026-11-17T23:23:44Z",
  "results": [
   {
    "id": "ILL-A1",
@@ -4097,6 +4097,515 @@
    "run_utc": "2026-11-17T21:03:32Z"
   },
   {
+   "id": "TH-V3h",
+   "title": "Diviner observation timing at five polar sites",
+   "kind": "published",
+   "source": "Diviner PCP (diurnal, summer), as TH-V3 and TH-V3e; observation times from the Diviner RDR (channel 7, standard nadir) via the PDS Geosciences Node ODE",
+   "metric": "bias of block Tbol over sunlit summer bins, Hayne2017 law at the observation times, per site",
+   "tolerance": "10 K at each of the five sites (pre-registered 2026-11-18)",
+   "status": "FAIL",
+   "summary": "Shackleton Hayne -21.4 K (every hour -23.8), hot +2.2 K (8 bins); hottest-hour bound -16.7 K; Site01 Hayne -51.6 K (every hour -51.4), hot -22.0 K (28 bins); hottest-hour bound -44.9 K; Site07 Hayne -42.9 K (every hour -44.9), hot -10.6 K (26 bins); hottest-hour bound -37.7 K; Site11 Hayne -30.8 K (every hour -27.2), hot -4.0 K (14 bins); hottest-hour bound -19.6 K; Site23 Hayne -35.4 K (every hour -33.7), hot -8.7 K (28 bins); hottest-hour bound -27.0 K",
+   "checks": [
+    {
+     "quantity": "Shackleton: Hayne2017 at the Diviner observation times, bias of block Tbol over sunlit summer bins with observations in all nine cells",
+     "reference": 0.0,
+     "measured": -21.432213181922712,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Shackleton: hot law at the observation times, bias",
+     "reference": 0.0,
+     "measured": 2.1605114983398366,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: Hayne2017 averaged over every summer hour, same bins, bias",
+     "reference": 0.0,
+     "measured": -23.835773721738683,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: hot law averaged over every summer hour, same bins, bias",
+     "reference": 0.0,
+     "measured": -0.3906736997424929,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: Hayne2017 over all sunlit bins (as TH-V3 / TH-V3e), bias",
+     "reference": 0.0,
+     "measured": -23.835773721738683,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: hot law over all sunlit bins (as TH-V3c / TH-V3e), bias",
+     "reference": 0.0,
+     "measured": -0.3906736997424929,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: Hayne2017 hottest summer hour per bin, all sunlit bins, bias",
+     "reference": 0.0,
+     "measured": -16.738994616782826,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: hot law hottest summer hour per bin, all sunlit bins, bias",
+     "reference": 0.0,
+     "measured": 6.806197569362652,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: Hayne2017 at the observation times binned by the nine IFOV points / by the centre only, bias over the bins with observations in all nine cells both ways",
+     "reference": -21.432213181922712,
+     "measured": -21.43692921979196,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: observations binned in the block in the bins used / of them before 2012",
+     "reference": 484.0,
+     "measured": 484.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: sunlit bins used / sunlit bins with Diviner in all nine cells",
+     "reference": 8.0,
+     "measured": 8.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Shackleton: fraction of those observations whose RDR subsolar longitude falls in the model's bin at the same time",
+     "reference": 1.0,
+     "measured": 1.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: Hayne2017 at the Diviner observation times, bias of block Tbol over sunlit summer bins with observations in all nine cells",
+     "reference": 0.0,
+     "measured": -51.55683932192137,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Site01: hot law at the observation times, bias",
+     "reference": 0.0,
+     "measured": -22.02859082911135,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: Hayne2017 averaged over every summer hour, same bins, bias",
+     "reference": 0.0,
+     "measured": -51.430871083830695,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: hot law averaged over every summer hour, same bins, bias",
+     "reference": 0.0,
+     "measured": -21.995998758890718,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: Hayne2017 over all sunlit bins (as TH-V3 / TH-V3e), bias",
+     "reference": 0.0,
+     "measured": -51.430871083830695,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: hot law over all sunlit bins (as TH-V3c / TH-V3e), bias",
+     "reference": 0.0,
+     "measured": -21.995998758890718,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: Hayne2017 hottest summer hour per bin, all sunlit bins, bias",
+     "reference": 0.0,
+     "measured": -44.93593339687785,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: hot law hottest summer hour per bin, all sunlit bins, bias",
+     "reference": 0.0,
+     "measured": -15.386892311284901,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: Hayne2017 at the observation times binned by the nine IFOV points / by the centre only, bias over the bins with observations in all nine cells both ways",
+     "reference": -51.55683932192137,
+     "measured": -51.55100673855959,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: observations binned in the block in the bins used / of them before 2012",
+     "reference": 2354.0,
+     "measured": 2354.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: sunlit bins used / sunlit bins with Diviner in all nine cells",
+     "reference": 28.0,
+     "measured": 28.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site01: fraction of those observations whose RDR subsolar longitude falls in the model's bin at the same time",
+     "reference": 1.0,
+     "measured": 1.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: Hayne2017 at the Diviner observation times, bias of block Tbol over sunlit summer bins with observations in all nine cells",
+     "reference": 0.0,
+     "measured": -42.94932070259212,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Site07: hot law at the observation times, bias",
+     "reference": 0.0,
+     "measured": -10.616029589998199,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: Hayne2017 averaged over every summer hour, same bins, bias",
+     "reference": 0.0,
+     "measured": -44.85830861905258,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: hot law averaged over every summer hour, same bins, bias",
+     "reference": 0.0,
+     "measured": -12.716976996615184,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: Hayne2017 over all sunlit bins (as TH-V3 / TH-V3e), bias",
+     "reference": 0.0,
+     "measured": -44.85830861905258,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: hot law over all sunlit bins (as TH-V3c / TH-V3e), bias",
+     "reference": 0.0,
+     "measured": -12.716976996615184,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: Hayne2017 hottest summer hour per bin, all sunlit bins, bias",
+     "reference": 0.0,
+     "measured": -37.662579791566976,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: hot law hottest summer hour per bin, all sunlit bins, bias",
+     "reference": 0.0,
+     "measured": -5.832754996177219,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: Hayne2017 at the observation times binned by the nine IFOV points / by the centre only, bias over the bins with observations in all nine cells both ways",
+     "reference": -44.59791252024136,
+     "measured": -44.599026838331866,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: observations binned in the block in the bins used / of them before 2012",
+     "reference": 1795.0,
+     "measured": 1773.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: sunlit bins used / sunlit bins with Diviner in all nine cells",
+     "reference": 26.0,
+     "measured": 26.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site07: fraction of those observations whose RDR subsolar longitude falls in the model's bin at the same time",
+     "reference": 1.0,
+     "measured": 1.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: Hayne2017 at the Diviner observation times, bias of block Tbol over sunlit summer bins with observations in all nine cells",
+     "reference": 0.0,
+     "measured": -30.810270010526832,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Site11: hot law at the observation times, bias",
+     "reference": 0.0,
+     "measured": -4.004141570895527,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: Hayne2017 averaged over every summer hour, same bins, bias",
+     "reference": 0.0,
+     "measured": -27.22800690533173,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: hot law averaged over every summer hour, same bins, bias",
+     "reference": 0.0,
+     "measured": -0.595105750967617,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: Hayne2017 over all sunlit bins (as TH-V3 / TH-V3e), bias",
+     "reference": 0.0,
+     "measured": -27.22800690533173,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: hot law over all sunlit bins (as TH-V3c / TH-V3e), bias",
+     "reference": 0.0,
+     "measured": -0.595105750967617,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: Hayne2017 hottest summer hour per bin, all sunlit bins, bias",
+     "reference": 0.0,
+     "measured": -19.601529982435206,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: hot law hottest summer hour per bin, all sunlit bins, bias",
+     "reference": 0.0,
+     "measured": 6.823184019983602,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: Hayne2017 at the observation times binned by the nine IFOV points / by the centre only, bias over the bins with observations in all nine cells both ways",
+     "reference": -30.810270010526832,
+     "measured": -30.91299618824267,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: observations binned in the block in the bins used / of them before 2012",
+     "reference": 1293.0,
+     "measured": 918.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: sunlit bins used / sunlit bins with Diviner in all nine cells",
+     "reference": 14.0,
+     "measured": 14.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site11: fraction of those observations whose RDR subsolar longitude falls in the model's bin at the same time",
+     "reference": 1.0,
+     "measured": 1.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: Hayne2017 at the Diviner observation times, bias of block Tbol over sunlit summer bins with observations in all nine cells",
+     "reference": 0.0,
+     "measured": -35.36344622226618,
+     "tolerance": 10.0,
+     "unit": "K",
+     "informational": false
+    },
+    {
+     "quantity": "Site23: hot law at the observation times, bias",
+     "reference": 0.0,
+     "measured": -8.734835812445045,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: Hayne2017 averaged over every summer hour, same bins, bias",
+     "reference": 0.0,
+     "measured": -33.735956399170114,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: hot law averaged over every summer hour, same bins, bias",
+     "reference": 0.0,
+     "measured": -7.260857099984667,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: Hayne2017 over all sunlit bins (as TH-V3 / TH-V3e), bias",
+     "reference": 0.0,
+     "measured": -33.735956399170114,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: hot law over all sunlit bins (as TH-V3c / TH-V3e), bias",
+     "reference": 0.0,
+     "measured": -7.260857099984667,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: Hayne2017 hottest summer hour per bin, all sunlit bins, bias",
+     "reference": 0.0,
+     "measured": -26.967464536722026,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: hot law hottest summer hour per bin, all sunlit bins, bias",
+     "reference": 0.0,
+     "measured": -0.8291693640333568,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: Hayne2017 at the observation times binned by the nine IFOV points / by the centre only, bias over the bins with observations in all nine cells both ways",
+     "reference": -35.36344622226618,
+     "measured": -35.33646172519496,
+     "tolerance": null,
+     "unit": "K",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: observations binned in the block in the bins used / of them before 2012",
+     "reference": 2921.0,
+     "measured": 689.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: sunlit bins used / sunlit bins with Diviner in all nine cells",
+     "reference": 28.0,
+     "measured": 28.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    },
+    {
+     "quantity": "Site23: fraction of those observations whose RDR subsolar longitude falls in the model's bin at the same time",
+     "reference": 1.0,
+     "measured": 1.0,
+     "tolerance": null,
+     "unit": "",
+     "informational": true
+    }
+   ],
+   "notes": [
+    "Pre-registered in docs/review/preregistration-th-v3h-2026-11-18.md before the model was evaluated at the observation times.",
+    "Observation times: Diviner RDR channel 7 records, activity flag 110 (standard nadir), subsolar latitude < 0, 10-450 K, 2009-07-05 to 2019-02-17, from the PDS Geosciences Node ODE Diviner RDR service (benchmarks/extract_diviner_rdr_times.py, retrieved 2026-11-17T23:17:30Z); temperatures not used. Each record is binned by its RDR subsolar longitude and in every cell that one of its nine IFOV points (Diviner RDR SIS section 5.4, 335 x 170 m at 50 km, in track along the meridian) falls in, once per point; centre-only binning is informational.",
+    "Model: TH-V3's forward model (every 20 m, 144 pixels per cell), radiance interpolated linearly between hourly samples to each observation time and averaged over the cell's pixels; cell bin value = mean over its observations; block Tbol as TH-V3. Sunlit bins from the hourly model as before; only sunlit bins with observations in all nine cells are compared, with the every-hour model on the same bins.",
+    "5 of 5 sites have at least 4 such bins.",
+    "Reading: the observation timing does not explain the gap (under 5 K at every site, both laws); remaining candidates: the albedo law and the illumination of the blocks. Also: the observation times make the model colder at Site01, Site11, Site23, so timing cannot be the cause there; even the hottest summer hour in every bin leaves Hayne2017 below -10 K at Shackleton, Site01, Site07, Site11, Site23: no timing of the observations can close the gap there; the hot law at the observation times is still below -10 K at Site01, Site07."
+   ],
+   "data": {
+    "pgda78.site04.surf": "38ff70dbdf2f066c2cfa94a646c3a59d653ce7f6b4528b15fc1b43ee397ce758",
+    "pgda78.site01.surf": "3ba7b97cb00a2bcf21189c3aeb535f65afc21207154ab9f0d43c5bdc1f7e747e",
+    "pgda78.site07.surf": "38aaee10bb4da4d63e7427aa1ca25c79bdbc649d212079a04990e135462091f8",
+    "pgda78.site11.surf": "58f3372c35bbd6baf38ffd5633c1c96b59bd89dbd252150581d12893a43136e5",
+    "pgda78.site23.surf": "12d280a59cd7580415f6bada638d0abe025ce6727541fddf68d5dc371a6c94cf",
+    "pgda90.ldem_80s_80mpp": "82030dcbdd7c4bb0c7d858e9b4b293b9f2cda5a543ba31ec0f42784bd6beee5a"
+   },
+   "seconds": 3930.8477374169743,
+   "run_utc": "2026-11-17T23:23:44Z"
+  },
+  {
    "id": "TH-V2c",
    "title": "Apollo 17 mean temperatures, like for like",
    "kind": "published",
@@ -4602,6 +5111,7 @@
   "TH-V3d": "not selected",
   "TH-V3e": "not selected",
   "TH-V3f": "not selected",
+  "TH-V3g": "not selected",
   "TH-V2c": "not selected",
   "TH-A3": "not selected",
   "TH-C1": "not selected",

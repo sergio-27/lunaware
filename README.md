@@ -18,7 +18,7 @@ before using a number.
 
 What can be used today: the illumination results from a metre or more above the ground
 and the irradiance on asset surfaces, which `lunarenv export` writes for another thermal
-tool. **The polar ground temperatures are experimental bounds, not predictions**: seven
+tool. **The polar ground temperatures are experimental bounds, not predictions**: eight
 comparisons with Diviner did not validate them (see
 [Thermal](#known-limitations), "The polar Diviner comparison is closed").
 
@@ -197,9 +197,9 @@ For agents: `lunarenv-mcp`, see [docs/mcp.md](docs/mcp.md).
 ## Validation
 
 [VALIDATION.md](VALIDATION.md) lists every case with its source, metric, tolerance and
-result. Summary (33 cases): 19 pass, 9 fail, 1 partial, 2 informational, 2 pending. Eighteen
+result. Summary (34 cases): 19 pass, 10 fail, 1 partial, 2 informational, 2 pending. Nineteen
 cases (TH-V1b, ILL-V2b, ILL-V5, TH-V3, TH-V3b, TH-V3c, TH-X1b, TH-X1c, TH-A3, TH-C1,
-TH-V2c, TH-A2b, TH-C2, TH-V3d, ILL-C1, TH-V3e, TH-V3f, TH-V3g) follow an independent scientific review and were
+TH-V2c, TH-A2b, TH-C2, TH-V3d, ILL-C1, TH-V3e, TH-V3f, TH-V3g, TH-V3h) follow an independent scientific review and were
 pre-registered in [docs/review/](docs/review/) before they were run.
 
 | Compared with | Result |
@@ -220,6 +220,7 @@ pre-registered in [docs/review/](docs/review/) before they were run.
 | Diviner at four more polar sites, 720 m blocks chosen from model geometry (TH-V3e: PGDA 78 Sites 1, 7, 11, 23) | **fail**: hot law -22.0 / -12.7 / -0.6 / -7.3 K over 28 / 26 / 14 / 28 sunlit bins (tolerance 10 K; passes at Sites 11 and 23). Cold law -39 to -63 K and published law -27 to -51 K at every site. Diviner lies between the two laws in 16 of 96 sunlit bins |
 | Diviner at the five polar blocks with sub-DEM roughness added (TH-V3f: Gaussian slopes, Smith 1967 shadowing, after Bandfield et al. 2015) | **fail**: Hayne law with 20 deg RMS roughness -12.8 / -34.4 / -27.0 / -14.1 / -21.1 K (Shackleton, Sites 1, 7, 11, 23; tolerance 10 K), 11-18 K warmer than smooth at every site. 35 deg: -9.6 to -30.1 K. Hot law changes by under 1 K at 20 deg. Equatorial noon -3.2 K |
 | Diviner at the five polar blocks with the Diviner footprint and binning applied to the model (TH-V3g: 335 x 170 m IFOV at 50 km, 206 m smear, nine-point binning of the RDR SIS) | **fail**: Hayne law -28.8 / -49.3 / -44.3 / -26.5 / -33.9 K (Shackleton, Sites 1, 7, 11, 23; tolerance 10 K). The footprint changes the block by -5.0 / +2.2 / +0.6 / +0.7 / -0.2 K (hot law -5.3 to +1.3 K): it does not explain the gap. Hot law with footprint -20.7 K at Site 1, -12.6 K at Site 7 |
+| Diviner at the five polar blocks with the model evaluated at the times of the Diviner observations (TH-V3h: 44 500 channel 7 nadir records from the RDR, nine-point binning) | **fail**: Hayne law -21.4 / -51.6 / -42.9 / -30.8 / -35.4 K (Shackleton, Sites 1, 7, 11, 23; tolerance 10 K). Timing changes the block by +2.4 / -0.1 / +1.9 / -3.6 / -1.6 K (hot law -3.4 to +2.6 K): it does not explain the gap. Even the hottest summer hour in every bin leaves the Hayne law 17-45 K too cold, and the hot law 15 K too cold at Site 1 |
 | Spherical bowl crater, single-bounce terrain radiation (TH-A3, Ingersoll et al. 1992) | **pass**: scattered sunlight and terrain infrared within 0.4 % at three shadowed floor points (tolerance 5 %); default patch layout within 3 % |
 | Terrain irradiance at the rim minimum against the earlier 0.0217 W m-2 bound and the review's 0.05 W m-2 threshold (TH-C1) | **pass**: 8.5e-5 W m-2 at most over the three albedo laws; Earthshine 0.006 W m-2 absorbed, +0.23 K on the minimum. With twice the patches the terrain value is 4.5e-5 W m-2: not converged in relative terms, negligible in absolute ones |
 | Low-temperature conductivity, Woods-Robinson et al. 2019 shape below 150 K (TH-A2b, TH-C2) | analytic steady case with the option: **pass** (1e-15). Effect at the test point (sensitivity, no pass/fail): minimum -3.3 K, mean -1.6 K, mean at 0.3 m +5.2 K, at 1 m +7.8 K; equatorial night -0.6 K (still within TH-V1's 2 K) |
@@ -291,16 +292,17 @@ Thermal
   by 11-18 K at all five blocks but leaves it 13-34 K too cold, and barely moves the hot
   bound (under 1 K), so it closes part of the Hayne gap and none of the hot-bound gap at
   Sites 1 and 7. The Diviner footprint and binning (TH-V3g) change the blocks by -5 to
-  +2 K, so they explain neither gap; observation timing and the albedo law remain.
-- **The polar Diviner comparison is closed (2026-11-18).** Seven pre-registered cases
-  (TH-V3 to TH-V3g) tried the published albedo law, a constant albedo, the albedo
-  envelope, terrain radiation and Earthshine, four more sites, sub-DEM roughness and the
-  Diviner footprint. None brings the default law within 10 K of Diviner at the five
+  +2 K, and the times of the Diviner observations (TH-V3h) by -4 to +2 K, so neither
+  explains either gap. Even the hottest summer hour of every bin leaves the Hayne law
+  17-45 K too cold at all five blocks and the hot law 15 K too cold at Site 1.
+- **The polar Diviner comparison is closed (2026-11-18).** Eight pre-registered cases
+  (TH-V3 to TH-V3h) tried the published albedo law, a constant albedo, the albedo
+  envelope, terrain radiation and Earthshine, four more sites, sub-DEM roughness, the
+  Diviner footprint and the times of the observations. None brings the default law within 10 K of Diviner at the five
   blocks (it stays 24-51 K too cold; 13-34 K with roughness), and the hot bound stays
   13-22 K too cold at Sites 1 and 7. No further model term will be added to this
   comparison. It will be reopened only with new information on what remains: the albedo
-  at grazing incidence, or the timing of the Diviner observations within each bin (which
-  needs the per-observation radiances, not the binned product). Until then the polar
+  and other surface properties at grazing incidence, or the illumination of the blocks. Until then the polar
   ground temperatures are experimental bounds: use them to bracket the ground boundary
   condition of a coupled asset model, and expect sunlit summer ground to be warmer than
   the hot bound at some sites. `lunarenv export` leaves them out for this reason.

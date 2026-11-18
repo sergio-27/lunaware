@@ -230,6 +230,7 @@ class ThermalModel:
                 "TH-V3e",
                 "TH-V3f",
                 "TH-V3g",
+                "TH-V3h",
             ),
             references=(
                 "Hayne2017",
@@ -927,7 +928,8 @@ def run_scenario(
                 "against both bounds; TH-V3d: the same with terrain radiation and Earthshine; "
                 "TH-V3e: four more polar sites, where Diviner is above the hot bound at two; "
                 "TH-V3f: sub-DEM roughness, which moves the hot bound by under 1 K; "
-                "TH-V3g: the Diviner footprint, which moves it by -5 to +1 K "
+                "TH-V3g: the Diviner footprint, which moves it by -5 to +1 K; "
+                "TH-V3h: the Diviner observation times, which move it by -3 to +3 K "
                 "(VALIDATION.md)",
             }
         if diffuse_on:

@@ -171,7 +171,8 @@ still; sub-DEM roughness, the Diviner footprint and observation timing remain. A
 envelope: the hot edge is not an upper bound for sunlit summer ground everywhere. Sub-DEM
 roughness (TH-V3f, 20 deg RMS) warms the Hayne law by 11-18 K at the five blocks, not
 enough to pass anywhere, and changes the hot law by under 1 K. The Diviner footprint and
-binning applied to the model (TH-V3g) change the blocks by -5 to +2 K. The constant albedo 0.12,
+binning applied to the model (TH-V3g) change the blocks by -5 to +2 K, and evaluating the
+model at the times of the Diviner observations (TH-V3h) by -4 to +2 K. The constant albedo 0.12,
 outside the envelope, is kept as a separate alternative.
 
 **Slope grid** (`slope_grid`). The DEM slope at a point is uncertain by about 2 degrees
@@ -191,7 +192,7 @@ scenario's albedo law for the terrain (`oriented_diffuse_irradiance`; see below)
 
 ## Status of the polar comparison: closed (2026-11-18)
 
-Seven pre-registered cases compared the model with the Diviner summer Polar Cumulative
+Eight pre-registered cases compared the model with the Diviner summer Polar Cumulative
 Product on 720 m blocks:
 
 | Case | What was tried | Result over the sunlit summer bins |
@@ -203,17 +204,20 @@ Product on 720 m blocks:
 | TH-V3e | four more sites | FAIL: hot bound -22.0 and -12.7 K at Sites 1 and 7 |
 | TH-V3f | sub-DEM roughness, 20 deg RMS | FAIL: -12.8 to -34.4 K |
 | TH-V3g | Diviner footprint and binning | FAIL: blocks change by -5 to +2 K |
+| TH-V3h | model at the Diviner observation times | FAIL: blocks change by -4 to +2 K |
 
 The default law stays 24-51 K too cold at the five blocks and the hot bound is not an
 upper bound at two of them. What these cases rule out as the main cause: single-bounce
-terrain radiation, Earthshine, roughness of the size measured at the equator, and the
-footprint. What stays open: which albedo law holds at grazing incidence (the cases bracket
-it, they do not settle it), and the timing of the observations inside each bin (not
-tested).
+terrain radiation, Earthshine, roughness of the size measured at the equator, the
+footprint and the timing of the observations (even the hottest summer hour of every bin
+leaves the default law 17-45 K too cold). What stays open: which albedo law (and which
+other surface properties) hold at grazing incidence (the cases bracket the albedo, they
+do not settle it), and the illumination of the blocks (5 m terrain).
 
 Decision: no further model term is added to this comparison. It is reopened only with
 new information on one of these two (a measured albedo at grazing
-incidence, or the per-observation Diviner radiances with their times). The polar ground
+incidence, or a better terrain model of the blocks). The observation times, the other
+condition stated when the comparison was closed, were tested in TH-V3h. The polar ground
 temperatures remain experimental bounds; they are not written by `lunarenv export`
 ([export.md](../export.md)).
 
@@ -490,3 +494,38 @@ scenario law: about 530 s of the 932 s wall-clock reference run on 7 worker proc
    every block held at two of five. Limits: the PCP binning method is assumed from the
    GDR description; flat footprints with a geometric response; summer, sunlit bins,
    720 m blocks. Run time 1.7 h.
+10. **Diviner observation timing at the five polar blocks (TH-V3h, pre-registered
+   2026-11-18).** The times and positions of the Diviner observations come from the RDR
+   (channel 7, activity flag 110, subsolar latitude < 0, 10-450 K, 2009-07-05 to
+   2019-02-17; `benchmarks/extract_diviner_rdr_times.py`, via the PDS Geosciences ODE
+   Diviner RDR service; temperatures not stored). Nine-point binning of these records gives
+   observations in all nine cells in exactly the bins where the PCP has all nine cells.
+   Standard nadir coverage of the four blocks poleward of 88.5 S stops in 2011-2013.
+   `diviner_pcp.at_hours` interpolates each pixel's radiance linearly between hourly
+   samples to each observation time; a cell's bin value is the mean over its
+   observations. Bias of block Tbol over the sunlit summer bins (model - Diviner):
+
+   | Block | Bins | Hayne, every hour | Hayne, observation times | Change | Hot, every hour | Hot, observation times | Change | Hottest hour, Hayne / hot | Observations (before 2012) |
+   |---|---|---|---|---|---|---|---|---|---|
+   | Shackleton | 8 | -23.8 K | -21.4 K (fail) | +2.4 K | -0.4 K | +2.2 K | +2.6 K | -16.7 / +6.8 K | 484 (484) |
+   | Site 1 | 28 | -51.4 K | -51.6 K (fail) | -0.1 K | -22.0 K | -22.0 K | -0.0 K | -44.9 / -15.4 K | 2354 (2354) |
+   | Site 7 | 26 | -44.9 K | -42.9 K (fail) | +1.9 K | -12.7 K | -10.6 K | +2.1 K | -37.7 / -5.8 K | 1795 (1773) |
+   | Site 11 | 14 | -27.2 K | -30.8 K (fail) | -3.6 K | -0.6 K | -4.0 K | -3.4 K | -19.6 / +6.8 K | 1293 (918) |
+   | Site 23 | 28 | -33.7 K | -35.4 K (fail) | -1.6 K | -7.3 K | -8.7 K | -1.5 K | -27.0 / -0.8 K | 2921 (689) |
+
+   The every-hour columns reproduce TH-V3 / TH-V3c / TH-V3e exactly, every sunlit bin
+   with Diviner in all nine cells has observations in all nine cells, and the RDR
+   subsolar longitude of every observation falls in the bin of the model's (SPICE)
+   subsolar longitude at the same time. Centre-only binning moves the Hayne bias by at
+   most 0.1 K. Reading fixed beforehand: the change is under 5 K at every site under both
+   laws, so the observation timing does not explain the gap; it makes the model colder at
+   Sites 1, 11 and 23, so it cannot be the cause there. The hottest summer hour of every
+   pixel in every bin, an upper bound for any timing, leaves the Hayne law below -10 K at
+   all five blocks (the expectation was Sites 1 and 7), and the hot law at the
+   observation times is still below -10 K at Sites 1 and 7 (-22.0 and -10.6 K); at
+   Site 1 even the hot law's hottest hour is 15 K too cold. With roughness, footprint,
+   terrain radiation and timing each under the gap, the remaining candidates are the
+   albedo law (and other surface properties) and the illumination of the blocks. The
+   expectation (change under 5 K everywhere) held. Limits: channel 7 times stand for all
+   channels; cell mean instead of the footprint average; flat footprint geometry;
+   summer, sunlit bins, 720 m blocks. Run time 1.1 h.
