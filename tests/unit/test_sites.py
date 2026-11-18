@@ -40,10 +40,9 @@ def test_every_set_refers_to_catalog_entries():
             assert len(catalog.group(terrain.clone_group)) == 100
 
 
-def test_sites_already_used_are_pinned():
+def test_every_site_dem_is_pinned():
     pins = load_pins()
-    for name in ("site01", "site04", "site07", "site11", "site23"):
-        assert TERRAIN_SETS[name].near_id in pins
+    assert [t.name for t in TERRAIN_SETS.values() if t.near_id not in pins] == []
 
 
 @pytest.mark.parametrize("name", sorted(TERRAIN_SETS))

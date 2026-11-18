@@ -39,6 +39,70 @@
     "sha256": "d71dc5adfff653e0e924e0a4cbf03795b996caa30b4ace3d5843a70a5ab2f3d2",
     "bytes": 24862958
   },
+  "pgda78.dm1.surf": {
+    "sha256": "ceb7e786d05ef6a604c80b78be885e641ad7bd2b5c3aac944201a4f2008d8ca4",
+    "bytes": 64033681
+  },
+  "pgda78.dm2.surf": {
+    "sha256": "d88677c21633683061117db0a577f0510e0948fe9db315d13be28782407ff604",
+    "bytes": 64025607
+  },
+  "pgda78.haworth.surf": {
+    "sha256": "387fd6e99bca266f4982f7256c4c185921105313882b4c2eee5b5ff1ef75016b",
+    "bytes": 142123767
+  },
+  "pgda78.lm1.surf": {
+    "sha256": "acdb5999fbbf1d3720cee1a5e3955db9c4575a4f3665ad8443199c0f7a1d4c0c",
+    "bytes": 64033673
+  },
+  "pgda78.lm2.surf": {
+    "sha256": "2ae42c1da672a1273754bf04e4598695b75a7833a6948b7d2893e2dd58152716",
+    "bytes": 64033675
+  },
+  "pgda78.lm3.surf": {
+    "sha256": "df159a1c7947394fd08217e9654651b020a3816fefbc143053c10d6ee386a548",
+    "bytes": 64033679
+  },
+  "pgda78.lm4.surf": {
+    "sha256": "838eef455d71c86aa5fe1390df87772b82c9e6a812f68da027b554b521ce259d",
+    "bytes": 64033675
+  },
+  "pgda78.lm5.surf": {
+    "sha256": "611eb3b0d59570fbafd25ffae4bdbf40603e958a740654233834848d7fb14ad5",
+    "bytes": 64033679
+  },
+  "pgda78.lm6.surf": {
+    "sha256": "452d0137122a787edff4e0ae7baeaac2b795d14cb48b3b8c0308be1aa6c44778",
+    "bytes": 64033677
+  },
+  "pgda78.lm7.surf": {
+    "sha256": "00930f9d110d5477b6d38349eb544ec35d0bb802035113a0894479c317d29023",
+    "bytes": 64033675
+  },
+  "pgda78.lm8.surf": {
+    "sha256": "53a4ec1c2513f3bcd59d81b9afa04174f6283cb2cd29a3bba9a33e4b9a40c979",
+    "bytes": 64033679
+  },
+  "pgda78.npa.surf": {
+    "sha256": "1d13a8befcaefbe168589d525aee05a14aff222068221d93406ce951600d2b32",
+    "bytes": 64033687
+  },
+  "pgda78.npb.surf": {
+    "sha256": "43e250222a3dd0aeee24b3a8a3fcb2303f5c51ad5655cc41590c95b929b342b8",
+    "bytes": 64033687
+  },
+  "pgda78.npc.surf": {
+    "sha256": "af952c0d255d815c87e4f5521bff98ef22f3570853a1995008e70c7a3fec738a",
+    "bytes": 64033691
+  },
+  "pgda78.npd.surf": {
+    "sha256": "c60be0a03f38dea0d250791373d8f13445c5bdbad7c49690e004f238ef309c78",
+    "bytes": 64033687
+  },
+  "pgda78.shoemaker.surf": {
+    "sha256": "75329262a6dbe37e4370adcf23ec3854396c9d3e911a682d76c170178a0b8290",
+    "bytes": 64025605
+  },
   "pgda78.site01.clone.0001": {
     "sha256": "242de9e3da624a276864cc4fa7c499e96981c95fd27583565e68e92434faf05b",
     "bytes": 40987165
@@ -855,6 +919,10 @@
     "sha256": "416c4baa3b64def0182bb3379a1a9228482efd8ce32a39309ea8de5d0330fbe6",
     "bytes": 40980808
   },
+  "pgda78.site06.surf": {
+    "sha256": "cca17e8067601dd659b583f889204db6bce685bc30c60a9e62427a8bce36b03d",
+    "bytes": 64025603
+  },
   "pgda78.site07.surf": {
     "sha256": "38aaee10bb4da4d63e7427aa1ca25c79bdbc649d212079a04990e135462091f8",
     "bytes": 40980808
@@ -863,9 +931,29 @@
     "sha256": "58f3372c35bbd6baf38ffd5633c1c96b59bd89dbd252150581d12893a43136e5",
     "bytes": 40980806
   },
+  "pgda78.site20.surf": {
+    "sha256": "e51451f3629ba7cd5cfc1b32c8c0ee3c5c454607488b00ea00cd06a9e301a892",
+    "bytes": 40980802
+  },
+  "pgda78.site20v2.surf": {
+    "sha256": "0e96c40987c0814eadd4f94f85dacbb33bcab5388dd0b1dc99dc59bf987f072f",
+    "bytes": 108192905
+  },
   "pgda78.site23.surf": {
     "sha256": "12d280a59cd7580415f6bada638d0abe025ce6727541fddf68d5dc371a6c94cf",
     "bytes": 70586804
+  },
+  "pgda78.site42.surf": {
+    "sha256": "5af35ddca6ee9d7b10348610cb6714fd6d04dcce08d4e8cb6fb1113f4c1839cf",
+    "bytes": 64025611
+  },
+  "pgda78.sl2.surf": {
+    "sha256": "16737cb5fdaa47f243715e003450deadeabc6fb1b947a5ed245d5a3fd78a2208",
+    "bytes": 64025605
+  },
+  "pgda78.sl3.surf": {
+    "sha256": "a18c153dab5c9e7e0b4d8a5f1547bd7ef5e31fba7dd1c3252d84060aebf0283b",
+    "bytes": 64025611
   },
   "pgda90.ldem_80s_40mpp": {
     "sha256": "b7f3567bfa405dbcb42f867f6cd3c9932ca9752b4363ce1eef835f9115c1dd76",

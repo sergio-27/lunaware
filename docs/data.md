@@ -14,7 +14,7 @@ test-suite (`pytest -s tests/data`) run on 2026-11-12.
 | `pgda78.site04.clone.0001..0100` | same | same | Terrain ensemble for uncertainty propagation |
 | `pgda78.site01.*` | PGDA-78 Site 1 (connecting ridge) | 5 m | Validation case ILL-V1 only |
 | `pgda78.site07.surf`, `.site11.surf`, `.site23.surf` | PGDA-78 Sites 7, 11, 23 | 5 m | Terrain sets `site07`, `site11`, `site23`; validation case TH-V3e. No clones in the catalog |
-| `pgda78.<name>.surf` for the other 22 sites | PGDA-78 | 5 m | Terrain sets of the same name (`lunarenv sites`). URLs answered on 2026-11-18; checksums not pinned yet, so they cannot be fetched without `--pin` |
+| `pgda78.<name>.surf` for the other 22 sites | PGDA-78 | 5 m; 3200 to 6000 pixels on a side | Terrain sets of the same name (`lunarenv sites`). Pinned 2026-11-18. No clones in the catalog |
 | `pgda90.ldem_80s_80mpp` | PGDA-90 | 7600 x 7600 at 80 m, +/-304 km | Mid- and far-field terrain |
 | `pgda90.ldem_80s_80mpp_err` | PGDA-90 | same grid | RMS height error of the 80 m DEM (m); regional error bound (optional, group `regional-error`) |
 | `pgda90.ldem_60s_240mpp` | PGDA-90 | 240 m | Fallback for rays leaving the 80S product |
@@ -22,6 +22,48 @@ test-suite (`pytest -s tests/data`) run on 2026-11-12.
 | `naif.*` | NAIF generic kernels | - | Time, ephemerides, lunar orientation, frames |
 
 The full list with URLs, versions and citations is `src/lunarenv/data/catalog.toml`.
+
+### Site tiles (PGDA 78)
+
+Read from the site DEMs on 2026-11-18 (all at 5 m per pixel, no missing heights). Ranges
+are the outer edges of the tile in south polar stereographic kilometres; heights are above
+the 1737.4 km sphere.
+
+| Terrain set | Site of the product | Tile | x range (km) | y range (km) | Centre (lat, east lon) | Height range (m) |
+|---|---|---|---|---|---|---|
+| `site01` | Site01: Connecting ridge | 3200 x 3200 | -19 to -3 | -20 to -4 | -89.46, 222.5 | -523 to 1959 |
+| `site04` | Site04: Shackleton rim | 3200 x 3200 | -9 to 7 | -15 to 1 | -89.77, 188.1 | -2848 to 1805 |
+| `site06` | Site06: Nobile rim 1 | 4000 x 4000 | 74 to 94 | 100 to 120 | -85.44, 37.4 | 860 to 6800 |
+| `site07` | Site07: Peak near Shackleton | 3200 x 3200 | 22 to 38 | -28 to -12 | -88.81, 123.7 | -419 to 1649 |
+| `site11` | Site11: de Gerlache rim | 3200 x 3200 | -45 to -29 | 7 to 23 | -88.68, 292.1 | -805 to 1816 |
+| `site20` | Site20: Leibnitz beta plateau | 3200 x 3200 | 65 to 81 | 110 to 126 | -85.43, 31.7 | 2796 to 6464 |
+| `site20v2` | Site20v2: Leibnitz beta plateau, extended boundaries | 5200 x 5200 | 60 to 86 | 105 to 131 | -85.43, 31.7 | 1330 to 6788 |
+| `site23` | Site23: Malapert massif | 4200 x 4200 | -11 to 10 | 111 to 132 | -85.99, 359.8 | 902 to 5174 |
+| `site42` | Site42: de Gerlache-Kocher massif | 4000 x 4000 | -123.4 to -103.4 | -66.1 to -46.1 | -85.83, 243.7 | -1093 to 2998 |
+| `haworth` | Haworth | 5960 x 5960 | -52.9 to -23.1 | 75.6 to 105.4 | -86.76, 337.2 | -1643 to 2842 |
+| `shoemaker` | Shoemaker | 4000 x 4000 | 66 to 86 | 29 to 49 | -87.18, 62.8 | -1075 to 714 |
+| `dm1` | DM1: Amundsen rim | 4000 x 4000 | 154 to 174 | 51.5 to 71.5 | -84.23, 69.4 | -1839 to 1020 |
+| `dm2` | DM2: Nobile rim 2 | 4000 x 4000 | 147 to 167 | 85 to 105 | -83.95, 58.8 | -1430 to 1818 |
+| `sl2` | SL2: de Gerlache rim | 4000 x 4000 | -58.5 to -38.5 | 13 to 33 | -88.23, 295.4 | -1860 to 1765 |
+| `sl3` | SL3: Connecting ridge extension | 4000 x 4000 | -38.7 to -18.7 | -16.1 to 3.9 | -89.03, 258.0 | -1170 to 1693 |
+| `npa` | NPA: Cabeus exterior wall 1 | 4000 x 4000 | -98.5 to -78.5 | 19.5 to 39.5 | -86.92, 288.4 | -2612 to -1347 |
+| `npb` | NPB: Amundsen 1 | 4000 x 4000 | 175 to 195 | -8.5 to 11.5 | -83.90, 89.5 | -3891 to -2859 |
+| `npc` | NPC: Idel'son L crater 1 | 4000 x 4000 | 122.5 to 142.5 | -109.5 to -89.5 | -84.54, 126.9 | -3397 to -1948 |
+| `npd` | NPD: Malapert crater 1 | 4000 x 4000 | 13 to 33 | 146 to 166 | -84.80, 8.4 | -2463 to -1337 |
+| `lm1` | LM1: Shackleton Rim B | 4000 x 4000 | 2 to 22 | -2 to 18 | -89.52, 56.3 | -2084 to 1444 |
+| `lm2` | LM2: Shoemaker Rim A | 4000 x 4000 | 2 to 22 | 47 to 67 | -88.08, 11.9 | -3907 to -153 |
+| `lm3` | LM3: Shoemaker Rim B | 4000 x 4000 | 4 to 24 | 37 to 57 | -88.38, 16.6 | -2884 to 71 |
+| `lm4` | LM4: Shoemaker Rim C | 4000 x 4000 | 9 to 29 | 15 to 35 | -88.96, 37.2 | -3792 to -48 |
+| `lm5` | LM5: Shoemaker Rim D | 4000 x 4000 | 30 to 50 | 1 to 21 | -88.63, 74.6 | -2985 to -173 |
+| `lm6` | LM6: Shoemaker Rim E | 4000 x 4000 | 49 to 69 | 10 to 30 | -87.95, 71.3 | -3721 to -123 |
+| `lm7` | LM7: Faustini Rim A | 4000 x 4000 | 54 to 74 | -10 to 10 | -87.89, 90.0 | -2776 to 579 |
+| `lm8` | LM8: Shoemaker Rim F | 4000 x 4000 | 60 to 80 | 30 to 50 | -87.34, 60.3 | -2498 to 714 |
+
+The regional DEM of every set is the 80 m product poleward of 80 S (+/-304 km). A short
+illumination run at the centre of each tile completes at all 27; at `site06` and `site42`
+it warns that the regional DEM is too small for the observer (terrain beyond 80 S could
+still hide the Sun), so the illumination there is an upper bound. The 240 m product
+poleward of 60 S is in the catalog but is not part of the terrain sets.
 The south-pole lies inside the Site 4 tile; the tile is 16 km on a side, not 20 km.
 
 ## Integrity and provenance

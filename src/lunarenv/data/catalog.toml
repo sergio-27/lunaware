@@ -170,8 +170,7 @@ version = "final_adj"
 citation = "Barker2021"
 description = "Site 23 (Malapert massif) surface height, 5 m/pix; used by validation case TH-V3e."
 
-# Remaining sites of the product: surface height only. URLs checked 2026-11-18; a file
-# can be fetched once its checksum is pinned (`lunarenv data fetch <group> --pin`).
+# Remaining sites of the product: surface height only (pinned 2026-11-18).
 [[file]]
 id = "pgda78.site06.surf"
 url = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site06/Site06_final_adj_5mpp_surf.tif"

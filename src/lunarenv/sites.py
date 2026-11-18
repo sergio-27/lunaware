@@ -4,8 +4,8 @@ One set per site of PGDA product 78 (5 m LOLA site models of the lunar south pol
 Barker et al. 2021): the site DEM for the near field and the regional 80 m DEM beyond.
 A scenario names its set in ``site.terrain``; the observer must lie inside the site DEM.
 
-A set can be run once its site DEM is in the data cache, which needs a pinned checksum
-(``lunarenv sites`` shows which are). Terrain error clones are in the catalog for
+A set can be run once its site DEM is in the data cache (``lunarenv data fetch <name>``;
+``lunarenv sites`` shows which are). Terrain error clones are in the catalog for
 ``site04`` and ``site01`` only; runs at the other sites do not vary the near terrain.
 """
 

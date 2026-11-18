@@ -12,8 +12,8 @@ Python API, a command line and an MCP server for AI agents. All physics is compu
 deterministic code.
 
 **Status: MVP, pre-alpha (0.1.0.dev0).** Two models, developed and validated at one test
-site (Shackleton crater rim); four more sites can be run and the other 22 of the terrain
-product are declared (`lunarenv sites`). Read [Known limitations](#known-limitations)
+site (Shackleton crater rim); the other 26 sites of the terrain product can be run
+(`lunarenv sites`) but are not validated. Read [Known limitations](#known-limitations)
 before using a number.
 
 What can be used today: the illumination results from a metre or more above the ground
@@ -231,17 +231,21 @@ pre-registered in [docs/review/](docs/review/) before they were run.
 Scope
 
 - **Sites.** `site.terrain` names one of the 27 site models of PGDA product 78
-  (`lunarenv sites` lists them). Five have a pinned checksum and can be fetched and run:
-  the Shackleton rim (`site04`), the connecting ridge (`site01`), the peak near
-  Shackleton (`site07`), the de Gerlache rim (`site11`) and the Malapert massif
-  (`site23`). The other 22, among them `site20` and `site20v2` (Leibnitz beta plateau,
-  named Mons Mouton by the IAU), are declared with checked URLs but not pinned: a
-  maintainer fetches each once with `lunarenv data fetch <terrain> --pin` (64 MB for
-  most, 1.5 GB in all). Observers must lie inside the site tile. Everything was developed
-  and validated at `site04`; the published illumination comparisons cover `site01` and
-  `site04` only, and at the other sites the only check is that a run completes. Terrain
-  error clones are in the catalog for `site04` and `site01`; elsewhere the near terrain
-  is not varied and the run says so.
+  (`lunarenv sites` lists them), among them the Shackleton rim (`site04`), the connecting
+  ridge (`site01`), the Malapert massif (`site23`) and the Leibnitz beta plateau, named
+  Mons Mouton by the IAU (`site20`, `site20v2`). Every site DEM has a pinned checksum:
+  `lunarenv data fetch <terrain>` fetches it (41 to 142 MB). Observers must lie inside
+  the site tile. Everything was developed and validated at `site04`; the published
+  illumination comparisons cover `site01` and `site04` only, and at the other sites the
+  only check is that a run at the centre of the tile completes. Terrain error clones are
+  in the catalog for `site04` and `site01`; elsewhere the near terrain is not varied and
+  the run says so.
+- **Far from the pole the regional terrain can be too small.** The regional DEM ends at
+  80 S. For high ground far from the pole, terrain beyond it can still hide the Sun and
+  is not in the model; the run then warns ("the regional DEM is too small for this
+  observer") and its illumination is an upper bound. At the centres of the 27 tiles this
+  happens at `site06` (Nobile rim 1) and `site42` (de Gerlache-Kocher massif); it depends
+  on the point and its height, so read the warnings of each run.
 - **Two models.** No structural, seismic, radiation, dust or ejecta model. The thermal
   model gives the temperature of the *ground*, not of a structure.
 
