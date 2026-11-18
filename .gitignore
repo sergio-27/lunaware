@@ -15,3 +15,7 @@ runs/
 # advisory lock files created next to the pin file and the manifest
 src/lunarenv/data/checksums.lock
 .manifest.lock
+# local agent state: logs and process files carry machine paths; worktrees are checkouts
+.claude/logs/
+.claude/run/
+.claude/worktrees/

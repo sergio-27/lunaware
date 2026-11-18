@@ -25,7 +25,8 @@ comparisons with Diviner did not validate them (see
 ## Related work and what is new here
 
 Most ingredients exist already; lunarenv is an integration with an auditable validation
-ledger, not new science (finding F10 of the [scientific review](docs/review/)).
+ledger, not new science (finding F10 of the [scientific review](docs/review/), which
+was done by an AI reviewer).
 
 - **Illumination.** The method is that of Barker et al. 2021 (nested 5 / 80 / 240 m
   LOLA terrain, limb-darkened disc, 100 terrain error clones), whose clones are open
@@ -207,7 +208,10 @@ For agents: `lunarenv-mcp`, see [docs/mcp.md](docs/mcp.md).
 result. Summary (34 cases): 19 pass, 10 fail, 1 partial, 2 informational, 2 pending. Nineteen
 cases (TH-V1b, ILL-V2b, ILL-V5, TH-V3, TH-V3b, TH-V3c, TH-X1b, TH-X1c, TH-A3, TH-C1,
 TH-V2c, TH-A2b, TH-C2, TH-V3d, ILL-C1, TH-V3e, TH-V3f, TH-V3g, TH-V3h) follow an independent scientific review and were
-pre-registered in [docs/review/](docs/review/) before they were run.
+pre-registered in [docs/review/](docs/review/) before they were run. That review was
+carried out by an AI reviewer (Claude Science) working from the project documents and
+the literature, not by a human expert; its brief and full text are in
+[docs/review/](docs/review/). This repository records no review by a human specialist.
 
 | Compared with | Result |
 |---|---|
